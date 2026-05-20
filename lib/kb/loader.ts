@@ -41,7 +41,12 @@ export type Kb = {
 };
 
 async function readYamlFile<T>(file: string, schema: { parse: (v: unknown) => T }, label: string): Promise<T> {
-  const raw = await fs.readFile(file, "utf8");
+  let raw: string;
+  try {
+    raw = await fs.readFile(file, "utf8");
+  } catch (err) {
+    throw new Error(`KB: failed to read ${label} (${file}): ${(err as Error).message}`);
+  }
   let parsed: unknown;
   try {
     parsed = parseYaml(raw);
@@ -70,7 +75,12 @@ async function readMarkdownDir<F>(
   const out = [];
   for (const file of md) {
     const full = path.join(dir, file);
-    const raw = await fs.readFile(full, "utf8");
+    let raw: string;
+    try {
+      raw = await fs.readFile(full, "utf8");
+    } catch (err) {
+      throw new Error(`KB: failed to read ${label} (${full}): ${(err as Error).message}`);
+    }
     const parsed = matter(raw);
     let frontmatter: F;
     try {

@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import path from "node:path";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { loadKb } from "@/lib/kb/loader";
 
 const FIXTURE_DIR = path.resolve(__dirname, "../../fixtures/kb");
@@ -14,7 +16,7 @@ describe("loadKb", () => {
     expect(kb.education.entries[0].institution).toBe("Test University");
     expect(kb.publicContact.email).toBe("test@example.com");
 
-    expect(kb.experience).toHaveLength(1);
+    expect(kb.experience).toHaveLength(2);
     expect(kb.experience[0].slug).toBe("2024-fixture-co");
     expect(kb.experience[0].frontmatter.company).toBe("Fixture Co");
     expect(kb.experience[0].body).toContain("Fixture body.");
@@ -29,12 +31,26 @@ describe("loadKb", () => {
 
   it("sorts experience entries by start date descending (most recent first)", async () => {
     const kb = await loadKb(FIXTURE_DIR);
-    const starts = kb.experience.map((e) => e.frontmatter.start);
-    const sorted = [...starts].sort((a, b) => (a < b ? 1 : -1));
-    expect(starts).toEqual(sorted);
+    expect(kb.experience.map((e) => e.slug)).toEqual(["2024-fixture-co", "2020-older-co"]);
   });
 
-  it("throws a descriptive error when a file fails validation", async () => {
+  it("throws when the root directory does not exist", async () => {
     await expect(loadKb(path.resolve(__dirname, "../../fixtures/does-not-exist"))).rejects.toThrow();
+  });
+
+  it("throws a descriptive error when a file fails schema validation", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "queryme-kb-bad-"));
+    try {
+      await writeFile(path.join(dir, "profile.yaml"), "name: X\n"); // missing headline
+      await writeFile(path.join(dir, "skills.yaml"), "skills: []\n");
+      await writeFile(path.join(dir, "education.yaml"), "entries: []\n");
+      await writeFile(path.join(dir, "public-contact.yaml"), "{}\n");
+      await mkdir(path.join(dir, "experience"));
+      await mkdir(path.join(dir, "projects"));
+
+      await expect(loadKb(dir)).rejects.toThrow(/KB:.*profile\.yaml/);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
