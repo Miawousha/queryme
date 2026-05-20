@@ -75,6 +75,11 @@ export function getKv(): KvClient {
       "KV_REST_API_URL / KV_REST_API_TOKEN not set. Configure them in .env.local or Vercel env.",
     );
   }
-  cached = new UpstashKv(new Redis({ url, token }));
+  // `automaticDeserialization: false` is REQUIRED. By default @upstash/redis
+  // JSON-parses values on read, so a numeric string like a 6-digit verification
+  // code ("920742") round-trips back as the number 920742 — breaking the strict
+  // string comparison in verifyCode. The KvClient contract is string-only, so we
+  // disable deserialization to keep the real client faithful to MemoryKv.
+  cached = new UpstashKv(new Redis({ url, token, automaticDeserialization: false }));
   return cached;
 }
