@@ -10,12 +10,7 @@ const sanitizeSchema = {
   tagNames: [...(defaultSchema.tagNames ?? []), "sup"],
   attributes: {
     ...defaultSchema.attributes,
-    // Allow `target` and `rel` on `a` so our citation links still open in a new tab.
-    a: [
-      ...((defaultSchema.attributes?.a as unknown[]) ?? []),
-      ["target"],
-      ["rel"],
-    ],
+    a: [...((defaultSchema.attributes?.a as unknown[]) ?? []), ["target"], ["rel"]],
   },
 };
 
@@ -33,7 +28,6 @@ function rewriteCitations(text: string, repoUrl: string, branch: string): string
   for (const c of cites) {
     i += 1;
     const url = citationToUrl(c, { repoUrl, branch });
-    // Replace the first remaining occurrence of this token with a markdown link inside <sup> tags.
     const replacement = `<sup>[\\[${i}\\]](${url})</sup>`;
     out = out.replace(c.token, replacement);
   }
@@ -47,29 +41,46 @@ export function ChatMessage({ role, text, repoUrl, branch }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        "max-w-prose rounded-2xl px-4 py-3 text-sm leading-relaxed",
-        isAssistant
-          ? "self-start bg-[var(--color-muted)] text-[var(--color-foreground)]"
-          : "self-end bg-[var(--color-accent)] text-[var(--color-accent-foreground)]",
+        "flex w-full",
+        isAssistant ? "justify-start" : "justify-end",
       )}
     >
-      {isAssistant ? (
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-          components={{
-            a: ({ href, children }) => (
-              <a href={href} target="_blank" rel="noopener noreferrer" className="underline">
-                {children}
-              </a>
-            ),
-          }}
-        >
-          {rendered}
-        </ReactMarkdown>
-      ) : (
-        <p className="whitespace-pre-wrap">{text}</p>
-      )}
+      <div
+        className={cn(
+          "relative max-w-[85%] rounded-2xl px-4 py-3",
+          isAssistant
+            ? "border border-[var(--color-border)] bg-[rgba(var(--color-primary-rgb),0.06)]"
+            : "bg-[rgba(var(--color-accent-rgb),0.12)] text-[var(--color-text-primary)] ring-1 ring-[rgba(var(--color-accent-rgb),0.25)]",
+        )}
+      >
+        {isAssistant && (
+          <span
+            className="mb-1 block font-mono text-[9px] uppercase text-[var(--color-primary)]"
+            style={{ letterSpacing: "0.32em" }}
+          >
+            agent
+          </span>
+        )}
+        {isAssistant ? (
+          <div className="prose-chat">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+              components={{
+                a: ({ href, children }) => (
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {children}
+                  </a>
+                ),
+              }}
+            >
+              {rendered}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          <p className="whitespace-pre-wrap text-[14px] leading-relaxed">{text}</p>
+        )}
+      </div>
     </div>
   );
 }

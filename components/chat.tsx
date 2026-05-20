@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
@@ -31,7 +31,14 @@ export function Chat({
   const { messages, sendMessage, status, error } = useChat({ transport });
 
   const [input, setInput] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
   const isBusy = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages]);
 
   function submit(text: string) {
     const trimmed = text.trim();
@@ -48,8 +55,48 @@ export function Chat({
   }
 
   return (
-    <section className="flex h-[70vh] max-w-3xl flex-col gap-4 rounded-3xl border border-[var(--color-border)] bg-[var(--color-background)] p-6">
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
+    <section
+      className="fade-up relative flex h-[68vh] min-h-[480px] flex-col overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-[var(--color-card)]/70 backdrop-blur-md"
+      style={{ animationDelay: "0.25s" }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-24 left-1/2 h-[260px] w-[260px] -translate-x-1/2 rounded-full"
+        style={{
+          background: "radial-gradient(circle, rgba(var(--color-accent-rgb),0.10) 0%, transparent 70%)",
+          filter: "blur(20px)",
+        }}
+      />
+
+      <header className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3">
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className={cn(
+              "relative inline-flex h-2 w-2 rounded-full",
+              isBusy ? "bg-[var(--color-accent)]" : "bg-[var(--color-primary)]",
+            )}
+          >
+            {isBusy && (
+              <span className="absolute inset-0 animate-ping rounded-full bg-[var(--color-accent)] opacity-60" />
+            )}
+          </span>
+          <span
+            className="font-mono text-[10px] uppercase text-[var(--color-text-secondary)]"
+            style={{ letterSpacing: "0.3em" }}
+          >
+            {isBusy ? "thinking" : "ready"}
+          </span>
+        </div>
+        <span
+          className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+          style={{ letterSpacing: "0.3em" }}
+        >
+          /chat
+        </span>
+      </header>
+
+      <div ref={scrollRef} className="chat-scroll flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
         <ChatMessage role="assistant" text={intro} repoUrl={repoUrl} branch={branch} />
         {messages.map((m) => (
           <ChatMessage
@@ -62,8 +109,11 @@ export function Chat({
         ))}
 
         {messages.length === 0 && (
-          <div className="mt-2 flex flex-col gap-2">
-            <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+          <div className="mt-3 flex flex-col gap-3">
+            <p
+              className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+              style={{ letterSpacing: "0.3em" }}
+            >
               {startersTitle}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -71,12 +121,15 @@ export function Chat({
                 <button
                   key={s}
                   type="button"
-                  className={cn(
-                    "rounded-full border border-[var(--color-border)] bg-[var(--color-muted)]",
-                    "px-3 py-1 text-xs text-[var(--color-foreground)] hover:bg-[var(--color-border)]",
-                  )}
                   onClick={() => submit(s)}
                   disabled={isBusy}
+                  className={cn(
+                    "group rounded-full border border-[var(--color-border)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
+                    "transition-all duration-200",
+                    "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
+                    "hover:bg-[rgba(var(--color-primary-rgb),0.10)]",
+                    "disabled:cursor-not-allowed disabled:opacity-50",
+                  )}
                 >
                   {s}
                 </button>
@@ -89,14 +142,14 @@ export function Chat({
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+          className="mx-5 mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"
         >
           Something went wrong — please try again.
         </div>
       )}
 
       <form
-        className="flex items-end gap-2"
+        className="flex items-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-surface)]/40 px-4 py-3 sm:px-5"
         onSubmit={(e) => {
           e.preventDefault();
           submit(input);
@@ -106,8 +159,8 @@ export function Chat({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={placeholder}
-          rows={2}
-          className="resize-none"
+          rows={1}
+          className="min-h-[42px] resize-none border-transparent bg-transparent text-[14px] focus-visible:border-transparent focus-visible:ring-0"
           disabled={isBusy}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -116,7 +169,7 @@ export function Chat({
             }
           }}
         />
-        <Button type="submit" disabled={isBusy || !input.trim()}>
+        <Button type="submit" disabled={isBusy || !input.trim()} className="shrink-0">
           {sendLabel}
         </Button>
       </form>
