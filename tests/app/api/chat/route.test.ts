@@ -49,4 +49,30 @@ describe("/api/chat POST validation", () => {
     }));
     expect(res.status).toBe(400);
   });
+
+  it("accepts multi-turn history containing non-text assistant parts", async () => {
+    // From the 2nd turn onward the client echoes back assistant messages, whose
+    // parts include non-text entries (e.g. `step-start`). Validation must accept
+    // these. If validation passes, execution proceeds to getDb()/answer() which
+    // need infra absent in the unit-test env — so a thrown error here is the
+    // success signal; a returned response must NOT be a 400 validation rejection.
+    const req = makeReq({
+      messages: [
+        { id: "1", role: "user", parts: [{ type: "text", text: "hi" }] },
+        {
+          id: "2",
+          role: "assistant",
+          parts: [{ type: "step-start" }, { type: "text", text: "Hello!", state: "done" }],
+        },
+        { id: "3", role: "user", parts: [{ type: "text", text: "again" }] },
+      ],
+    });
+    let status: number | undefined;
+    try {
+      status = (await POST(req)).status;
+    } catch {
+      return; // reached infra-dependent code — validation passed
+    }
+    expect(status).not.toBe(400);
+  });
 });

@@ -16,7 +16,14 @@ export const runtime = "nodejs";
 const MAX_TURNS = 50;
 const MAX_TOTAL_USER_CHARS = 20_000;
 
-const UIMessagePartSchema = z.object({ type: z.literal("text"), text: z.string() });
+// A UI message part. Text parts carry `text`; the AI SDK also produces
+// non-text parts (e.g. `step-start`, reasoning) that get echoed back as
+// conversation history on the 2nd turn onward — those must be accepted, not
+// rejected. `.loose()` keeps any extra fields (e.g. `state`) intact for
+// convertToModelMessages.
+const UIMessagePartSchema = z
+  .object({ type: z.string(), text: z.string().optional() })
+  .loose();
 
 const UIMessageSchema = z.object({
   id: z.string().optional(),
@@ -61,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   const userCharCount = parsed.data.messages
     .filter((m) => m.role === "user")
-    .reduce((n, m) => n + m.parts.reduce((p, part) => p + part.text.length, 0), 0);
+    .reduce((n, m) => n + m.parts.reduce((p, part) => p + (part.text?.length ?? 0), 0), 0);
   if (userCharCount > MAX_TOTAL_USER_CHARS) {
     return NextResponse.json(
       { error: `Conversation too long (max ${MAX_TOTAL_USER_CHARS} characters of user text)` },
@@ -82,7 +89,7 @@ export async function POST(req: NextRequest) {
   // Append the last user turn to the transcript before streaming.
   const lastMessage = parsed.data.messages[parsed.data.messages.length - 1];
   if (lastMessage.role === "user") {
-    const text = lastMessage.parts.map((p) => p.text).join("");
+    const text = lastMessage.parts.map((p) => p.text ?? "").join("");
     await appendTurn(db, conversationId, {
       role: "user",
       text,
