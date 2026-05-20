@@ -103,7 +103,7 @@ export function assembleSensitiveKbText(sensitive: SensitiveKb): string {
         lines.push(`- ${h.company} (${h.period}): ${h.amount}${notes}`);
       }
     }
-    lines.push("[ref: sensitive/salary.yaml]");
+    lines.push("[ref: sensitive/salary.yaml.enc]");
     sections.push(lines.join("\n"));
   }
 
@@ -114,7 +114,7 @@ export function assembleSensitiveKbText(sensitive: SensitiveKb): string {
       lines.push(`- ${r.name} (${r.relationship})${contact ? ` — ${contact}` : ""}`);
       if (r.notes) lines.push(`  notes: ${r.notes}`);
     }
-    lines.push("[ref: sensitive/references.yaml]");
+    lines.push("[ref: sensitive/references.yaml.enc]");
     sections.push(lines.join("\n"));
   }
 
@@ -123,7 +123,7 @@ export function assembleSensitiveKbText(sensitive: SensitiveKb): string {
     if (sensitive.privateContact.phone) lines.push(`Phone: ${sensitive.privateContact.phone}`);
     if (sensitive.privateContact.personalEmail) lines.push(`Personal email: ${sensitive.privateContact.personalEmail}`);
     if (sensitive.privateContact.notes) lines.push(`Notes: ${sensitive.privateContact.notes}`);
-    lines.push("[ref: sensitive/private-contact.yaml]");
+    lines.push("[ref: sensitive/private-contact.yaml.enc]");
     sections.push(lines.join("\n"));
   }
 

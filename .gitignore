@@ -8,3 +8,7 @@ node_modules/
 next-env.d.ts
 *.tsbuildinfo
 coverage/
+
+# Plaintext sensitive KB — only the encrypted *.yaml.enc files are committed.
+# Edit these locally, then run `pnpm kb:encrypt`.
+/kb/sensitive/*.yaml

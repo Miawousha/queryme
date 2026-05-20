@@ -10,6 +10,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "validate:kb": "tsx scripts/validate-kb.ts",
+    "kb:gen-key": "tsx scripts/kb-sensitive.ts gen-key",
+    "kb:encrypt": "tsx scripts/kb-sensitive.ts encrypt",
+    "kb:decrypt": "tsx scripts/kb-sensitive.ts decrypt",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts"
   },

@@ -64,13 +64,13 @@ describe("assembleSensitiveKbText", () => {
     const text = assembleSensitiveKbText(kb.sensitive);
     expect(text).toContain("# Sensitive — Salary");
     expect(text).toContain("€90k–€110k");
-    expect(text).toContain("[ref: sensitive/salary.yaml]");
+    expect(text).toContain("[ref: sensitive/salary.yaml.enc]");
     expect(text).toContain("# Sensitive — References");
     expect(text).toContain("Jane Doe");
-    expect(text).toContain("[ref: sensitive/references.yaml]");
+    expect(text).toContain("[ref: sensitive/references.yaml.enc]");
     expect(text).toContain("# Sensitive — Private contact");
     expect(text).toContain("+33 6 00 00 00 00");
-    expect(text).toContain("[ref: sensitive/private-contact.yaml]");
+    expect(text).toContain("[ref: sensitive/private-contact.yaml.enc]");
   });
 
   it("returns empty string when every section is null", () => {

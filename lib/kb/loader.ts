@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import { parse as parseYaml } from "yaml";
+import { decryptSensitive } from "./crypto";
 import {
   ProfileSchema,
   SkillsSchema,
@@ -73,17 +74,71 @@ async function readYamlFile<T>(file: string, schema: { parse: (v: unknown) => T 
   }
 }
 
-async function readOptionalYaml<T>(
-  file: string,
+async function fileExists(file: string): Promise<boolean> {
+  try {
+    await fs.access(file);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function parseAndValidate<T>(raw: string, schema: { parse: (v: unknown) => T }, label: string): T {
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(raw);
+  } catch (err) {
+    throw new Error(`KB: failed to parse YAML in ${label}: ${(err as Error).message}`);
+  }
+  try {
+    return schema.parse(parsed);
+  } catch (err) {
+    throw new Error(`KB: schema validation failed for ${label}: ${(err as Error).message}`);
+  }
+}
+
+/**
+ * Loads a sensitive KB file. Prefers the committed ciphertext (`<name>.enc`,
+ * decrypted with KB_SENSITIVE_KEY); falls back to a plaintext `<name>` if no
+ * `.enc` exists (local dev / test fixtures). If a `.enc` exists but the key is
+ * absent, the section is treated as unavailable — fail-closed, never leak.
+ */
+async function readOptionalSensitiveYaml<T>(
+  dir: string,
+  baseName: string,
   schema: { parse: (v: unknown) => T },
   label: string,
 ): Promise<T | null> {
-  try {
-    await fs.access(file);
-  } catch {
-    return null;
+  const encPath = path.join(dir, `${baseName}.enc`);
+  const plainPath = path.join(dir, baseName);
+
+  if (await fileExists(encPath)) {
+    const key = process.env.KB_SENSITIVE_KEY;
+    if (!key) {
+      console.warn(
+        `KB: ${label} is encrypted but KB_SENSITIVE_KEY is not set — sensitive content unavailable.`,
+      );
+      return null;
+    }
+    let ciphertext: string;
+    try {
+      ciphertext = await fs.readFile(encPath, "utf8");
+    } catch (err) {
+      throw new Error(`KB: failed to read ${label} (${encPath}): ${(err as Error).message}`);
+    }
+    let raw: string;
+    try {
+      raw = decryptSensitive(ciphertext, key);
+    } catch (err) {
+      throw new Error(`KB: failed to decrypt ${label} (${encPath}): ${(err as Error).message}`);
+    }
+    return parseAndValidate(raw, schema, label);
   }
-  return await readYamlFile(file, schema, label);
+
+  if (await fileExists(plainPath)) {
+    return await readYamlFile(plainPath, schema, label);
+  }
+  return null;
 }
 
 async function readMarkdownDir<F>(
@@ -148,9 +203,9 @@ export async function loadKb(rootDir: string): Promise<Kb> {
 
   const sensitiveDir = path.join(rootDir, "sensitive");
   const [salary, references, privateContact] = await Promise.all([
-    readOptionalYaml(path.join(sensitiveDir, "salary.yaml"), SalarySchema, "sensitive/salary.yaml"),
-    readOptionalYaml(path.join(sensitiveDir, "references.yaml"), ReferencesSchema, "sensitive/references.yaml"),
-    readOptionalYaml(path.join(sensitiveDir, "private-contact.yaml"), PrivateContactSchema, "sensitive/private-contact.yaml"),
+    readOptionalSensitiveYaml(sensitiveDir, "salary.yaml", SalarySchema, "sensitive/salary.yaml"),
+    readOptionalSensitiveYaml(sensitiveDir, "references.yaml", ReferencesSchema, "sensitive/references.yaml"),
+    readOptionalSensitiveYaml(sensitiveDir, "private-contact.yaml", PrivateContactSchema, "sensitive/private-contact.yaml"),
   ]);
 
   return {
