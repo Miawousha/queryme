@@ -17,14 +17,14 @@ describe("verification codes", () => {
     expect(first.ok).toBe(true);
     const second = await verifyCode(kv, { conversationId: "c1", email: "a@b.com", code });
     expect(second.ok).toBe(false);
-    expect(second.reason).toBe("not_found");
+    if (!second.ok) expect(second.reason).toBe("not_found");
   });
 
   it("rejects wrong codes", async () => {
     await issueCode(kv, { conversationId: "c1", email: "a@b.com" });
     const r = await verifyCode(kv, { conversationId: "c1", email: "a@b.com", code: "000000" });
     expect(r.ok).toBe(false);
-    expect(r.reason).toBe("mismatch");
+    if (!r.ok) expect(r.reason).toBe("mismatch");
   });
 
   it("isolates codes per (conversationId, email)", async () => {
