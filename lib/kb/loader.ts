@@ -9,12 +9,18 @@ import {
   PublicContactSchema,
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
+  SalarySchema,
+  ReferencesSchema,
+  PrivateContactSchema,
   type Profile,
   type Skills,
   type Education,
   type PublicContact,
   type ExperienceFrontmatter,
   type ProjectFrontmatter,
+  type Salary,
+  type References,
+  type PrivateContact,
 } from "./schemas";
 
 export type ExperienceEntry = {
@@ -31,6 +37,12 @@ export type ProjectEntry = {
   body: string;
 };
 
+export type SensitiveKb = {
+  salary: Salary | null;
+  references: References | null;
+  privateContact: PrivateContact | null;
+};
+
 export type Kb = {
   profile: Profile;
   skills: Skills;
@@ -38,6 +50,7 @@ export type Kb = {
   publicContact: PublicContact;
   experience: ExperienceEntry[];
   projects: ProjectEntry[];
+  sensitive: SensitiveKb;
 };
 
 async function readYamlFile<T>(file: string, schema: { parse: (v: unknown) => T }, label: string): Promise<T> {
@@ -58,6 +71,19 @@ async function readYamlFile<T>(file: string, schema: { parse: (v: unknown) => T 
   } catch (err) {
     throw new Error(`KB: schema validation failed for ${label} (${file}): ${(err as Error).message}`);
   }
+}
+
+async function readOptionalYaml<T>(
+  file: string,
+  schema: { parse: (v: unknown) => T },
+  label: string,
+): Promise<T | null> {
+  try {
+    await fs.access(file);
+  } catch {
+    return null;
+  }
+  return await readYamlFile(file, schema, label);
 }
 
 async function readMarkdownDir<F>(
@@ -120,5 +146,20 @@ export async function loadKb(rootDir: string): Promise<Kb> {
   experience.sort((a, b) => (startSortKey(a.frontmatter.start) < startSortKey(b.frontmatter.start) ? 1 : -1));
   projects.sort((a, b) => (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0));
 
-  return { profile, skills, education, publicContact, experience, projects };
+  const sensitiveDir = path.join(rootDir, "sensitive");
+  const [salary, references, privateContact] = await Promise.all([
+    readOptionalYaml(path.join(sensitiveDir, "salary.yaml"), SalarySchema, "sensitive/salary.yaml"),
+    readOptionalYaml(path.join(sensitiveDir, "references.yaml"), ReferencesSchema, "sensitive/references.yaml"),
+    readOptionalYaml(path.join(sensitiveDir, "private-contact.yaml"), PrivateContactSchema, "sensitive/private-contact.yaml"),
+  ]);
+
+  return {
+    profile,
+    skills,
+    education,
+    publicContact,
+    experience,
+    projects,
+    sensitive: { salary, references, privateContact },
+  };
 }

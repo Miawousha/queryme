@@ -27,6 +27,28 @@ describe("loadKb", () => {
     expect(kb.projects[0].frontmatter.name).toBe("Fixture Project");
     expect(kb.projects[0].body).toContain("A fixture project body.");
     expect(kb.projects[0].relativePath).toBe("projects/fixture-project.md");
+
+    expect(kb.sensitive.salary?.expectations).toBe("€90k–€110k");
+    expect(kb.sensitive.references?.entries[0].name).toBe("Jane Doe");
+    expect(kb.sensitive.privateContact?.phone).toBe("+33 6 00 00 00 00");
+  });
+
+  it("returns null sensitive sections when the sensitive directory is absent", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "queryme-kb-nosens-"));
+    try {
+      await writeFile(path.join(dir, "profile.yaml"), "name: X\nheadline: Y\n");
+      await writeFile(path.join(dir, "skills.yaml"), "skills: []\n");
+      await writeFile(path.join(dir, "education.yaml"), "entries: []\n");
+      await writeFile(path.join(dir, "public-contact.yaml"), "{}\n");
+      await mkdir(path.join(dir, "experience"));
+      await mkdir(path.join(dir, "projects"));
+      const kb = await loadKb(dir);
+      expect(kb.sensitive.salary).toBeNull();
+      expect(kb.sensitive.references).toBeNull();
+      expect(kb.sensitive.privateContact).toBeNull();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("sorts experience entries by start date descending (most recent first)", async () => {

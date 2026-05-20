@@ -76,3 +76,35 @@ export const ProjectFrontmatterSchema = z.object({
   url: z.url().optional(),
 });
 export type ProjectFrontmatter = z.infer<typeof ProjectFrontmatterSchema>;
+
+export const SalarySchema = z.object({
+  expectations: z.string().optional(),
+  history: z
+    .array(
+      z.object({
+        company: z.string(),
+        period: DateOrPresent,
+        amount: z.string(),
+        notes: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+export type Salary = z.infer<typeof SalarySchema>;
+
+export const ReferenceEntrySchema = z.object({
+  name: z.string().min(1),
+  relationship: z.string().min(1),
+  email: z.email().optional(),
+  phone: z.string().optional(),
+  notes: z.string().optional(),
+});
+export const ReferencesSchema = z.object({ entries: z.array(ReferenceEntrySchema) });
+export type References = z.infer<typeof ReferencesSchema>;
+
+export const PrivateContactSchema = z.object({
+  phone: z.string().optional(),
+  personalEmail: z.email().optional(),
+  notes: z.string().optional(),
+});
+export type PrivateContact = z.infer<typeof PrivateContactSchema>;
