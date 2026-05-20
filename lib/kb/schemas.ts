@@ -16,10 +16,10 @@ export const ProfileSchema = z.object({
   photo: z.string().optional(),
   links: z
     .object({
-      linkedin: z.string().url().optional(),
-      github: z.string().url().optional(),
-      website: z.string().url().optional(),
-      twitter: z.string().url().optional(),
+      linkedin: z.url().optional(),
+      github: z.url().optional(),
+      website: z.url().optional(),
+      twitter: z.url().optional(),
     })
     .optional(),
 });
@@ -45,13 +45,13 @@ export const EducationSchema = z.object({ entries: z.array(EducationEntrySchema)
 export type Education = z.infer<typeof EducationSchema>;
 
 export const PublicContactSchema = z.object({
-  email: z.string().email().optional(),
+  email: z.email().optional(),
   links: z
     .object({
-      linkedin: z.string().url().optional(),
-      github: z.string().url().optional(),
-      website: z.string().url().optional(),
-      twitter: z.string().url().optional(),
+      linkedin: z.url().optional(),
+      github: z.url().optional(),
+      website: z.url().optional(),
+      twitter: z.url().optional(),
     })
     .optional(),
 });
@@ -73,6 +73,6 @@ export const ProjectFrontmatterSchema = z.object({
   year: z.number().int().min(1900).max(2100).optional(),
   stack: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
-  url: z.string().url().optional(),
+  url: z.url().optional(),
 });
 export type ProjectFrontmatter = z.infer<typeof ProjectFrontmatterSchema>;
