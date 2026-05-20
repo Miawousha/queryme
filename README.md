@@ -9,7 +9,7 @@ Live: _coming soon_
 1. The KB lives in `/kb` as YAML files (structured facts) and Markdown files (narrative stories). One file per role and per project.
 2. The system prompt lives in `/prompts/system.md`. It's plain Markdown — read it.
 3. The Next.js app loads the KB at runtime, assembles it into a single text blob, and injects it into the system prompt with Anthropic prompt caching so every request after the first is cheap.
-4. The web chat at `/` calls `/api/chat`, which calls a shared `answer()` function. (An MCP server interface is on the way and will call the same `answer()`.)
+4. The web chat at `/` calls `/api/chat`, which calls a shared `answer()` function. The MCP server at `/api/mcp` calls the same `answer()` — see [MCP server](#mcp-server) below.
 
 ## Local development
 
@@ -61,6 +61,40 @@ pnpm typecheck     # TS only
 pnpm build         # full Next.js build (runs KB validation first)
 ```
 
+## MCP server
+
+queryme exposes the CV agent over the [Model Context Protocol](https://modelcontextprotocol.io)
+at a single Streamable-HTTP endpoint:
+
+```
+POST /api/mcp     — JSON-RPC requests
+GET  /api/mcp     — server→client SSE stream
+DELETE /api/mcp   — session teardown
+```
+
+Point any MCP client at `https://<deployment>/api/mcp` (Streamable-HTTP transport).
+The endpoint is **public** — querying public CV content needs no credentials.
+
+### Tools
+
+| Tool | Input | Result |
+|---|---|---|
+| `ask` | `question` (string), `conversationId?` (uuid) | `{ answer, conversationId }` — reuse `conversationId` on follow-ups |
+| `request_identification` | `conversationId`, `name`, `company`, `workEmail`, `role`, `purpose?` | `{ ok: true }` — emails a 6-digit code; free-email domains rejected |
+| `verify_identification` | `conversationId`, `workEmail`, `code` (6 digits) | `{ ok: true }` — unlocks sensitive content for that conversation |
+| `forward_question` | `question` (string), `conversationId?` (uuid) | `{ ok: true, id }` — queues a question for the candidate |
+
+### Accessing sensitive content
+
+Salary, references, and private contact are gated. To unlock them for a
+conversation: call `request_identification` with the principal's work email,
+have them read back the 6-digit code from their inbox, then call
+`verify_identification`. Subsequent `ask` calls on the same `conversationId`
+include sensitive content. This is the same email-code flow as the web chat —
+there is no separate MCP OAuth.
+
+Requests are rate-limited per client IP.
+
 ## Deployment
 
 Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optionally) override `NEXT_PUBLIC_REPO_URL` / `NEXT_PUBLIC_REPO_BRANCH` if you've forked.
@@ -76,7 +110,6 @@ Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optio
 
 Coming in later plans:
 
-- MCP server endpoint for AI agents (Plan 3)
 - Admin panel for reviewing conversations + forwarded questions (Plan 4)
 
 ## License
