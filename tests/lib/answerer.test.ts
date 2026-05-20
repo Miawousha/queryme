@@ -92,8 +92,15 @@ describe("answer", () => {
       model,
     }).then((r) => r.text);
 
-    const serialised = JSON.stringify(captured);
-    expect(serialised).toMatch(/cacheControl|cache_control/);
-    expect(serialised).toContain("ephemeral");
+    const prompt = (captured as any).prompt as Array<any>;
+    const systemMessages = prompt.filter((m) => m.role === "system");
+    expect(systemMessages.length).toBeGreaterThanOrEqual(2);
+    const kbMessage = systemMessages.find(
+      (m) => typeof m.content === "string" && m.content.includes("KB"),
+    );
+    const headerMessage = systemMessages.find((m) => m !== kbMessage);
+    expect(kbMessage).toBeDefined();
+    expect(kbMessage.providerOptions?.anthropic?.cacheControl?.type).toBe("ephemeral");
+    expect(headerMessage?.providerOptions?.anthropic?.cacheControl).toBeUndefined();
   });
 });
