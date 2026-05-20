@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { MemoryKv } from "@/lib/kv/client";
 import { handleAsk, handleForwardQuestion } from "@/lib/mcp/tools";
 import type { AskDeps, ForwardQuestionDeps } from "@/lib/mcp/tools";
+import { handleRequestIdentification, handleVerifyIdentification } from "@/lib/mcp/tools";
+import type { RequestIdentificationDeps, VerifyIdentificationDeps } from "@/lib/mcp/tools";
 
 // A minimal in-memory conversation store standing in for the Drizzle `db`.
 // Only the methods the handlers call are implemented.
@@ -189,5 +191,129 @@ describe("handleForwardQuestion", () => {
       forwardQuestion: async () => ({ id: "x" }) as never,
     };
     await expect(handleForwardQuestion(deps, { question: "" })).rejects.toThrow();
+  });
+});
+
+describe("handleRequestIdentification", () => {
+  const validInput = {
+    conversationId: "33333333-3333-4333-8333-333333333333",
+    name: "Dana Recruiter",
+    company: "Acme Corp",
+    workEmail: "dana@acme.com",
+    role: "Talent Partner",
+    purpose: "Evaluating for a staff role",
+  };
+
+  it("calls requestIdentification with mapped args and returns ok on success", async () => {
+    let received: unknown = null;
+    const deps: RequestIdentificationDeps = {
+      db: {} as never,
+      kv: new MemoryKv(),
+      requestIdentification: async (_d, input) => {
+        received = input;
+        return { ok: true };
+      },
+      send: async () => {},
+    };
+
+    const result = await handleRequestIdentification(deps, validInput);
+
+    expect(result).toEqual({ ok: true });
+    expect(received).toEqual({
+      conversationId: validInput.conversationId,
+      name: validInput.name,
+      company: validInput.company,
+      workEmail: validInput.workEmail,
+      role: validInput.role,
+      purpose: validInput.purpose,
+    });
+  });
+
+  it("maps an invalid_email_domain reason to a descriptive error", async () => {
+    const deps: RequestIdentificationDeps = {
+      db: {} as never,
+      kv: new MemoryKv(),
+      requestIdentification: async () => ({ ok: false, reason: "invalid_email_domain" }),
+      send: async () => {},
+    };
+
+    const result = await handleRequestIdentification(deps, validInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/work email/i);
+  });
+
+  it("rejects a missing conversationId via input validation", async () => {
+    const deps: RequestIdentificationDeps = {
+      db: {} as never,
+      kv: new MemoryKv(),
+      requestIdentification: async () => ({ ok: true }),
+      send: async () => {},
+    };
+    const { conversationId, ...withoutConvId } = validInput;
+    void conversationId;
+    await expect(handleRequestIdentification(deps, withoutConvId)).rejects.toThrow();
+  });
+});
+
+describe("handleVerifyIdentification", () => {
+  const validInput = {
+    conversationId: "44444444-4444-4444-8444-444444444444",
+    workEmail: "dana@acme.com",
+    code: "920742",
+  };
+
+  it("calls verifyIdentification with mapped args and returns ok on success", async () => {
+    let received: unknown = null;
+    const deps: VerifyIdentificationDeps = {
+      db: {} as never,
+      kv: new MemoryKv(),
+      verifyIdentification: async (_d, input) => {
+        received = input;
+        return { ok: true, token: "tok-abc", askerId: "asker-1" };
+      },
+    };
+
+    const result = await handleVerifyIdentification(deps, validInput);
+
+    expect(result).toEqual({ ok: true });
+    expect(received).toEqual(validInput);
+  });
+
+  it("maps a code_invalid reason to a descriptive error", async () => {
+    const deps: VerifyIdentificationDeps = {
+      db: {} as never,
+      kv: new MemoryKv(),
+      verifyIdentification: async () => ({ ok: false, reason: "code_invalid" }),
+    };
+
+    const result = await handleVerifyIdentification(deps, validInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/invalid|expired/i);
+  });
+
+  it("maps an asker_not_found reason to a descriptive error", async () => {
+    const deps: VerifyIdentificationDeps = {
+      db: {} as never,
+      kv: new MemoryKv(),
+      verifyIdentification: async () => ({ ok: false, reason: "asker_not_found" }),
+    };
+
+    const result = await handleVerifyIdentification(deps, validInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/no matching/i);
+  });
+
+  it("rejects a non-6-digit code via input validation", async () => {
+    const deps: VerifyIdentificationDeps = {
+      db: {} as never,
+      kv: new MemoryKv(),
+      verifyIdentification: async () => ({ ok: true, token: "t", askerId: "a" }),
+    };
+    await expect(
+      handleVerifyIdentification(deps, { ...validInput, code: "12345" }),
+    ).rejects.toThrow();
   });
 });
