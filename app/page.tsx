@@ -18,7 +18,7 @@ export default function Home() {
     <>
       <GridBackground />
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col gap-12 px-5 py-14 sm:px-8 sm:py-20">
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-5 py-10 sm:px-8 sm:py-14">
         <header className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-3">
             <MatriceLogo size={32} animated />
@@ -39,37 +39,6 @@ export default function Home() {
           </div>
           <LanguageToggle value={lang} onChange={setLang} />
         </header>
-
-        <section className="fade-up flex flex-col gap-5" style={{ animationDelay: "0.1s" }}>
-          <span
-            className="font-mono text-[11px] uppercase text-[var(--color-accent)]"
-            style={{ letterSpacing: "0.4em" }}
-          >
-            {lang === "en" ? "Ask · Learn · Connect" : "Demander · Découvrir · Contacter"}
-          </span>
-          <h1
-            className="font-display text-[clamp(34px,5vw,52px)] font-light text-[var(--color-text-primary)]"
-            style={{ letterSpacing: "-0.025em", lineHeight: 1.05 }}
-          >
-            {lang === "en" ? (
-              <>
-                A CV that{" "}
-                <span className="font-serif italic text-[var(--color-accent)]">answers back.</span>
-              </>
-            ) : (
-              <>
-                Un CV qui{" "}
-                <span className="font-serif italic text-[var(--color-accent)]">vous répond.</span>
-              </>
-            )}
-          </h1>
-          <p
-            className="max-w-xl text-[15px] leading-relaxed text-[var(--color-text-secondary)]"
-            style={{ letterSpacing: "0.005em" }}
-          >
-            {t.intro}
-          </p>
-        </section>
 
         <Chat
           repoUrl={REPO_URL}
