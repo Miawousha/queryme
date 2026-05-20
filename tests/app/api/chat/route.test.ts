@@ -41,4 +41,12 @@ describe("/api/chat POST validation", () => {
     const res = await POST(makeReq({ messages }));
     expect(res.status).toBe(400);
   });
+
+  it("rejects a malformed conversationId", async () => {
+    const res = await POST(makeReq({
+      conversationId: "not-a-uuid",
+      messages: [{ id: "1", role: "user" as const, parts: [{ type: "text" as const, text: "hi" }] }],
+    }));
+    expect(res.status).toBe(400);
+  });
 });

@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { loadKb } from "@/lib/kb/loader";
-import { assembleKbText } from "@/lib/kb/assembler";
+import { assemblePublicKbText, assembleSensitiveKbText } from "@/lib/kb/assembler";
 import { answer } from "@/lib/answerer";
 import { convertToModelMessages, type UIMessage } from "ai";
+import { getDb } from "@/lib/db/client";
+import { getKv } from "@/lib/kv/client";
+import { isConversationUnlocked } from "@/lib/identity/tokens";
+import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 
 export const runtime = "nodejs";
 
 const MAX_TURNS = 50;
 const MAX_TOTAL_USER_CHARS = 20_000;
 
-const UIMessagePartSchema = z.object({
-  type: z.literal("text"),
-  text: z.string(),
-});
+const UIMessagePartSchema = z.object({ type: z.literal("text"), text: z.string() });
 
 const UIMessageSchema = z.object({
   id: z.string().optional(),
@@ -24,16 +26,24 @@ const UIMessageSchema = z.object({
 
 const RequestBodySchema = z.object({
   messages: z.array(UIMessageSchema).min(1).max(MAX_TURNS),
+  conversationId: z.string().uuid().optional(),
 });
 
-let cachedKbText: string | null = null;
+let cachedPublicKbText: string | null = null;
 
-async function getKbText(): Promise<string> {
-  if (cachedKbText !== null) return cachedKbText;
+async function getPublicKbText(): Promise<string> {
+  if (cachedPublicKbText !== null) return cachedPublicKbText;
   const kbDir = path.resolve(process.cwd(), "kb");
   const kb = await loadKb(kbDir);
-  cachedKbText = assembleKbText(kb);
-  return cachedKbText;
+  cachedPublicKbText = assemblePublicKbText(kb);
+  return cachedPublicKbText;
+}
+
+async function maybeGetSensitiveKbText(): Promise<string> {
+  // Loaded per-request (small, infrequent). Could be cached if needed.
+  const kbDir = path.resolve(process.cwd(), "kb");
+  const kb = await loadKb(kbDir);
+  return assembleSensitiveKbText(kb.sensitive);
 }
 
 export async function POST(req: NextRequest) {
@@ -52,7 +62,6 @@ export async function POST(req: NextRequest) {
   const userCharCount = parsed.data.messages
     .filter((m) => m.role === "user")
     .reduce((n, m) => n + m.parts.reduce((p, part) => p + part.text.length, 0), 0);
-
   if (userCharCount > MAX_TOTAL_USER_CHARS) {
     return NextResponse.json(
       { error: `Conversation too long (max ${MAX_TOTAL_USER_CHARS} characters of user text)` },
@@ -60,12 +69,49 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const kbText = await getKbText();
+  const conversationId = parsed.data.conversationId ?? randomUUID();
+  const db = getDb();
+  const kv = getKv();
+
+  await getOrCreateConversation(db, { id: conversationId, channel: "chat" });
+  const unlocked = await isConversationUnlocked(kv, conversationId);
+
+  const publicKbText = await getPublicKbText();
+  const sensitiveKbText = unlocked ? await maybeGetSensitiveKbText() : "";
+
+  // Append the last user turn to the transcript before streaming.
+  const lastMessage = parsed.data.messages[parsed.data.messages.length - 1];
+  if (lastMessage.role === "user") {
+    const text = lastMessage.parts.map((p) => p.text).join("");
+    await appendTurn(db, conversationId, {
+      role: "user",
+      text,
+      at: new Date().toISOString(),
+    });
+  }
 
   const result = await answer({
     messages: convertToModelMessages(parsed.data.messages as UIMessage[]),
-    kbText,
+    kbText: publicKbText,
+    sensitiveKbText: sensitiveKbText || undefined,
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    headers: { "x-conversation-id": conversationId },
+    onFinish: async ({ messages: finalMessages }) => {
+      // After the stream completes, append the assistant's full reply.
+      const last = finalMessages[finalMessages.length - 1];
+      if (last && last.role === "assistant") {
+        const text = last.parts
+          .filter((p): p is { type: "text"; text: string } => p.type === "text")
+          .map((p) => p.text)
+          .join("");
+        await appendTurn(db, conversationId, {
+          role: "assistant",
+          text,
+          at: new Date().toISOString(),
+        });
+      }
+    },
+  });
 }
