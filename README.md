@@ -24,6 +24,18 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Provisioning (one time)
+
+Plan 2 needs Postgres (via Vercel/Neon), Upstash Redis (via Vercel KV), and a Resend account.
+
+1. Vercel dashboard → Storage → Create Database → Neon. Connect to the project.
+2. Vercel dashboard → Storage → Create Database → KV. Connect to the project.
+3. Resend → verify a domain → create an API key.
+4. Pull all envs locally: `vercel env pull .env.local`
+5. Run migrations: `pnpm db:migrate`
+
+After this, `pnpm dev` will work end-to-end.
+
 ## Editing the knowledge base
 
 The KB is just files. Edit them and commit; the agent picks up the new content on the next build.
@@ -53,13 +65,19 @@ pnpm build         # full Next.js build (runs KB validation first)
 
 Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optionally) override `NEXT_PUBLIC_REPO_URL` / `NEXT_PUBLIC_REPO_BRANCH` if you've forked.
 
+## What's in this version
+
+- Public chat at `/` answering questions about Alexandre, grounded in `kb/`.
+- Sensitive content (salary, references, private contact) gated behind verified work-email identification.
+- "Ask Alexandre" inline button when the agent hits a knowledge gap.
+- Conversation logging + identified-asker capture in Postgres for follow-up.
+
 ## What's NOT in this version
 
-This is the foundation. Coming in later releases:
+Coming in later plans:
 
-- Sensitive content (salary, references, private contact) behind verified-email identification
-- Lead capture + admin panel
-- MCP server endpoint for AI agents
+- MCP server endpoint for AI agents (Plan 3)
+- Admin panel for reviewing conversations + forwarded questions (Plan 4)
 
 ## License
 
