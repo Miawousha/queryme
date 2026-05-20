@@ -40,15 +40,30 @@ export function Chat({
   starters,
 }: ChatProps) {
   const [conversationId, setConversationId] = useState("");
+  const conversationIdRef = useRef("");
   useEffect(() => {
-    setConversationId(loadOrCreateConversationId());
+    const id = loadOrCreateConversationId();
+    conversationIdRef.current = id;
+    setConversationId(id);
   }, []);
   const [modalOpen, setModalOpen] = useState(false);
   const [forwardToast, setForwardToast] = useState<string | null>(null);
 
+  // The transport is created ONCE. `useChat` does not adopt a new transport
+  // instance after mount, so the body callback must read the conversation id
+  // from a ref at request time. Capturing the state value directly would pin
+  // it to the empty initial render and every request would 400 on the uuid
+  // check. When the id isn't ready yet, omit it — the server generates one.
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat", body: () => ({ conversationId }) }),
-    [conversationId],
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: () => {
+          const id = conversationIdRef.current;
+          return id ? { conversationId: id } : {};
+        },
+      }),
+    [],
   );
   const { messages, sendMessage, status, error } = useChat({ transport });
 
