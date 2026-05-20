@@ -8,7 +8,7 @@ export type AnswerInput = {
   model?: LanguageModel;
 };
 
-const DEFAULT_MODEL_ID = "claude-sonnet-4-5";
+const DEFAULT_MODEL_ID = "claude-sonnet-4-6";
 
 export async function answer(input: AnswerInput) {
   const model = input.model ?? anthropic(DEFAULT_MODEL_ID);
