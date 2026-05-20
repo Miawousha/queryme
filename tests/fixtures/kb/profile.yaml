@@ -1,0 +1,7 @@
+name: Test Person
+headline: Test headline
+location: Test City
+languages: [en, fr]
+links:
+  linkedin: https://linkedin.com/in/test
+  github: https://github.com/test

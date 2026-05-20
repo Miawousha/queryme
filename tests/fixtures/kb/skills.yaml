@@ -1,0 +1,8 @@
+skills:
+  - name: TypeScript
+    level: 5
+    years: 10
+    tags: [frontend, backend]
+  - name: Python
+    level: 4
+    years: 8
