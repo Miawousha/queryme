@@ -1,21 +1,42 @@
 skills:
-  - name: TypeScript
+  - name: Battery management
     level: 5
+    years: 15
+    tags: [battery, hardware, expert]
+    # SOX design (SOC, SOH, SOP), BMS integration, balancing technologies,
+    # aging, thermal behaviour, paralleling, model-based design, emulation.
+  - name: Power electronics
+    level: 4
+    years: 15
+    tags: [hardware]
+    # Inverter, dual active bridge, active balancing, solid-state relays, PSIM.
+  - name: Electronics
+    level: 4
+    years: 15
+    tags: [hardware]
+    # Schematic and layout design, mixed signals, MCUs, power-electronics control.
+  - name: Electrical engineering
+    level: 4
+    years: 15
+    tags: [hardware]
+    # Grid architectures, distribution, electromechanical PDUs, LEV / EV powertrains.
+  - name: Embedded software
+    level: 4
+    years: 15
+    tags: [software, firmware]
+    # 16- and 32-bit architectures, RTOS, modular design, version control.
+  - name: Software engineering
+    level: 4
+    years: 15
+    tags: [software]
+    # 10+ years across embedded C, C++, C#, Python, TypeScript, and some PHP
+    # (Symfony); also Java, SQL, Android.
+  - name: TypeScript / Next.js
+    level: 3
     years: 10
-    tags: [frontend, backend, fullstack]
-  - name: React / Next.js
-    level: 5
-    years: 8
-    tags: [frontend]
-  - name: Python
-    level: 4
-    years: 8
-    tags: [backend, data]
-  - name: Postgres
-    level: 4
-    years: 8
-    tags: [data]
+    tags: [software, frontend]
   - name: AI / LLM application development
-    level: 4
-    years: 3
-    tags: [ai]
+    level: 3
+    years: 2
+    tags: [software, ai]
+    # Built Queryme — an agent-driven CV — on the Vercel AI SDK.

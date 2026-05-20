@@ -1,5 +1,6 @@
 entries:
-  - institution: "[School name — to be filled in]"
-    degree: "[Degree — to be filled in]"
-    start: "2010-09"
-    end: "2014-06"
+  - institution: "Grenoble INP — ENSE3"
+    degree: "Master of Engineering, Power Electronics"
+    start: "2006-09"
+    end: "2009-09"
+    notes: "Engineering school of the Grenoble Institute of Technology."
