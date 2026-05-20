@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
@@ -27,9 +27,8 @@ export function Chat({
   startersTitle,
   starters,
 }: ChatProps) {
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  });
+  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  const { messages, sendMessage, status, error } = useChat({ transport });
 
   const [input, setInput] = useState("");
   const isBusy = status === "submitted" || status === "streaming";
@@ -86,6 +85,15 @@ export function Chat({
           </div>
         )}
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+        >
+          Something went wrong — please try again.
+        </div>
+      )}
 
       <form
         className="flex items-end gap-2"
