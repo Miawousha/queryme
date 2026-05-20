@@ -1,57 +1,237 @@
 @import "tailwindcss";
 
-/* If a brand color is needed later, override --color-accent. */
+/*
+ * Arctic-dark palette, ported from the Matrice Technologies website
+ * (https://github.com/Miawousha/matrice-website). Single dark theme on
+ * purpose — no runtime switcher.
+ */
 
 @theme {
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.145 0 0);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.145 0 0);
-  --color-primary: oklch(0.205 0 0);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-secondary: oklch(0.97 0 0);
-  --color-secondary-foreground: oklch(0.205 0 0);
-  --color-muted: oklch(0.97 0 0);
-  --color-muted-foreground: oklch(0.556 0 0);
-  --color-accent: oklch(0.97 0 0);
-  --color-accent-foreground: oklch(0.205 0 0);
-  --color-destructive: oklch(0.577 0.245 27.325);
-  --color-destructive-foreground: oklch(0.985 0 0);
-  --color-border: oklch(0.922 0 0);
-  --color-input: oklch(0.922 0 0);
-  --color-ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
+  --color-void: #080e18;
+  --color-surface: #0d1520;
+  --color-card: #111d2b;
+  --color-border: #1c2c40;
+  --color-border-hover: #264060;
+
+  --color-primary: #3b82d6;
+  --color-primary-rgb: 59, 130, 214;
+  --color-accent: #22d3ee;
+  --color-accent-rgb: 34, 211, 238;
+
+  --color-text-primary: #e4ebf5;
+  --color-text-secondary: #7b90a8;
+  --color-text-tertiary: #4a6178;
+
+  /* shadcn-compatible aliases so existing primitives still work. */
+  --color-background: var(--color-void);
+  --color-foreground: var(--color-text-primary);
+  --color-muted: var(--color-card);
+  --color-muted-foreground: var(--color-text-secondary);
+  --color-input: var(--color-border);
+  --color-ring: var(--color-primary);
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fef2f2;
+
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --radius: 0.875rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: oklch(0.145 0 0);
-    --color-foreground: oklch(0.985 0 0);
-    --color-card: oklch(0.205 0 0);
-    --color-card-foreground: oklch(0.985 0 0);
-    --color-popover: oklch(0.205 0 0);
-    --color-popover-foreground: oklch(0.985 0 0);
-    --color-primary: oklch(0.922 0 0);
-    --color-primary-foreground: oklch(0.205 0 0);
-    --color-secondary: oklch(0.269 0 0);
-    --color-secondary-foreground: oklch(0.985 0 0);
-    --color-muted: oklch(0.269 0 0);
-    --color-muted-foreground: oklch(0.708 0 0);
-    --color-accent: oklch(0.269 0 0);
-    --color-accent-foreground: oklch(0.985 0 0);
-    --color-destructive: oklch(0.704 0.191 22.216);
-    --color-destructive-foreground: oklch(0.985 0 0);
-    --color-border: oklch(1 0 0 / 10%);
-    --color-input: oklch(1 0 0 / 15%);
-    --color-ring: oklch(0.556 0 0);
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-void);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(var(--color-accent-rgb), 0.25);
+  color: var(--color-text-primary);
+}
+
+@keyframes matPulse {
+  0%,
+  100% {
+    opacity: var(--base-opacity, 0.7);
+  }
+  50% {
+    opacity: calc(var(--base-opacity, 0.7) * 0.5);
   }
 }
 
-html, body { height: 100%; }
-body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+@keyframes heroGlow {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  opacity: 0;
+  animation: slideIn 0.8s ease forwards;
+}
+
+/* Markdown content inside assistant bubbles. */
+.prose-chat {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--color-text-primary);
+}
+
+.prose-chat > * + * {
+  margin-top: 0.85em;
+}
+
+.prose-chat p {
+  margin: 0;
+}
+
+.prose-chat strong {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.prose-chat em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--color-text-primary);
+}
+
+.prose-chat code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.375rem;
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-accent);
+}
+
+.prose-chat pre {
+  font-family: var(--font-mono);
+  font-size: 0.825em;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+}
+
+.prose-chat pre code {
+  background: transparent;
+  color: var(--color-text-primary);
+  padding: 0;
+}
+
+.prose-chat a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(var(--color-accent-rgb), 0.4);
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.prose-chat a:hover {
+  border-bottom-color: var(--color-accent);
+}
+
+.prose-chat ul,
+.prose-chat ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.prose-chat li + li {
+  margin-top: 0.25em;
+}
+
+.prose-chat sup a {
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  color: var(--color-accent);
+  margin-left: 0.1em;
+}
+
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.prose-chat h1 {
+  font-size: 1.25rem;
+}
+.prose-chat h2 {
+  font-size: 1.1rem;
+}
+.prose-chat h3 {
+  font-size: 1rem;
+}
+
+.prose-chat blockquote {
+  border-left: 2px solid rgba(var(--color-accent-rgb), 0.5);
+  padding-left: 0.85rem;
+  color: var(--color-text-secondary);
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+/* Subtle scrollbar inside the chat surface. */
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-primary-rgb), 0.25);
+  border-radius: 999px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
