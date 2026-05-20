@@ -1,8 +1,23 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { parseCitations, citationToUrl } from "@/lib/kb/citations";
 import { cn } from "@/lib/utils";
+
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "sup"],
+  attributes: {
+    ...defaultSchema.attributes,
+    // Allow `target` and `rel` on `a` so our citation links still open in a new tab.
+    a: [
+      ...((defaultSchema.attributes?.a as unknown[]) ?? []),
+      ["target"],
+      ["rel"],
+    ],
+  },
+};
 
 export type ChatMessageProps = {
   role: "user" | "assistant";
@@ -41,7 +56,7 @@ export function ChatMessage({ role, text, repoUrl, branch }: ChatMessageProps) {
       {isAssistant ? (
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw]}
+          rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
           components={{
             a: ({ href, children }) => (
               <a href={href} target="_blank" rel="noopener noreferrer" className="underline">

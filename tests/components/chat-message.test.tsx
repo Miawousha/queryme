@@ -60,4 +60,17 @@ describe("ChatMessage", () => {
       "https://github.com/test/repo/blob/main/kb/experience/2022-matrice.md#highlights",
     );
   });
+
+  it("strips dangerous HTML emitted by the model", () => {
+    render(
+      <ChatMessage
+        role="assistant"
+        text="Safe text <script>alert('xss')</script> after."
+        repoUrl={REPO}
+        branch={BRANCH}
+      />,
+    );
+    expect(document.querySelector("script")).toBeNull();
+    expect(screen.getByText(/Safe text/)).toBeInTheDocument();
+  });
 });
