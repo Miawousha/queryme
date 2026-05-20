@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
+import { IdentifyModal } from "@/components/identify-modal";
 import { cn } from "@/lib/utils";
 
 export type ChatProps = {
@@ -18,6 +19,17 @@ export type ChatProps = {
   starters: string[];
 };
 
+function loadOrCreateConversationId(): string {
+  if (typeof window === "undefined") return "";
+  const KEY = "queryme:conversationId";
+  let id = window.localStorage.getItem(KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    window.localStorage.setItem(KEY, id);
+  }
+  return id;
+}
+
 export function Chat({
   repoUrl,
   branch,
@@ -27,7 +39,17 @@ export function Chat({
   startersTitle,
   starters,
 }: ChatProps) {
-  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  const [conversationId, setConversationId] = useState("");
+  useEffect(() => {
+    setConversationId(loadOrCreateConversationId());
+  }, []);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [forwardToast, setForwardToast] = useState<string | null>(null);
+
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: "/api/chat", body: () => ({ conversationId }) }),
+    [conversationId],
+  );
   const { messages, sendMessage, status, error } = useChat({ transport });
 
   const [input, setInput] = useState("");
@@ -45,6 +67,20 @@ export function Chat({
     if (!trimmed) return;
     sendMessage({ text: trimmed });
     setInput("");
+  }
+
+  async function handleForward(question: string) {
+    try {
+      const res = await fetch("/api/forward-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, question }),
+      });
+      setForwardToast(res.ok ? "Question forwarded to Alexandre." : "Couldn't forward — try again.");
+    } catch {
+      setForwardToast("Couldn't forward — try again.");
+    }
+    setTimeout(() => setForwardToast(null), 3000);
   }
 
   function messageText(m: (typeof messages)[number]): string {
@@ -105,6 +141,8 @@ export function Chat({
             text={messageText(m)}
             repoUrl={repoUrl}
             branch={branch}
+            onIdentify={() => setModalOpen(true)}
+            onForward={handleForward}
           />
         ))}
 
@@ -138,6 +176,15 @@ export function Chat({
           </div>
         )}
       </div>
+
+      {forwardToast && (
+        <div
+          role="status"
+          className="mx-5 mb-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-2 text-xs text-[var(--color-text-secondary)]"
+        >
+          {forwardToast}
+        </div>
+      )}
 
       {error && (
         <div
@@ -173,6 +220,13 @@ export function Chat({
           {sendLabel}
         </Button>
       </form>
+
+      <IdentifyModal
+        conversationId={conversationId}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => setModalOpen(false)}
+      />
     </section>
   );
 }

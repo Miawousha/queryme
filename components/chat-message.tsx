@@ -19,7 +19,32 @@ export type ChatMessageProps = {
   text: string;
   repoUrl: string;
   branch: string;
+  onIdentify?: () => void;
+  onForward?: (question: string) => void;
 };
+
+type MarkerChunk =
+  | { kind: "text"; value: string }
+  | { kind: "identify" }
+  | { kind: "forward"; question: string };
+
+function splitOnMarkers(text: string): MarkerChunk[] {
+  const out: MarkerChunk[] = [];
+  const re = /\[\[(identify|forward:[^\]]+)\]\]/g;
+  let last = 0;
+  for (const m of text.matchAll(re)) {
+    const idx = m.index ?? 0;
+    if (idx > last) out.push({ kind: "text", value: text.slice(last, idx) });
+    if (m[1] === "identify") {
+      out.push({ kind: "identify" });
+    } else {
+      out.push({ kind: "forward", question: m[1].slice("forward:".length).trim() });
+    }
+    last = idx + m[0].length;
+  }
+  if (last < text.length) out.push({ kind: "text", value: text.slice(last) });
+  return out;
+}
 
 function rewriteCitations(text: string, repoUrl: string, branch: string): string {
   const cites = parseCitations(text);
@@ -34,9 +59,10 @@ function rewriteCitations(text: string, repoUrl: string, branch: string): string
   return out;
 }
 
-export function ChatMessage({ role, text, repoUrl, branch }: ChatMessageProps) {
+export function ChatMessage({ role, text, repoUrl, branch, onIdentify, onForward }: ChatMessageProps) {
   const isAssistant = role === "assistant";
   const rendered = isAssistant ? rewriteCitations(text, repoUrl, branch) : text;
+  const chunks = isAssistant ? splitOnMarkers(rendered) : [];
 
   return (
     <div
@@ -63,19 +89,49 @@ export function ChatMessage({ role, text, repoUrl, branch }: ChatMessageProps) {
         )}
         {isAssistant ? (
           <div className="prose-chat">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-              components={{
-                a: ({ href, children }) => (
-                  <a href={href} target="_blank" rel="noopener noreferrer">
-                    {children}
-                  </a>
-                ),
-              }}
-            >
-              {rendered}
-            </ReactMarkdown>
+            {chunks.map((chunk, i) => {
+              if (chunk.kind === "identify") {
+                return (
+                  <button
+                    key={`identify-${i}`}
+                    type="button"
+                    onClick={onIdentify}
+                    className="mt-2 mr-2 inline-flex rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)] hover:bg-[rgba(var(--color-primary-rgb),0.10)]"
+                  >
+                    Identify yourself
+                  </button>
+                );
+              }
+              if (chunk.kind === "forward") {
+                return (
+                  <button
+                    key={`forward-${i}`}
+                    type="button"
+                    onClick={() => onForward?.(chunk.question)}
+                    className="mt-2 mr-2 inline-flex rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)] hover:bg-[rgba(var(--color-primary-rgb),0.10)]"
+                  >
+                    Send this question to Alexandre
+                  </button>
+                );
+              }
+              if (chunk.value === "") return null;
+              return (
+                <ReactMarkdown
+                  key={`text-${i}`}
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+                  components={{
+                    a: ({ href, children }) => (
+                      <a href={href} target="_blank" rel="noopener noreferrer">
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {chunk.value}
+                </ReactMarkdown>
+              );
+            })}
           </div>
         ) : (
           <p className="whitespace-pre-wrap text-[14px] leading-relaxed">{text}</p>

@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ChatMessage } from "@/components/chat-message";
 
 const REPO = "https://github.com/test/repo";
@@ -72,5 +73,39 @@ describe("ChatMessage", () => {
     );
     expect(document.querySelector("script")).toBeNull();
     expect(screen.getByText(/Safe text/)).toBeInTheDocument();
+  });
+
+  it("renders an 'Identify yourself' button for [[identify]] marker and triggers callback", async () => {
+    const onIdentify = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChatMessage
+        role="assistant"
+        text="That's behind verification. [[identify]]"
+        repoUrl={REPO}
+        branch={BRANCH}
+        onIdentify={onIdentify}
+      />,
+    );
+    const btn = screen.getByRole("button", { name: /identify yourself/i });
+    await user.click(btn);
+    expect(onIdentify).toHaveBeenCalled();
+  });
+
+  it("renders 'Send this question to Alexandre' for [[forward:...]] and passes the question to the callback", async () => {
+    const onForward = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChatMessage
+        role="assistant"
+        text="Not in the KB — [[forward:What were Q1 numbers?]]"
+        repoUrl={REPO}
+        branch={BRANCH}
+        onForward={onForward}
+      />,
+    );
+    const btn = screen.getByRole("button", { name: /send this question/i });
+    await user.click(btn);
+    expect(onForward).toHaveBeenCalledWith("What were Q1 numbers?");
   });
 });
