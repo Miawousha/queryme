@@ -102,6 +102,48 @@ describe("handleAsk", () => {
     ]);
   });
 
+  it("caps reconstructed prior history to the most recent turns", async () => {
+    const store = makeConversationStore();
+    const kv = new MemoryKv();
+    const convId = "55555555-5555-4555-8555-555555555555";
+    // Seed a transcript with far more than the history cap (50 turns).
+    // 100 turns alternating user/assistant.
+    const cap = 50;
+    const transcript = Array.from({ length: cap * 2 }, (_, i) => ({
+      role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
+      text: `turn ${i}`,
+      at: new Date(2026, 0, 1, 0, 0, i).toISOString(),
+    }));
+    store.rows.set(convId, { id: convId, channel: "mcp", transcript });
+
+    let seenMessages: { role: string; content: string }[] = [];
+    const deps: AskDeps = {
+      db: {} as never,
+      kv,
+      getOrCreateConversation: store.getOrCreateConversation,
+      appendTurn: store.appendTurn,
+      isConversationUnlocked: async () => false,
+      loadPublicKbText: async () => "PUBLIC KB",
+      loadSensitiveKbText: async () => "SENSITIVE KB",
+      produceAnswer: async ({ messages }) => {
+        seenMessages = messages.map((m) => ({ role: m.role, content: String(m.content) }));
+        return "answer";
+      },
+    };
+
+    await handleAsk(deps, { question: "newest question", conversationId: convId });
+
+    // Capped history (<= cap) + the 1 new question.
+    expect(seenMessages.length).toBeLessThanOrEqual(cap + 1);
+    expect(seenMessages.length).toBe(cap + 1);
+    // The oldest KEPT turn is the (cap*2 - cap) = turn 50, not turn 0.
+    expect(seenMessages[0]).toEqual({ role: "user", content: `turn ${cap}` });
+    expect(seenMessages[seenMessages.length - 1]).toEqual({
+      role: "user",
+      content: "newest question",
+    });
+  });
+
   it("passes sensitive KB text to produceAnswer only when the conversation is unlocked", async () => {
     const store = makeConversationStore();
     const kv = new MemoryKv();

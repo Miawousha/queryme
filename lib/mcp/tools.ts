@@ -44,6 +44,11 @@ export type VerifyIdentificationInput = z.infer<typeof VerifyIdentificationInput
 
 // --- ask ---
 
+// Cap on how many prior transcript turns are replayed into the model on each
+// `ask` call. Mirrors `MAX_TURNS` in app/api/chat/route.ts so a long-lived MCP
+// conversation does not grow its message array unbounded (2 turns per call).
+const MAX_HISTORY_TURNS = 50;
+
 export type ProduceAnswerArgs = {
   messages: ModelMessage[];
   kbText: string;
@@ -91,9 +96,11 @@ export async function handleAsk(deps: AskDeps, rawInput: unknown): Promise<AskRe
 
   // Reconstruct prior history from the stored transcript, then append the
   // new user question. MCP `ask` is stateless across calls — the transcript
-  // is the source of truth.
+  // is the source of truth. Cap the replayed history to the most recent
+  // MAX_HISTORY_TURNS turns so the message array stays bounded.
+  const priorHistory = (conversation.transcript ?? []).slice(-MAX_HISTORY_TURNS);
   const messages: ModelMessage[] = [
-    ...transcriptToMessages(conversation.transcript ?? []),
+    ...transcriptToMessages(priorHistory),
     { role: "user", content: input.question },
   ];
 
