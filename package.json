@@ -9,7 +9,9 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "validate:kb": "tsx scripts/validate-kb.ts"
+    "validate:kb": "tsx scripts/validate-kb.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts"
   },
   "keywords": [],
   "author": "",
