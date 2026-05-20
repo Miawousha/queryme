@@ -26,7 +26,12 @@ async function getTransport(): Promise<WebStandardStreamableHTTPServerTransport>
     const server = buildMcpServer();
     await server.connect(transport);
     return transport;
-  })();
+  })().catch((err) => {
+    // Don't poison the singleton: a transient failure here would otherwise be
+    // cached forever. Reset so the next request can retry initialization.
+    transportPromise = null;
+    throw err;
+  });
   return transportPromise;
 }
 
@@ -61,8 +66,20 @@ async function handle(req: NextRequest): Promise<Response> {
     );
   }
 
-  const transport = await getTransport();
-  return transport.handleRequest(req);
+  try {
+    const transport = await getTransport();
+    return transport.handleRequest(req);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    return NextResponse.json(
+      {
+        jsonrpc: "2.0",
+        error: { code: -32603, message },
+        id: null,
+      },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
