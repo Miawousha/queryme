@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
+import { StreamingMessage } from "@/components/streaming-message";
 import { IdentifyModal } from "@/components/identify-modal";
 import { cn } from "@/lib/utils";
 
@@ -149,17 +150,22 @@ export function Chat({
 
       <div ref={scrollRef} className="chat-scroll flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
         <ChatMessage role="assistant" text={intro} repoUrl={repoUrl} branch={branch} />
-        {messages.map((m) => (
-          <ChatMessage
-            key={m.id}
-            role={m.role === "user" ? "user" : "assistant"}
-            text={messageText(m)}
-            repoUrl={repoUrl}
-            branch={branch}
-            onIdentify={() => setModalOpen(true)}
-            onForward={handleForward}
-          />
-        ))}
+        {messages.map((m, i) => {
+          const isLastMessage = i === messages.length - 1;
+          const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
+          return (
+            <StreamingMessage
+              key={m.id}
+              role={m.role === "user" ? "user" : "assistant"}
+              text={messageText(m)}
+              isStreaming={isStreaming}
+              repoUrl={repoUrl}
+              branch={branch}
+              onIdentify={() => setModalOpen(true)}
+              onForward={handleForward}
+            />
+          );
+        })}
 
         {messages.length === 0 && (
           <div className="mt-3 flex flex-col gap-3">
