@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
 /*
- * Arctic-dark palette, ported from the Matrice Technologies website
- * (https://github.com/Miawousha/matrice-website). Single dark theme on
- * purpose — no runtime switcher.
+ * Arctic palette, ported from the Matrice Technologies website
+ * (https://github.com/Miawousha/matrice-website). Two themes: the @theme
+ * block below is Arctic Dark (the base); the `:root[data-theme="light"]`
+ * block further down overrides the primitives with Arctic Light. Components
+ * read everything through `var(--color-*)`, so switching `data-theme` on
+ * <html> reskins the whole page.
  */
 
 @theme {
@@ -21,6 +24,7 @@
   --color-text-primary: #e4ebf5;
   --color-text-secondary: #7b90a8;
   --color-text-tertiary: #4a6178;
+  --color-text-primary-rgb: 228, 235, 245;
 
   /* shadcn-compatible aliases so existing primitives still work. */
   --color-background: var(--color-void);
@@ -40,12 +44,38 @@
   --radius: 0.875rem;
 }
 
+/*
+ * Arctic Light — overrides the primitives above. The shadcn aliases
+ * (--color-background, --color-foreground, …) are defined as references to
+ * these primitives, so they follow automatically.
+ */
+:root[data-theme="light"] {
+  --color-void: #f4f6f9;
+  --color-surface: #e9ecf1;
+  --color-card: #ffffff;
+  --color-border: #d0d5de;
+  --color-border-hover: #b8bfc9;
+
+  --color-primary: #1a3f6f;
+  --color-primary-rgb: 26, 63, 111;
+  --color-accent: #0ea5e9;
+  --color-accent-rgb: 14, 165, 233;
+
+  --color-text-primary: #0c1824;
+  --color-text-secondary: #5c6b7e;
+  --color-text-tertiary: #8694a6;
+  --color-text-primary-rgb: 12, 24, 36;
+
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 html,
@@ -61,6 +91,7 @@ body {
   font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {

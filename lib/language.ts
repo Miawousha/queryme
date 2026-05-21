@@ -53,6 +53,7 @@ export const UI_STRINGS = {
       copied: "Copied",
       close: "Close",
     },
+    themeToggle: "Switch between light and dark theme",
   },
   fr: {
     headline: "Alexandre Collet — CV interrogeable",
@@ -106,5 +107,6 @@ export const UI_STRINGS = {
       copied: "Copié",
       close: "Fermer",
     },
+    themeToggle: "Basculer entre thème clair et sombre",
   },
 } as const;

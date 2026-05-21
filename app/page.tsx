@@ -6,6 +6,7 @@ import { GridBackground } from "@/components/grid-background";
 import { LanguageToggle } from "@/components/language-toggle";
 import { MatriceLogo } from "@/components/matrice-logo";
 import { McpModal } from "@/components/mcp-modal";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { UI_STRINGS, type UiLang } from "@/lib/language";
 
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/Miawousha/queryme";
@@ -40,6 +41,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle label={t.themeToggle} />
             <button
               type="button"
               onClick={() => setMcpOpen(true)}

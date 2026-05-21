@@ -16,8 +16,15 @@ export function GridBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const styles = getComputedStyle(document.documentElement);
-    const primaryRgb = styles.getPropertyValue("--color-primary-rgb").trim() || "59,130,214";
+    // Palette is read from CSS variables and re-read when the theme changes,
+    // so the dot grid follows light/dark.
+    const palette = { primaryRgb: "59,130,214", textRgb: "228,235,245" };
+    function readPalette() {
+      const s = getComputedStyle(document.documentElement);
+      palette.primaryRgb = s.getPropertyValue("--color-primary-rgb").trim() || palette.primaryRgb;
+      palette.textRgb = s.getPropertyValue("--color-text-primary-rgb").trim() || palette.textRgb;
+    }
+    readPalette();
 
     const gap = 40;
     let dots: { x: number; y: number; baseAlpha: number; pulse: number }[] = [];
@@ -68,19 +75,25 @@ export function GridBackground() {
         if (proximity > 0.1) {
           ctx.beginPath();
           ctx.arc(d.x, d.y, r + 2, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${primaryRgb},${proximity * 0.08})`;
+          ctx.fillStyle = `rgba(${palette.primaryRgb},${proximity * 0.08})`;
           ctx.fill();
         }
         ctx.beginPath();
         ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
         ctx.fillStyle =
           proximity > 0.3
-            ? `rgba(${primaryRgb},${alpha})`
-            : `rgba(228,235,245,${alpha})`;
+            ? `rgba(${palette.primaryRgb},${alpha})`
+            : `rgba(${palette.textRgb},${alpha})`;
         ctx.fill();
       }
       raf = requestAnimationFrame(draw);
     }
+
+    const themeObserver = new MutationObserver(readPalette);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
 
     resize();
     draw();
@@ -88,6 +101,7 @@ export function GridBackground() {
     window.addEventListener("mousemove", handleMouse);
     return () => {
       cancelAnimationFrame(raf);
+      themeObserver.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouse);
     };
