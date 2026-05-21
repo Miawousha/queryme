@@ -7,7 +7,6 @@ import type { Conversation, ConversationTurn } from "@/lib/db/schema";
 import type { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 import type { isConversationUnlocked } from "@/lib/identity/tokens";
 import type { forwardQuestion } from "@/lib/questions/repo";
-import type { requestIdentification, verifyIdentification } from "@/lib/identity/service";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -24,23 +23,6 @@ export const ForwardQuestionInputSchema = z.object({
   conversationId: z.string().uuid().optional(),
 });
 export type ForwardQuestionInput = z.infer<typeof ForwardQuestionInputSchema>;
-
-export const RequestIdentificationInputSchema = z.object({
-  conversationId: z.string().uuid(),
-  name: z.string().min(1).max(200),
-  company: z.string().min(1).max(200),
-  workEmail: z.string().email().max(320),
-  role: z.string().min(1).max(200),
-  purpose: z.string().max(2000).optional(),
-});
-export type RequestIdentificationInput = z.infer<typeof RequestIdentificationInputSchema>;
-
-export const VerifyIdentificationInputSchema = z.object({
-  conversationId: z.string().uuid(),
-  workEmail: z.string().email().max(320),
-  code: z.string().regex(/^\d{6}$/, "code must be 6 digits"),
-});
-export type VerifyIdentificationInput = z.infer<typeof VerifyIdentificationInputSchema>;
 
 // --- ask ---
 
@@ -147,88 +129,4 @@ export async function handleForwardQuestion(
   });
 
   return { ok: true, id: inserted.id };
-}
-
-// --- request_identification ---
-
-export type RequestIdentificationDeps = {
-  db: Db;
-  kv: KvClient;
-  requestIdentification: typeof requestIdentification;
-  send: Parameters<typeof requestIdentification>[0]["send"];
-};
-
-export type RequestIdentificationResult =
-  | { ok: true }
-  | { ok: false; error: string };
-
-export async function handleRequestIdentification(
-  deps: RequestIdentificationDeps,
-  rawInput: unknown,
-): Promise<RequestIdentificationResult> {
-  const input = RequestIdentificationInputSchema.parse(rawInput);
-
-  const result = await deps.requestIdentification(
-    { db: deps.db, kv: deps.kv, send: deps.send },
-    {
-      conversationId: input.conversationId,
-      name: input.name,
-      company: input.company,
-      workEmail: input.workEmail,
-      role: input.role,
-      purpose: input.purpose,
-    },
-  );
-
-  if (!result.ok) {
-    return {
-      ok: false,
-      error:
-        result.reason === "invalid_email_domain"
-          ? "A work email from a company domain is required (free-email providers are not accepted)."
-          : `Identification request failed: ${result.reason}`,
-    };
-  }
-
-  return { ok: true };
-}
-
-// --- verify_identification ---
-
-export type VerifyIdentificationDeps = {
-  db: Db;
-  kv: KvClient;
-  verifyIdentification: typeof verifyIdentification;
-};
-
-export type VerifyIdentificationResult =
-  | { ok: true }
-  | { ok: false; error: string };
-
-export async function handleVerifyIdentification(
-  deps: VerifyIdentificationDeps,
-  rawInput: unknown,
-): Promise<VerifyIdentificationResult> {
-  const input = VerifyIdentificationInputSchema.parse(rawInput);
-
-  const result = await deps.verifyIdentification(
-    { db: deps.db, kv: deps.kv },
-    {
-      conversationId: input.conversationId,
-      workEmail: input.workEmail,
-      code: input.code,
-    },
-  );
-
-  if (!result.ok) {
-    return {
-      ok: false,
-      error:
-        result.reason === "code_invalid"
-          ? "The verification code is invalid or has expired."
-          : "No matching identification request was found for this email.",
-    };
-  }
-
-  return { ok: true };
 }

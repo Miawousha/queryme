@@ -4,7 +4,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { buildMcpServer } from "@/lib/mcp/server";
 
 describe("buildMcpServer", () => {
-  it("registers exactly the four expected tools", async () => {
+  it("registers exactly the expected tools", async () => {
     const server = buildMcpServer();
 
     // The in-process protocol Server has no transport on its own, so connect a
@@ -22,12 +22,7 @@ describe("buildMcpServer", () => {
     const result = await client.listTools();
     const names = result.tools.map((t) => t.name).sort();
 
-    expect(names).toEqual([
-      "ask",
-      "forward_question",
-      "request_identification",
-      "verify_identification",
-    ]);
+    expect(names).toEqual(["ask", "forward_question"]);
 
     await client.close();
     await server.close();

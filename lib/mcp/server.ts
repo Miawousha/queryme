@@ -8,17 +8,11 @@ import { answer } from "@/lib/answerer";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 import { isConversationUnlocked } from "@/lib/identity/tokens";
 import { forwardQuestion } from "@/lib/questions/repo";
-import { requestIdentification, verifyIdentification } from "@/lib/identity/service";
-import { sendVerificationCode } from "@/lib/identity/resend";
 import {
   handleAsk,
   handleForwardQuestion,
-  handleRequestIdentification,
-  handleVerifyIdentification,
   AskInputSchema,
   ForwardQuestionInputSchema,
-  RequestIdentificationInputSchema,
-  VerifyIdentificationInputSchema,
 } from "@/lib/mcp/tools";
 
 // Public KB text is immutable for the process lifetime — load once.
@@ -58,10 +52,8 @@ export function buildMcpServer(): McpServer {
       instructions:
         "queryme exposes a candidate's CV as an interactive agent. Use `ask` for " +
         "questions about public CV content; reuse the returned conversationId on " +
-        "follow-ups. To access sensitive content (salary, references, private " +
-        "contact), call `request_identification` with the principal's work email, " +
-        "then `verify_identification` with the 6-digit code they receive. Use " +
-        "`forward_question` to leave a question for the candidate to answer later.",
+        "follow-ups. Use `forward_question` to leave a question for the candidate " +
+        "to answer later.",
     },
   );
 
@@ -94,56 +86,6 @@ export function buildMcpServer(): McpServer {
           args,
         );
         return jsonResult(result);
-      } catch (err) {
-        return errorResult(err);
-      }
-    },
-  );
-
-  server.registerTool(
-    "request_identification",
-    {
-      title: "Request identification",
-      description:
-        "Send a 6-digit verification code to the principal's work email so the " +
-        "conversation can be unlocked for sensitive content. Free-email domains " +
-        "are rejected.",
-      inputSchema: RequestIdentificationInputSchema.shape,
-    },
-    async (args) => {
-      try {
-        const result = await handleRequestIdentification(
-          {
-            db: getDb(),
-            kv: getKv(),
-            requestIdentification,
-            send: sendVerificationCode,
-          },
-          args,
-        );
-        return jsonResult(result, !result.ok);
-      } catch (err) {
-        return errorResult(err);
-      }
-    },
-  );
-
-  server.registerTool(
-    "verify_identification",
-    {
-      title: "Verify identification",
-      description:
-        "Submit the 6-digit code the principal received by email. On success the " +
-        "conversation is unlocked and subsequent `ask` calls include sensitive content.",
-      inputSchema: VerifyIdentificationInputSchema.shape,
-    },
-    async (args) => {
-      try {
-        const result = await handleVerifyIdentification(
-          { db: getDb(), kv: getKv(), verifyIdentification },
-          args,
-        );
-        return jsonResult(result, !result.ok);
       } catch (err) {
         return errorResult(err);
       }
