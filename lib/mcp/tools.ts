@@ -2,10 +2,8 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { ModelMessage } from "ai";
 import type { getDb } from "@/lib/db/client";
-import type { KvClient } from "@/lib/kv/client";
 import type { Conversation, ConversationTurn } from "@/lib/db/schema";
 import type { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
-import type { isConversationUnlocked } from "@/lib/identity/tokens";
 import type { forwardQuestion } from "@/lib/questions/repo";
 
 type Db = ReturnType<typeof getDb>;
@@ -34,7 +32,6 @@ const MAX_HISTORY_TURNS = 50;
 export type ProduceAnswerArgs = {
   messages: ModelMessage[];
   kbText: string;
-  sensitiveKbText?: string;
 };
 
 // The handler only ever reads `transcript` off the conversation, so it depends
@@ -44,15 +41,12 @@ type ConversationLike = Pick<Conversation, "id" | "transcript">;
 
 export type AskDeps = {
   db: Db;
-  kv: KvClient;
   getOrCreateConversation: (
     db: Db,
     input: { id: string; channel: "chat" | "mcp"; language?: "en" | "fr" },
   ) => Promise<ConversationLike>;
   appendTurn: typeof appendTurn;
-  isConversationUnlocked: typeof isConversationUnlocked;
   loadPublicKbText: () => Promise<string>;
-  loadSensitiveKbText: () => Promise<string>;
   produceAnswer: (args: ProduceAnswerArgs) => Promise<string>;
 };
 
@@ -71,10 +65,7 @@ export async function handleAsk(deps: AskDeps, rawInput: unknown): Promise<AskRe
     channel: "mcp",
   });
 
-  const unlocked = await deps.isConversationUnlocked(deps.kv, conversationId);
-
   const kbText = await deps.loadPublicKbText();
-  const sensitiveKbText = unlocked ? await deps.loadSensitiveKbText() : "";
 
   // Reconstruct prior history from the stored transcript, then append the
   // new user question. MCP `ask` is stateless across calls — the transcript
@@ -92,11 +83,7 @@ export async function handleAsk(deps: AskDeps, rawInput: unknown): Promise<AskRe
     at: new Date().toISOString(),
   });
 
-  const answerText = await deps.produceAnswer({
-    messages,
-    kbText,
-    sensitiveKbText: sensitiveKbText || undefined,
-  });
+  const answerText = await deps.produceAnswer({ messages, kbText });
 
   await deps.appendTurn(deps.db, conversationId, {
     role: "assistant",

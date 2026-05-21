@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { MemoryKv } from "@/lib/kv/client";
 import { handleAsk, handleForwardQuestion } from "@/lib/mcp/tools";
 import type { AskDeps, ForwardQuestionDeps } from "@/lib/mcp/tools";
 
@@ -35,15 +34,11 @@ function makeConversationStore() {
 describe("handleAsk", () => {
   it("generates a conversationId when omitted and returns it", async () => {
     const store = makeConversationStore();
-    const kv = new MemoryKv();
     const deps: AskDeps = {
       db: {} as never,
-      kv,
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
-      isConversationUnlocked: async () => false,
       loadPublicKbText: async () => "PUBLIC KB",
-      loadSensitiveKbText: async () => "SENSITIVE KB",
       produceAnswer: async () => "the answer",
     };
 
@@ -55,7 +50,6 @@ describe("handleAsk", () => {
 
   it("reuses a provided conversationId and reconstructs history from the transcript", async () => {
     const store = makeConversationStore();
-    const kv = new MemoryKv();
     const convId = "11111111-1111-4111-8111-111111111111";
     // Seed a prior conversation with one full turn pair.
     store.rows.set(convId, {
@@ -70,12 +64,9 @@ describe("handleAsk", () => {
     let seenMessages: { role: string; content: string }[] = [];
     const deps: AskDeps = {
       db: {} as never,
-      kv,
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
-      isConversationUnlocked: async () => false,
       loadPublicKbText: async () => "PUBLIC KB",
-      loadSensitiveKbText: async () => "SENSITIVE KB",
       produceAnswer: async ({ messages }) => {
         seenMessages = messages.map((m) => ({ role: m.role, content: String(m.content) }));
         return "fresh answer";
@@ -102,7 +93,6 @@ describe("handleAsk", () => {
 
   it("caps reconstructed prior history to the most recent turns", async () => {
     const store = makeConversationStore();
-    const kv = new MemoryKv();
     const convId = "55555555-5555-4555-8555-555555555555";
     // Seed a transcript with far more than the history cap (50 turns).
     // 100 turns alternating user/assistant.
@@ -117,12 +107,9 @@ describe("handleAsk", () => {
     let seenMessages: { role: string; content: string }[] = [];
     const deps: AskDeps = {
       db: {} as never,
-      kv,
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
-      isConversationUnlocked: async () => false,
       loadPublicKbText: async () => "PUBLIC KB",
-      loadSensitiveKbText: async () => "SENSITIVE KB",
       produceAnswer: async ({ messages }) => {
         seenMessages = messages.map((m) => ({ role: m.role, content: String(m.content) }));
         return "answer";
@@ -142,44 +129,13 @@ describe("handleAsk", () => {
     });
   });
 
-  it("passes sensitive KB text to produceAnswer only when the conversation is unlocked", async () => {
-    const store = makeConversationStore();
-    const kv = new MemoryKv();
-
-    let sawSensitive: string | undefined;
-    const baseDeps = (unlocked: boolean): AskDeps => ({
-      db: {} as never,
-      kv,
-      getOrCreateConversation: store.getOrCreateConversation,
-      appendTurn: store.appendTurn,
-      isConversationUnlocked: async () => unlocked,
-      loadPublicKbText: async () => "PUBLIC KB",
-      loadSensitiveKbText: async () => "SENSITIVE KB",
-      produceAnswer: async ({ sensitiveKbText }) => {
-        sawSensitive = sensitiveKbText;
-        return "ok";
-      },
-    });
-
-    sawSensitive = "untouched";
-    await handleAsk(baseDeps(false), { question: "q1" });
-    expect(sawSensitive).toBeUndefined();
-
-    sawSensitive = "untouched";
-    await handleAsk(baseDeps(true), { question: "q2" });
-    expect(sawSensitive).toBe("SENSITIVE KB");
-  });
-
   it("rejects an empty question via input validation", async () => {
     const store = makeConversationStore();
     const deps: AskDeps = {
       db: {} as never,
-      kv: new MemoryKv(),
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
-      isConversationUnlocked: async () => false,
       loadPublicKbText: async () => "PUBLIC KB",
-      loadSensitiveKbText: async () => "SENSITIVE KB",
       produceAnswer: async () => "x",
     };
 

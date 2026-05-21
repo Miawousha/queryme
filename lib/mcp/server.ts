@@ -1,12 +1,10 @@
 import path from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getDb } from "@/lib/db/client";
-import { getKv } from "@/lib/kv/client";
 import { loadKb } from "@/lib/kb/loader";
-import { assemblePublicKbText, assembleSensitiveKbText } from "@/lib/kb/assembler";
+import { assemblePublicKbText } from "@/lib/kb/assembler";
 import { answer } from "@/lib/answerer";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
-import { isConversationUnlocked } from "@/lib/identity/tokens";
 import { forwardQuestion } from "@/lib/questions/repo";
 import {
   handleAsk,
@@ -23,11 +21,6 @@ async function loadPublicKbText(): Promise<string> {
   const kb = await loadKb(path.resolve(process.cwd(), "kb"));
   cachedPublicKbText = assemblePublicKbText(kb);
   return cachedPublicKbText;
-}
-
-async function loadSensitiveKbText(): Promise<string> {
-  const kb = await loadKb(path.resolve(process.cwd(), "kb"));
-  return assembleSensitiveKbText(kb.sensitive);
 }
 
 // Wrap a handler result object into a standard MCP tool result: JSON text
@@ -64,7 +57,7 @@ export function buildMcpServer(): McpServer {
       description:
         "Ask a question about the candidate. Returns the full answer and a " +
         "conversationId — pass that conversationId back on follow-up calls to " +
-        "keep context. Sensitive content is only included after identification.",
+        "keep context.",
       inputSchema: AskInputSchema.shape,
     },
     async (args) => {
@@ -72,14 +65,11 @@ export function buildMcpServer(): McpServer {
         const result = await handleAsk(
           {
             db: getDb(),
-            kv: getKv(),
             getOrCreateConversation,
             appendTurn,
-            isConversationUnlocked,
             loadPublicKbText,
-            loadSensitiveKbText,
-            produceAnswer: async ({ messages, kbText, sensitiveKbText }) => {
-              const streamed = await answer({ messages, kbText, sensitiveKbText });
+            produceAnswer: async ({ messages, kbText }) => {
+              const streamed = await answer({ messages, kbText });
               return await streamed.text;
             },
           },

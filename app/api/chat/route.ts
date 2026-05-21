@@ -3,12 +3,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { loadKb } from "@/lib/kb/loader";
-import { assemblePublicKbText, assembleSensitiveKbText } from "@/lib/kb/assembler";
+import { assemblePublicKbText } from "@/lib/kb/assembler";
 import { answer } from "@/lib/answerer";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { getDb } from "@/lib/db/client";
-import { getKv } from "@/lib/kv/client";
-import { isConversationUnlocked } from "@/lib/identity/tokens";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 
 export const runtime = "nodejs";
@@ -46,13 +44,6 @@ async function getPublicKbText(): Promise<string> {
   return cachedPublicKbText;
 }
 
-async function maybeGetSensitiveKbText(): Promise<string> {
-  // Loaded per-request (small, infrequent). Could be cached if needed.
-  const kbDir = path.resolve(process.cwd(), "kb");
-  const kb = await loadKb(kbDir);
-  return assembleSensitiveKbText(kb.sensitive);
-}
-
 export async function POST(req: NextRequest) {
   let rawBody: unknown;
   try {
@@ -78,13 +69,10 @@ export async function POST(req: NextRequest) {
 
   const conversationId = parsed.data.conversationId ?? randomUUID();
   const db = getDb();
-  const kv = getKv();
 
   await getOrCreateConversation(db, { id: conversationId, channel: "chat" });
-  const unlocked = await isConversationUnlocked(kv, conversationId);
 
   const publicKbText = await getPublicKbText();
-  const sensitiveKbText = unlocked ? await maybeGetSensitiveKbText() : "";
 
   // Append the last user turn to the transcript before streaming.
   const lastMessage = parsed.data.messages[parsed.data.messages.length - 1];
@@ -100,7 +88,6 @@ export async function POST(req: NextRequest) {
   const result = await answer({
     messages: convertToModelMessages(parsed.data.messages as UIMessage[]),
     kbText: publicKbText,
-    sensitiveKbText: sensitiveKbText || undefined,
   });
 
   return result.toUIMessageStreamResponse({
