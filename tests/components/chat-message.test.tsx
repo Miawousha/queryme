@@ -75,23 +75,6 @@ describe("ChatMessage", () => {
     expect(screen.getByText(/Safe text/)).toBeInTheDocument();
   });
 
-  it("renders an 'Identify yourself' button for [[identify]] marker and triggers callback", async () => {
-    const onIdentify = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <ChatMessage
-        role="assistant"
-        text="That's behind verification. [[identify]]"
-        repoUrl={REPO}
-        branch={BRANCH}
-        onIdentify={onIdentify}
-      />,
-    );
-    const btn = screen.getByRole("button", { name: /identify yourself/i });
-    await user.click(btn);
-    expect(onIdentify).toHaveBeenCalled();
-  });
-
   it("renders 'Send this question to Alexandre' for [[forward:...]] and passes the question to the callback", async () => {
     const onForward = vi.fn();
     const user = userEvent.setup();

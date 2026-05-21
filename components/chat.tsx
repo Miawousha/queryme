@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
-import { IdentifyModal } from "@/components/identify-modal";
 import { cn } from "@/lib/utils";
 
 export type ChatProps = {
@@ -47,7 +46,6 @@ export function Chat({
     conversationIdRef.current = id;
     setConversationId(id);
   }, []);
-  const [modalOpen, setModalOpen] = useState(false);
   const [forwardToast, setForwardToast] = useState<string | null>(null);
 
   // The transport is created ONCE. `useChat` does not adopt a new transport
@@ -161,7 +159,6 @@ export function Chat({
               isStreaming={isStreaming}
               repoUrl={repoUrl}
               branch={branch}
-              onIdentify={() => setModalOpen(true)}
               onForward={handleForward}
             />
           );
@@ -241,13 +238,6 @@ export function Chat({
           {sendLabel}
         </Button>
       </form>
-
-      <IdentifyModal
-        conversationId={conversationId}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={() => setModalOpen(false)}
-      />
     </section>
   );
 }
