@@ -49,6 +49,14 @@ describe("assembleKbText", () => {
     expect(text).toContain("test@example.com");
   });
 
+  it("includes a file ref for every YAML-sourced section so claims are citable", () => {
+    const text = assembleKbText(kb);
+    expect(text).toContain("[ref: profile.yaml]");
+    expect(text).toContain("[ref: skills.yaml]");
+    expect(text).toContain("[ref: education.yaml]");
+    expect(text).toContain("[ref: public-contact.yaml]");
+  });
+
   it("is deterministic — same input produces same output", () => {
     expect(assembleKbText(kb)).toBe(assembleKbText(kb));
   });

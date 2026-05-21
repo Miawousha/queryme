@@ -179,10 +179,27 @@ body {
   border-bottom-color: var(--color-accent);
 }
 
+/*
+ * Tailwind's preflight resets `list-style: none` on ul/ol, so the marker
+ * type must be restored explicitly for rendered Markdown lists.
+ */
 .prose-chat ul,
 .prose-chat ol {
   margin: 0;
   padding-left: 1.25rem;
+  list-style-position: outside;
+}
+
+.prose-chat ul {
+  list-style-type: disc;
+}
+
+.prose-chat ol {
+  list-style-type: decimal;
+}
+
+.prose-chat li::marker {
+  color: var(--color-text-tertiary);
 }
 
 .prose-chat li + li {

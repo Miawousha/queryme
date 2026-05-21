@@ -18,7 +18,13 @@ export const assembleKbText = assemblePublicKbText;
 
 function renderProfile(kb: Kb): string {
   const { profile } = kb;
-  const lines = [`# Profile`, ``, `Name: ${profile.name}`, `Headline: ${profile.headline}`];
+  const lines = [
+    `# Profile`,
+    `[ref: profile.yaml]`,
+    ``,
+    `Name: ${profile.name}`,
+    `Headline: ${profile.headline}`,
+  ];
   if (profile.location) lines.push(`Location: ${profile.location}`);
   if (profile.languages?.length) lines.push(`Languages: ${profile.languages.join(", ")}`);
   if (profile.links) {
@@ -30,7 +36,7 @@ function renderProfile(kb: Kb): string {
 }
 
 function renderSkills(kb: Kb): string {
-  const lines = [`# Skills`, ``];
+  const lines = [`# Skills`, `[ref: skills.yaml]`, ``];
   for (const skill of kb.skills.skills) {
     const tags = skill.tags?.length ? ` (tags: ${skill.tags.join(", ")})` : "";
     lines.push(`- ${skill.name} — level: ${skill.level}/5, years: ${skill.years}${tags}`);
@@ -39,7 +45,7 @@ function renderSkills(kb: Kb): string {
 }
 
 function renderEducation(kb: Kb): string {
-  const lines = [`# Education`, ``];
+  const lines = [`# Education`, `[ref: education.yaml]`, ``];
   for (const e of kb.education.entries) {
     const notes = e.notes ? ` — ${e.notes}` : "";
     lines.push(`- ${e.institution}, ${e.degree} (${e.start} → ${e.end})${notes}`);
@@ -48,7 +54,7 @@ function renderEducation(kb: Kb): string {
 }
 
 function renderPublicContact(kb: Kb): string {
-  const lines = [`# Public contact`, ``];
+  const lines = [`# Public contact`, `[ref: public-contact.yaml]`, ``];
   if (kb.publicContact.email) lines.push(`Email: ${kb.publicContact.email}`);
   if (kb.publicContact.links) {
     for (const [k, v] of Object.entries(kb.publicContact.links)) {
