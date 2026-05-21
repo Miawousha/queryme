@@ -1,4 +1,4 @@
-import type { Kb, SensitiveKb } from "./loader";
+import type { Kb } from "./loader";
 
 export function assemblePublicKbText(kb: Kb): string {
   const sections: string[] = [];
@@ -94,44 +94,4 @@ function renderProjects(kb: Kb): string {
     lines.push(``);
   }
   return lines.join("\n");
-}
-
-export function assembleSensitiveKbText(sensitive: SensitiveKb): string {
-  const sections: string[] = [];
-
-  if (sensitive.salary) {
-    const lines: string[] = ["# Sensitive — Salary"];
-    if (sensitive.salary.expectations) lines.push(`Expectations: ${sensitive.salary.expectations}`);
-    if (sensitive.salary.history?.length) {
-      lines.push("", "History:");
-      for (const h of sensitive.salary.history) {
-        const notes = h.notes ? ` — ${h.notes}` : "";
-        lines.push(`- ${h.company} (${h.period}): ${h.amount}${notes}`);
-      }
-    }
-    lines.push("[ref: sensitive/salary.yaml.enc]");
-    sections.push(lines.join("\n"));
-  }
-
-  if (sensitive.references) {
-    const lines: string[] = ["# Sensitive — References"];
-    for (const r of sensitive.references.entries) {
-      const contact = [r.email, r.phone].filter(Boolean).join(" / ");
-      lines.push(`- ${r.name} (${r.relationship})${contact ? ` — ${contact}` : ""}`);
-      if (r.notes) lines.push(`  notes: ${r.notes}`);
-    }
-    lines.push("[ref: sensitive/references.yaml.enc]");
-    sections.push(lines.join("\n"));
-  }
-
-  if (sensitive.privateContact) {
-    const lines: string[] = ["# Sensitive — Private contact"];
-    if (sensitive.privateContact.phone) lines.push(`Phone: ${sensitive.privateContact.phone}`);
-    if (sensitive.privateContact.personalEmail) lines.push(`Personal email: ${sensitive.privateContact.personalEmail}`);
-    if (sensitive.privateContact.notes) lines.push(`Notes: ${sensitive.privateContact.notes}`);
-    lines.push("[ref: sensitive/private-contact.yaml.enc]");
-    sections.push(lines.join("\n"));
-  }
-
-  return sections.join("\n\n");
 }

@@ -104,46 +104,7 @@ describe("answer", () => {
     expect(headerMessage?.providerOptions?.anthropic?.cacheControl).toBeUndefined();
   });
 
-  it("appends a third system message AFTER the cache breakpoint when sensitiveKbText is provided", async () => {
-    let captured: any = null;
-    const model = new MockLanguageModelV2({
-      doStream: async (options) => {
-        captured = options;
-        return {
-          stream: simulateReadableStream({
-            chunks: [
-              { type: "stream-start", warnings: [] },
-              { type: "response-metadata", id: "id-1", timestamp: new Date(0), modelId: "mock" },
-              { type: "text-start", id: "1" },
-              { type: "text-delta", id: "1", delta: "ok" },
-              { type: "text-end", id: "1" },
-              { type: "finish", finishReason: "stop", usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } },
-            ],
-          }),
-        };
-      },
-    });
-
-    await answer({
-      messages: [{ role: "user", content: "Hi" }],
-      kbText: "PUBLIC_KB",
-      sensitiveKbText: "SENS_KB",
-      model,
-    }).then((r) => r.text);
-
-    const prompt = (captured as any).prompt as Array<any>;
-    const systemMessages = prompt.filter((m) => m.role === "system");
-    expect(systemMessages).toHaveLength(3);
-
-    const [header, kb, sensitive] = systemMessages;
-    expect(header.providerOptions?.anthropic?.cacheControl).toBeUndefined();
-    expect(kb.content).toContain("PUBLIC_KB");
-    expect(kb.providerOptions?.anthropic?.cacheControl?.type).toBe("ephemeral");
-    expect(sensitive.content).toContain("SENS_KB");
-    expect(sensitive.providerOptions?.anthropic?.cacheControl).toBeUndefined();
-  });
-
-  it("sends only header + kb when sensitiveKbText is not provided", async () => {
+  it("sends only header + kb", async () => {
     let captured: any = null;
     const model = new MockLanguageModelV2({
       doStream: async (options) => {

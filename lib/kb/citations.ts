@@ -9,8 +9,7 @@ export type CitationConfig = {
   branch: string;
 };
 
-// `.yaml.enc` covers the encrypted sensitive KB files (kb/sensitive/*.yaml.enc).
-const CITATION_RE = /\[\^kb:([a-zA-Z0-9._/-]+\.(?:md|yaml|yaml\.enc))(#[a-zA-Z0-9_-]+)?\]/g;
+const CITATION_RE = /\[\^kb:([a-zA-Z0-9._/-]+\.(?:md|yaml))(#[a-zA-Z0-9_-]+)?\]/g;
 
 export function parseCitations(text: string): Citation[] {
   const out: Citation[] = [];

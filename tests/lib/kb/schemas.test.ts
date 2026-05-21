@@ -6,9 +6,6 @@ import {
   PublicContactSchema,
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
-  SalarySchema,
-  ReferencesSchema,
-  PrivateContactSchema,
 } from "@/lib/kb/schemas";
 
 describe("ProfileSchema", () => {
@@ -100,39 +97,5 @@ describe("ProjectFrontmatterSchema", () => {
       url: "https://github.com/x/queryme",
     };
     expect(ProjectFrontmatterSchema.parse(data)).toEqual(data);
-  });
-});
-
-describe("SalarySchema", () => {
-  it("accepts expectations + history", () => {
-    const data = {
-      expectations: "€90k–€110k",
-      history: [{ company: "X", period: "2022-01", amount: "€80k" }],
-    };
-    expect(SalarySchema.parse(data)).toEqual(data);
-  });
-
-  it("accepts an empty object", () => {
-    expect(SalarySchema.parse({})).toEqual({});
-  });
-});
-
-describe("ReferencesSchema", () => {
-  it("accepts a list of references", () => {
-    const data = {
-      entries: [{ name: "Jane Doe", relationship: "Manager at X", email: "jane@x.com" }],
-    };
-    expect(ReferencesSchema.parse(data)).toEqual(data);
-  });
-
-  it("rejects an empty name", () => {
-    expect(() => ReferencesSchema.parse({ entries: [{ name: "", relationship: "X" }] })).toThrow();
-  });
-});
-
-describe("PrivateContactSchema", () => {
-  it("accepts phone + personal email", () => {
-    const data = { phone: "+33 6 12 34 56 78", personalEmail: "alex@me.com" };
-    expect(PrivateContactSchema.parse(data)).toEqual(data);
   });
 });
