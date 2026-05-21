@@ -26,13 +26,12 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Provisioning (one time)
 
-Plan 2 needs Postgres (via Vercel/Neon), Upstash Redis (via Vercel KV), and a Resend account.
+Persistence needs Postgres (via Vercel/Neon) and Upstash Redis (via Vercel KV).
 
 1. Vercel dashboard → Storage → Create Database → Neon. Connect to the project.
 2. Vercel dashboard → Storage → Create Database → KV. Connect to the project.
-3. Resend → verify a domain → create an API key.
-4. Pull all envs locally: `vercel env pull .env.local`
-5. Run migrations: `pnpm db:migrate`
+3. Pull all envs locally: `vercel env pull .env.local`
+4. Run migrations: `pnpm db:migrate`
 
 After this, `pnpm dev` will work end-to-end.
 
@@ -80,18 +79,7 @@ The endpoint is **public** — querying public CV content needs no credentials.
 | Tool | Input | Result |
 |---|---|---|
 | `ask` | `question` (string), `conversationId?` (uuid) | `{ answer, conversationId }` — reuse `conversationId` on follow-ups |
-| `request_identification` | `conversationId`, `name`, `company`, `workEmail`, `role`, `purpose?` | `{ ok: true }` — emails a 6-digit code; free-email domains rejected |
-| `verify_identification` | `conversationId`, `workEmail`, `code` (6 digits) | `{ ok: true }` — unlocks sensitive content for that conversation |
-| `forward_question` | `question` (string), `conversationId?` (uuid) | `{ ok: true, id }` — queues a question for the candidate |
-
-### Accessing sensitive content
-
-Salary, references, and private contact are gated. To unlock them for a
-conversation: call `request_identification` with the principal's work email,
-have them read back the 6-digit code from their inbox, then call
-`verify_identification`. Subsequent `ask` calls on the same `conversationId`
-include sensitive content. This is the same email-code flow as the web chat —
-there is no separate MCP OAuth.
+| `forward_question` | `question` (string), `conversationId?` (uuid) | `{ ok: true, id }` — queues a question for Alexandre |
 
 Requests are rate-limited per client IP.
 
@@ -102,15 +90,9 @@ Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optio
 ## What's in this version
 
 - Public chat at `/` answering questions about Alexandre, grounded in `kb/`.
-- Sensitive content (salary, references, private contact) gated behind verified work-email identification.
-- "Ask Alexandre" inline button when the agent hits a knowledge gap.
-- Conversation logging + identified-asker capture in Postgres for follow-up.
-
-## What's NOT in this version
-
-Coming in later plans:
-
-- Admin panel for reviewing conversations + forwarded questions (Plan 4)
+- "Ask Alexandre" inline button that forwards a question when the agent hits a knowledge gap.
+- Conversation logging in Postgres for follow-up.
+- Admin panel for reviewing conversations + forwarded questions.
 
 ## License
 

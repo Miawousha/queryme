@@ -9,10 +9,10 @@ describe("buildSystemPromptParts", () => {
     expect(parts[1].kind).toBe("kb");
   });
 
-  it("the header mentions identify and forward markers", () => {
+  it("the header mentions the forward marker but not identify", () => {
     const parts = buildSystemPromptParts({ kbText: "" });
-    expect(parts[0].text).toContain("[[identify]]");
     expect(parts[0].text).toContain("[[forward:");
+    expect(parts[0].text).not.toContain("[[identify]]");
   });
 
   it("the header still mentions third person, EN/FR, citations, soft extrapolation", () => {

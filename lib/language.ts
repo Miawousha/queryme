@@ -35,20 +35,10 @@ export const UI_STRINGS = {
           desc: "Ask a question about Alexandre. Returns an answer and a conversationId to reuse on follow-ups.",
         },
         {
-          name: "request_identification",
-          desc: "Email a 6-digit code to a work address to unlock sensitive content.",
-        },
-        {
-          name: "verify_identification",
-          desc: "Submit the code to unlock sensitive content for the conversation.",
-        },
-        {
           name: "forward_question",
           desc: "Leave a question for Alexandre to answer later.",
         },
       ],
-      gateNote:
-        "Public CV content needs no credentials. Sensitive details (salary, references, private contact) require the email-code identification flow — the same one used in this chat.",
       copy: "Copy",
       copied: "Copied",
       close: "Close",
@@ -89,20 +79,10 @@ export const UI_STRINGS = {
           desc: "Poser une question sur Alexandre. Renvoie une réponse et un conversationId à réutiliser pour les questions suivantes.",
         },
         {
-          name: "request_identification",
-          desc: "Envoyer un code à 6 chiffres à une adresse professionnelle pour débloquer le contenu sensible.",
-        },
-        {
-          name: "verify_identification",
-          desc: "Saisir le code pour débloquer le contenu sensible de la conversation.",
-        },
-        {
           name: "forward_question",
           desc: "Laisser une question à laquelle Alexandre répondra plus tard.",
         },
       ],
-      gateNote:
-        "Le contenu public du CV ne nécessite aucune authentification. Les détails sensibles (salaire, références, contact privé) requièrent le processus d'identification par code e-mail — le même que dans ce chat.",
       copy: "Copier",
       copied: "Copié",
       close: "Fermer",

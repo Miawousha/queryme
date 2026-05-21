@@ -12,7 +12,6 @@ export type McpModalStrings = {
   configNote: string;
   toolsTitle: string;
   tools: readonly McpTool[];
-  gateNote: string;
   copy: string;
   copied: string;
   close: string;
@@ -123,10 +122,6 @@ export function McpModal({ open, onClose, strings }: McpModalProps) {
             ))}
           </ul>
         </div>
-
-        <p className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]/40 p-3 text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
-          {strings.gateNote}
-        </p>
       </div>
     </div>
   );
