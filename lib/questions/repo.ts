@@ -6,14 +6,13 @@ type Db = ReturnType<typeof getDb>;
 
 export async function forwardQuestion(
   db: Db,
-  input: { question: string; conversationId?: string; askerId?: string },
+  input: { question: string; conversationId?: string },
 ): Promise<QuestionForAlex> {
   const [inserted] = await db
     .insert(questionsForAlex)
     .values({
       question: input.question,
       conversationId: input.conversationId,
-      askerId: input.askerId,
     })
     .returning();
   return inserted;

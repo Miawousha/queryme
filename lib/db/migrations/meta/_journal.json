@@ -8,6 +8,13 @@
       "when": 1779273888629,
       "tag": "0000_yielding_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779395138300,
+      "tag": "0001_quick_energizer",
+      "breakpoints": true
     }
   ]
 }

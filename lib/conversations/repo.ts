@@ -48,14 +48,3 @@ export async function appendTurn(db: Db, conversationId: string, turn: Conversat
     throw new Error(`appendTurn: conversation ${conversationId} does not exist; turn was not persisted`);
   }
 }
-
-export async function isConversationUnlockedInDb(db: Db, conversationId: string): Promise<boolean> {
-  const rows = await db
-    .select({ unlockedAt: conversations.sensitiveUnlockedAt })
-    .from(conversations)
-    .where(eq(conversations.id, conversationId));
-  if (rows.length === 0) return false;
-  const at = rows[0].unlockedAt;
-  if (!at) return false;
-  return Date.now() - new Date(at).getTime() < 24 * 60 * 60 * 1000;
-}
