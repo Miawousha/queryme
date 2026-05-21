@@ -5,6 +5,7 @@ import { Chat } from "@/components/chat";
 import { GridBackground } from "@/components/grid-background";
 import { LanguageToggle } from "@/components/language-toggle";
 import { MatriceLogo } from "@/components/matrice-logo";
+import { McpModal } from "@/components/mcp-modal";
 import { UI_STRINGS, type UiLang } from "@/lib/language";
 
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/Miawousha/queryme";
@@ -12,6 +13,7 @@ const BRANCH = process.env.NEXT_PUBLIC_REPO_BRANCH ?? "main";
 
 export default function Home() {
   const [lang, setLang] = useState<UiLang>("en");
+  const [mcpOpen, setMcpOpen] = useState(false);
   const t = UI_STRINGS[lang];
 
   return (
@@ -37,7 +39,19 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <LanguageToggle value={lang} onChange={setLang} />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMcpOpen(true)}
+              aria-label={t.mcp.buttonLabel}
+              aria-haspopup="dialog"
+              className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] backdrop-blur transition-colors hover:text-[var(--color-accent)]"
+              style={{ letterSpacing: "0.3em" }}
+            >
+              MCP
+            </button>
+            <LanguageToggle value={lang} onChange={setLang} />
+          </div>
         </header>
 
         <Chat
@@ -69,6 +83,8 @@ export default function Home() {
           </div>
         </footer>
       </main>
+
+      <McpModal open={mcpOpen} onClose={() => setMcpOpen(false)} strings={t.mcp} />
     </>
   );
 }
