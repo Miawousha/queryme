@@ -44,6 +44,15 @@ export const UI_STRINGS = {
       close: "Close",
     },
     themeToggle: "Switch between light and dark theme",
+    about: {
+      buttonLabel: "About this project",
+      title: "About this project",
+      close: "Close",
+    },
+    kbPanel: {
+      show: "Show the knowledge base panel",
+      hide: "Hide the knowledge base panel",
+    },
   },
   fr: {
     headline: "Alexandre Collet — CV interrogeable",
@@ -88,5 +97,14 @@ export const UI_STRINGS = {
       close: "Fermer",
     },
     themeToggle: "Basculer entre thème clair et sombre",
+    about: {
+      buttonLabel: "À propos de ce projet",
+      title: "À propos de ce projet",
+      close: "Fermer",
+    },
+    kbPanel: {
+      show: "Afficher la base de connaissances",
+      hide: "Masquer la base de connaissances",
+    },
   },
 } as const;
