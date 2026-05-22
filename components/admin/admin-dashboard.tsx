@@ -1,7 +1,14 @@
-import type { AdminData } from "@/lib/admin/data";
+"use client";
+
+import { useState } from "react";
+import type { AdminData, AdminStats } from "@/lib/admin/data";
 import { CONVERSATION_LIMIT } from "@/lib/admin/data";
 import type { Conversation, QuestionForAlex, InterviewerIdentity } from "@/lib/db/schema";
+import { GridBackground } from "@/components/grid-background";
+import { MatriceLogo } from "@/components/matrice-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/admin/logout-button";
+import { cn } from "@/lib/utils";
 
 function fmt(value: Date | string | null): string {
   if (!value) return "—";
@@ -19,123 +26,176 @@ function fmt(value: Date | string | null): string {
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
 const CARD = "rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/60";
 
+type TabId = "interviewers" | "conversations" | "questions";
+
 export function AdminDashboard({ data }: { data: AdminData }) {
   const { stats, conversations, questions, interviewers } = data;
+  const [tab, setTab] = useState<TabId>("interviewers");
+
+  // Cross-link from an interviewer card: jump to the Conversations tab and
+  // open + scroll to that conversation. The row only exists in the DOM once
+  // the Conversations panel renders, so the scroll waits a frame.
+  function openConversation(conversationId: string) {
+    setTab("conversations");
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`conv-${conversationId}`);
+      if (el instanceof HTMLDetailsElement) {
+        el.open = true;
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }
+
+  const tabs: { id: TabId; label: string; count: number }[] = [
+    { id: "interviewers", label: "Interviewers", count: interviewers.length },
+    { id: "conversations", label: "Conversations", count: conversations.length },
+    { id: "questions", label: "Questions", count: questions.length },
+  ];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-5 py-10 sm:px-8">
-      <header className="flex items-center justify-between">
-        <div className="flex flex-col leading-tight">
-          <span className={LABEL} style={{ letterSpacing: "0.32em" }}>
-            queryme
+    <>
+      <GridBackground />
+      <div className="relative z-10 flex h-dvh flex-col">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-2.5 backdrop-blur sm:px-6">
+          <h1 className="sr-only">queryme — Admin</h1>
+          <div className="flex shrink-0 items-center gap-3">
+            <MatriceLogo size={28} animated />
+            <div className="flex flex-col leading-tight">
+              <span
+                className="whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-primary)]"
+                style={{ letterSpacing: "0.32em" }}
+              >
+                queryme
+              </span>
+              <span
+                className="whitespace-nowrap font-display text-[14px] font-medium text-[var(--color-text-primary)]"
+                style={{ letterSpacing: "-0.01em" }}
+              >
+                Admin
+              </span>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle label="Switch between light and dark theme" />
+            <LogoutButton />
+          </div>
+        </header>
+
+        <div
+          role="tablist"
+          aria-label="Admin sections"
+          className="flex h-11 shrink-0 items-center border-b border-[var(--color-border)] px-2 sm:px-4"
+        >
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              id={`tab-${t.id}`}
+              aria-selected={tab === t.id}
+              aria-controls={`panel-${t.id}`}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "relative flex h-full items-center gap-1.5 px-3 font-mono text-[10px] uppercase transition-colors",
+                "after:absolute after:inset-x-3 after:-bottom-px after:h-[2px] after:content-['']",
+                tab === t.id
+                  ? "text-[var(--color-accent)] after:bg-[var(--color-accent)]"
+                  : "text-[var(--color-text-tertiary)] after:bg-transparent hover:text-[var(--color-primary)]",
+              )}
+              style={{ letterSpacing: "0.18em" }}
+            >
+              {t.label}
+              <span className="text-[var(--color-text-tertiary)]">{t.count}</span>
+            </button>
+          ))}
+          <span
+            className="ml-auto truncate pl-3 pr-1 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+            style={{ letterSpacing: "0.14em" }}
+          >
+            <TabMeta tab={tab} stats={stats} interviewers={interviewers} />
           </span>
-          <h1 className="font-display text-lg font-medium text-[var(--color-text-primary)]">
-            Admin dashboard
-          </h1>
         </div>
-        <LogoutButton />
-      </header>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Conversations" value={stats.conversations} />
-        <Stat label="Chat / MCP" value={`${stats.chat} / ${stats.mcp}`} />
-        <Stat
-          label="Questions"
-          value={`${stats.questions}`}
-          hint={stats.unanswered > 0 ? `${stats.unanswered} unanswered` : "all answered"}
-        />
-        <Stat label="Identified" value={`${stats.identified}`} />
-      </section>
-
-      <Section title="Interviewers" count={interviewers.length}>
-        {interviewers.length === 0 ? (
-          <Empty>No interviewers identified yet.</Empty>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {interviewers.map((c) => (
-              <InterviewerCard key={c.id} conversation={c} identity={c.interviewer!} />
-            ))}
-          </div>
-        )}
-      </Section>
-
-      <Section
-        title="Conversations"
-        count={conversations.length}
-        note={
-          conversations.length >= CONVERSATION_LIMIT
-            ? `most recent ${CONVERSATION_LIMIT}`
-            : undefined
-        }
-      >
-        {conversations.length === 0 ? (
-          <Empty>No conversations yet.</Empty>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {conversations.map((c) => (
-              <ConversationRow key={c.id} conversation={c} />
-            ))}
-          </div>
-        )}
-      </Section>
-
-      <Section title="Forwarded questions" count={questions.length}>
-        {questions.length === 0 ? (
-          <Empty>No forwarded questions.</Empty>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {questions.map((q) => (
-              <QuestionRow key={q.id} question={q} />
-            ))}
-          </div>
-        )}
-      </Section>
-    </main>
+        <div
+          role="tabpanel"
+          id={`panel-${tab}`}
+          aria-labelledby={`tab-${tab}`}
+          className="min-h-0 flex-1 overflow-auto px-4 py-6 sm:px-6"
+        >
+          {tab === "interviewers" && (
+            <InterviewersPanel interviewers={interviewers} onOpenConversation={openConversation} />
+          )}
+          {tab === "conversations" && <ConversationsPanel conversations={conversations} />}
+          {tab === "questions" && <QuestionsPanel questions={questions} />}
+        </div>
+      </div>
+    </>
   );
 }
 
-function Stat({
-  label,
-  value,
-  hint,
+/** The active tab's secondary metric, shown at the right of the tab band. */
+function TabMeta({
+  tab,
+  stats,
+  interviewers,
 }: {
-  label: string;
-  value: string | number;
-  hint?: string;
+  tab: TabId;
+  stats: AdminStats;
+  interviewers: Conversation[];
 }) {
+  if (tab === "conversations") {
+    const capped =
+      stats.conversations >= CONVERSATION_LIMIT ? ` · most recent ${CONVERSATION_LIMIT}` : "";
+    return <>{`${stats.chat} chat · ${stats.mcp} mcp${capped}`}</>;
+  }
+  if (tab === "questions") {
+    return <>{stats.unanswered > 0 ? `${stats.unanswered} unanswered` : "all answered"}</>;
+  }
+  const stated = interviewers.filter((c) => c.interviewer?.basis === "stated").length;
+  return <>{`${stated} stated · ${interviewers.length - stated} inferred`}</>;
+}
+
+function InterviewersPanel({
+  interviewers,
+  onOpenConversation,
+}: {
+  interviewers: Conversation[];
+  onOpenConversation: (conversationId: string) => void;
+}) {
+  if (interviewers.length === 0) return <Empty>No interviewers identified yet.</Empty>;
   return (
-    <div className={`${CARD} flex flex-col gap-1 px-4 py-3`}>
-      <span className={LABEL} style={{ letterSpacing: "0.24em" }}>
-        {label}
-      </span>
-      <span className="font-display text-xl text-[var(--color-text-primary)]">{value}</span>
-      {hint && <span className="text-[11px] text-[var(--color-text-tertiary)]">{hint}</span>}
+    <div className="flex flex-col gap-2">
+      {interviewers.map((c) => (
+        <InterviewerCard
+          key={c.id}
+          conversation={c}
+          identity={c.interviewer!}
+          onOpen={onOpenConversation}
+        />
+      ))}
     </div>
   );
 }
 
-function Section({
-  title,
-  count,
-  note,
-  children,
-}: {
-  title: string;
-  count: number;
-  note?: string;
-  children: React.ReactNode;
-}) {
+function ConversationsPanel({ conversations }: { conversations: Conversation[] }) {
+  if (conversations.length === 0) return <Empty>No conversations yet.</Empty>;
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-2 border-b border-[var(--color-border)] pb-2">
-        <h2 className="font-display text-sm font-medium text-[var(--color-text-primary)]">
-          {title}
-        </h2>
-        <span className={LABEL}>{count}</span>
-        {note && <span className="text-[11px] text-[var(--color-text-tertiary)]">· {note}</span>}
-      </div>
-      {children}
-    </section>
+    <div className="flex flex-col gap-2">
+      {conversations.map((c) => (
+        <ConversationRow key={c.id} conversation={c} />
+      ))}
+    </div>
+  );
+}
+
+function QuestionsPanel({ questions }: { questions: QuestionForAlex[] }) {
+  if (questions.length === 0) return <Empty>No forwarded questions.</Empty>;
+  return (
+    <div className="flex flex-col gap-2">
+      {questions.map((q) => (
+        <QuestionRow key={q.id} question={q} />
+      ))}
+    </div>
   );
 }
 
@@ -224,14 +284,21 @@ function Field({ label, value }: { label: string; value: string }) {
 function InterviewerCard({
   conversation,
   identity,
+  onOpen,
 }: {
   conversation: Conversation;
   identity: InterviewerIdentity;
+  onOpen: (conversationId: string) => void;
 }) {
   return (
-    <a
-      href={`#conv-${conversation.id}`}
-      className={`${CARD} flex flex-col gap-3 px-4 py-3 transition-colors hover:border-[var(--color-primary)] focus-visible:border-[var(--color-primary)]`}
+    <button
+      type="button"
+      onClick={() => onOpen(conversation.id)}
+      className={cn(
+        CARD,
+        "flex w-full flex-col gap-3 px-4 py-3 text-left transition-colors",
+        "hover:border-[var(--color-primary)] focus-visible:border-[var(--color-primary)]",
+      )}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-display text-sm text-[var(--color-text-primary)]">
@@ -253,6 +320,6 @@ function InterviewerCard({
           {identity.notes}
         </p>
       )}
-    </a>
+    </button>
   );
 }
