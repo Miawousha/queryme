@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Chat } from "@/components/chat";
 import { GridBackground } from "@/components/grid-background";
+import { KbProvider } from "@/components/kb/kb-context";
+import { KbPanel } from "@/components/kb/kb-panel";
+import { KbLayout } from "@/components/kb/kb-layout";
 import { LanguageToggle } from "@/components/language-toggle";
 import { MatriceLogo } from "@/components/matrice-logo";
 import { McpModal } from "@/components/mcp-modal";
@@ -18,10 +21,10 @@ export default function Home() {
   const t = UI_STRINGS[lang];
 
   return (
-    <>
+    <KbProvider>
       <GridBackground />
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-5 py-10 sm:px-8 sm:py-14">
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-5 py-10 sm:px-8 sm:py-14">
         <header className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-3">
             <MatriceLogo size={32} animated />
@@ -56,14 +59,19 @@ export default function Home() {
           </div>
         </header>
 
-        <Chat
-          repoUrl={REPO_URL}
-          branch={BRANCH}
-          intro={t.intro}
-          placeholder={t.placeholder}
-          sendLabel={t.send}
-          startersTitle={t.startersTitle}
-          starters={[...t.starters]}
+        <KbLayout
+          chat={
+            <Chat
+              repoUrl={REPO_URL}
+              branch={BRANCH}
+              intro={t.intro}
+              placeholder={t.placeholder}
+              sendLabel={t.send}
+              startersTitle={t.startersTitle}
+              starters={[...t.starters]}
+            />
+          }
+          panel={<KbPanel />}
         />
 
         <footer
@@ -87,7 +95,7 @@ export default function Home() {
       </main>
 
       <McpModal open={mcpOpen} onClose={() => setMcpOpen(false)} strings={t.mcp} />
-    </>
+    </KbProvider>
   );
 }
 
