@@ -67,13 +67,23 @@ export function Chat({
 
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Whether the user is pinned to the bottom of the transcript. The
+  // auto-scroll effect only fires when true, so scrolling up to read an
+  // earlier message isn't yanked back down while a reply streams in.
+  const atBottomRef = useRef(true);
   const isBusy = status === "submitted" || status === "streaming";
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
+    if (!el || !atBottomRef.current) return;
     el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
 
   function submit(text: string) {
     const trimmed = text.trim();
@@ -149,7 +159,11 @@ export function Chat({
         </span>
       </header>
 
-      <div ref={scrollRef} className="chat-scroll flex-1 overflow-y-auto px-5 py-6 sm:px-6">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="chat-scroll flex-1 overflow-y-auto px-5 py-6 sm:px-6"
+      >
         <div className="fade-up mx-auto flex w-full max-w-3xl flex-col gap-4" style={{ animationDelay: "0.15s" }}>
           <ChatMessage role="assistant" text={intro} />
           {messages.map((m, i) => {

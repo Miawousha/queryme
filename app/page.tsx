@@ -25,7 +25,7 @@ export default function Home() {
     <KbProvider>
       <GridBackground />
 
-      <div className="relative z-10 flex h-screen flex-col">
+      <div className="relative z-10 flex h-dvh flex-col">
         <AppTopBar
           lang={lang}
           onLangChange={setLang}
