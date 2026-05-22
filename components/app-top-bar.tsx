@@ -4,6 +4,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { MatriceLogo } from "@/components/matrice-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { UiLang } from "@/lib/language";
+import { cn } from "@/lib/utils";
 
 export type AppTopBarProps = {
   lang: UiLang;
@@ -88,7 +89,7 @@ export function AppTopBar({
           onClick={onToggleKb}
           aria-label={kbCollapsed ? kbShowLabel : kbHideLabel}
           aria-pressed={!kbCollapsed}
-          className={`hidden sm:inline-flex ${PILL_CLASS}`}
+          className={cn(PILL_CLASS, "hidden sm:inline-flex")}
           style={{ letterSpacing: "0.3em" }}
         >
           KB
