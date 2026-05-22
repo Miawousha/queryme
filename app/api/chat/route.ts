@@ -6,6 +6,8 @@ import { answer } from "@/lib/answerer";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { getDb } from "@/lib/db/client";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
+import { setInterviewer } from "@/lib/interviewer/repo";
+import { buildIdentifyTools } from "@/lib/interviewer/tool";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
 import { requestIp } from "@/lib/request-ip";
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
   const result = await answer({
     messages: convertToModelMessages(parsed.data.messages as UIMessage[]),
     kbText: publicKbText,
+    tools: buildIdentifyTools((identity) => setInterviewer(db, conversationId, identity)),
   });
 
   return result.toUIMessageStreamResponse({

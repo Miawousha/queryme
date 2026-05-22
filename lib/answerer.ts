@@ -1,4 +1,4 @@
-import { streamText, type LanguageModel, type ModelMessage } from "ai";
+import { streamText, stepCountIs, type LanguageModel, type ModelMessage, type ToolSet } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { buildSystemPromptParts } from "./prompts";
 
@@ -6,6 +6,12 @@ export type AnswerInput = {
   messages: ModelMessage[];
   kbText: string;
   model?: LanguageModel;
+  /**
+   * Optional tools the agent may call mid-answer. When present, `streamText`
+   * runs multi-step (tool call → tool result → final answer); when absent,
+   * behaviour is unchanged.
+   */
+  tools?: ToolSet;
 };
 
 const DEFAULT_MODEL_ID = "claude-sonnet-4-6";
@@ -44,5 +50,8 @@ export async function answer(input: AnswerInput) {
     model,
     messages: [...systemMessages, ...input.messages],
     temperature: 0.3,
+    ...(input.tools
+      ? { tools: input.tools, stopWhen: stepCountIs(5) }
+      : {}),
   });
 }

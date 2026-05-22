@@ -20,6 +20,10 @@ export const UI_STRINGS = {
     forwardSuccess: "Question forwarded to Alexandre.",
     forwardError: "Couldn't forward — try again.",
     genericError: "Something went wrong — please try again.",
+    identity: {
+      chipPrefix: "Recognized you as",
+      hiring: "hiring",
+    },
     footer: {
       transparency: "Everything this agent knows is in the public repo.",
       systemPrompt: "View the system prompt",
@@ -114,6 +118,10 @@ export const UI_STRINGS = {
     forwardSuccess: "Question envoyée à Alexandre.",
     forwardError: "Échec de l'envoi — réessayez.",
     genericError: "Une erreur s'est produite — réessayez.",
+    identity: {
+      chipPrefix: "Vous avez été reconnu·e comme",
+      hiring: "recrute pour",
+    },
     footer: {
       transparency: "Tout ce que cet agent sait est dans le dépôt public.",
       systemPrompt: "Voir le prompt système",

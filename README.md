@@ -11,6 +11,13 @@ Live: _coming soon_
 3. The Next.js app loads the KB at runtime, assembles it into a single text blob, and injects it into the system prompt with Anthropic prompt caching so every request after the first is cheap.
 4. The web chat at `/` calls `/api/chat`, which calls a shared `answer()` function. The MCP server at `/api/mcp` calls the same `answer()` — see [MCP server](#mcp-server) below.
 
+The agent can also recognize who it is talking to: when a visitor introduces
+themselves (e.g. a recruiter naming their company and the role they're
+hiring for), the agent calls an `identify_interviewer` tool that records that
+on the conversation. Nothing is hidden — the tool, its code, and the prompt
+instructions are all in this repo, and the chat shows a chip with exactly what
+was captured.
+
 ### Knowledge-base panel
 
 Alongside the chat, a side panel lists every file in the public knowledge base.

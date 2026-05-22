@@ -15,6 +15,13 @@
       "when": 1779395138300,
       "tag": "0001_quick_energizer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779476171426,
+      "tag": "0002_small_sheva_callister",
+      "breakpoints": true
     }
   ]
 }

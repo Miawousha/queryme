@@ -1,6 +1,6 @@
 import type { AdminData } from "@/lib/admin/data";
 import { CONVERSATION_LIMIT } from "@/lib/admin/data";
-import type { Conversation, QuestionForAlex } from "@/lib/db/schema";
+import type { Conversation, QuestionForAlex, InterviewerIdentity } from "@/lib/db/schema";
 import { LogoutButton } from "@/components/admin/logout-button";
 
 function fmt(value: Date | string | null): string {
@@ -20,7 +20,7 @@ const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]
 const CARD = "rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/60";
 
 export function AdminDashboard({ data }: { data: AdminData }) {
-  const { stats, conversations, questions } = data;
+  const { stats, conversations, questions, interviewers } = data;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-5 py-10 sm:px-8">
@@ -36,7 +36,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
         <LogoutButton />
       </header>
 
-      <section className="grid grid-cols-3 gap-3">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Conversations" value={stats.conversations} />
         <Stat label="Chat / MCP" value={`${stats.chat} / ${stats.mcp}`} />
         <Stat
@@ -44,7 +44,20 @@ export function AdminDashboard({ data }: { data: AdminData }) {
           value={`${stats.questions}`}
           hint={stats.unanswered > 0 ? `${stats.unanswered} unanswered` : "all answered"}
         />
+        <Stat label="Identified" value={`${stats.identified}`} />
       </section>
+
+      <Section title="Interviewers" count={interviewers.length}>
+        {interviewers.length === 0 ? (
+          <Empty>No interviewers identified yet.</Empty>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {interviewers.map((c) => (
+              <InterviewerCard key={c.id} conversation={c} identity={c.interviewer!} />
+            ))}
+          </div>
+        )}
+      </Section>
 
       <Section
         title="Conversations"
@@ -144,10 +157,13 @@ function Badge({ children }: { children: React.ReactNode }) {
 function ConversationRow({ conversation }: { conversation: Conversation }) {
   const turns = conversation.transcript ?? [];
   return (
-    <details className={`${CARD} group`}>
+    <details id={`conv-${conversation.id}`} className={`${CARD} group`}>
       <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-[13px] text-[var(--color-text-secondary)]">
         <Badge>{conversation.channel}</Badge>
         {conversation.language && <Badge>{conversation.language}</Badge>}
+        {conversation.interviewer && (
+          <Badge>{conversation.interviewer.name ?? "identified"}</Badge>
+        )}
         <span className="ml-auto flex items-center gap-3 text-[var(--color-text-tertiary)]">
           <span>{turns.length} turns</span>
           <span>{fmt(conversation.lastMessageAt)}</span>
@@ -193,5 +209,50 @@ function QuestionRow({ question }: { question: QuestionForAlex }) {
         )}
       </div>
     </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={LABEL}>{label}</span>
+      <span className="text-[13px] text-[var(--color-text-primary)]">{value}</span>
+    </div>
+  );
+}
+
+function InterviewerCard({
+  conversation,
+  identity,
+}: {
+  conversation: Conversation;
+  identity: InterviewerIdentity;
+}) {
+  return (
+    <a
+      href={`#conv-${conversation.id}`}
+      className={`${CARD} flex flex-col gap-3 px-4 py-3 transition-colors hover:border-[var(--color-primary)] focus-visible:border-[var(--color-primary)]`}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-display text-sm text-[var(--color-text-primary)]">
+          {identity.name ?? "Unknown name"}
+        </span>
+        <Badge>{identity.basis}</Badge>
+        <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          {fmt(identity.updatedAt)}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {identity.company && <Field label="Company" value={identity.company} />}
+        {identity.role && <Field label="Role" value={identity.role} />}
+        {identity.hiringFor && <Field label="Hiring for" value={identity.hiringFor} />}
+        {identity.contact && <Field label="Contact" value={identity.contact} />}
+      </div>
+      {identity.notes && (
+        <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+          {identity.notes}
+        </p>
+      )}
+    </a>
   );
 }
