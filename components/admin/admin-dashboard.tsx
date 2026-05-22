@@ -44,7 +44,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
           value={`${stats.questions}`}
           hint={stats.unanswered > 0 ? `${stats.unanswered} unanswered` : "all answered"}
         />
-        <Stat label="Identified" value={stats.identified} />
+        <Stat label="Identified" value={`${stats.identified}`} />
       </section>
 
       <Section title="Interviewers" count={interviewers.length}>
@@ -53,7 +53,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
         ) : (
           <div className="flex flex-col gap-2">
             {interviewers.map((c) => (
-              <InterviewerCard key={c.id} conversation={c} />
+              <InterviewerCard key={c.id} conversation={c} identity={c.interviewer!} />
             ))}
           </div>
         )}
@@ -221,32 +221,36 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InterviewerCard({ conversation }: { conversation: Conversation }) {
-  // Non-null on every row of the interviewers list (filtered in buildAdminData).
-  const id = conversation.interviewer as InterviewerIdentity;
+function InterviewerCard({
+  conversation,
+  identity,
+}: {
+  conversation: Conversation;
+  identity: InterviewerIdentity;
+}) {
   return (
     <a
       href={`#conv-${conversation.id}`}
-      className={`${CARD} flex flex-col gap-3 px-4 py-3 transition-colors hover:border-[var(--color-primary)]`}
+      className={`${CARD} flex flex-col gap-3 px-4 py-3 transition-colors hover:border-[var(--color-primary)] focus-visible:border-[var(--color-primary)]`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-display text-sm text-[var(--color-text-primary)]">
-          {id.name ?? "Unknown name"}
+          {identity.name ?? "Unknown name"}
         </span>
-        <Badge>{id.basis}</Badge>
+        <Badge>{identity.basis}</Badge>
         <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
-          {fmt(id.updatedAt)}
+          {fmt(identity.updatedAt)}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        {id.company && <Field label="Company" value={id.company} />}
-        {id.role && <Field label="Role" value={id.role} />}
-        {id.hiringFor && <Field label="Hiring for" value={id.hiringFor} />}
-        {id.contact && <Field label="Contact" value={id.contact} />}
+        {identity.company && <Field label="Company" value={identity.company} />}
+        {identity.role && <Field label="Role" value={identity.role} />}
+        {identity.hiringFor && <Field label="Hiring for" value={identity.hiringFor} />}
+        {identity.contact && <Field label="Contact" value={identity.contact} />}
       </div>
-      {id.notes && (
+      {identity.notes && (
         <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
-          {id.notes}
+          {identity.notes}
         </p>
       )}
     </a>
