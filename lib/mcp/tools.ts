@@ -32,6 +32,7 @@ const MAX_HISTORY_TURNS = 50;
 export type ProduceAnswerArgs = {
   messages: ModelMessage[];
   kbText: string;
+  conversationId: string;
 };
 
 // The handler only ever reads `transcript` off the conversation, so it depends
@@ -83,7 +84,7 @@ export async function handleAsk(deps: AskDeps, rawInput: unknown): Promise<AskRe
     at: new Date().toISOString(),
   });
 
-  const answerText = await deps.produceAnswer({ messages, kbText });
+  const answerText = await deps.produceAnswer({ messages, kbText, conversationId });
 
   await deps.appendTurn(deps.db, conversationId, {
     role: "assistant",

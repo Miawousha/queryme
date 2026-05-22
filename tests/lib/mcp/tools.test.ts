@@ -141,6 +141,26 @@ describe("handleAsk", () => {
 
     await expect(handleAsk(deps, { question: "" })).rejects.toThrow();
   });
+
+  it("passes the conversationId to produceAnswer", async () => {
+    const store = makeConversationStore();
+    const convId = "33333333-3333-4333-8333-333333333333";
+    let seenConversationId: string | undefined;
+    const deps: AskDeps = {
+      db: {} as never,
+      getOrCreateConversation: store.getOrCreateConversation,
+      appendTurn: store.appendTurn,
+      loadPublicKbText: async () => "PUBLIC KB",
+      produceAnswer: async ({ conversationId }) => {
+        seenConversationId = conversationId;
+        return "answer";
+      },
+    };
+
+    await handleAsk(deps, { question: "who built this?", conversationId: convId });
+
+    expect(seenConversationId).toBe(convId);
+  });
 });
 
 describe("handleForwardQuestion", () => {

@@ -4,6 +4,8 @@ import { getCachedPublicKbText } from "@/lib/kb/cache";
 import { answer } from "@/lib/answerer";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 import { forwardQuestion } from "@/lib/questions/repo";
+import { setInterviewer } from "@/lib/interviewer/repo";
+import { buildIdentifyTools } from "@/lib/interviewer/tool";
 import {
   handleAsk,
   handleForwardQuestion,
@@ -56,8 +58,14 @@ export function buildMcpServer(): McpServer {
             getOrCreateConversation,
             appendTurn,
             loadPublicKbText: getCachedPublicKbText,
-            produceAnswer: async ({ messages, kbText }) => {
-              const streamed = await answer({ messages, kbText });
+            produceAnswer: async ({ messages, kbText, conversationId }) => {
+              const streamed = await answer({
+                messages,
+                kbText,
+                tools: buildIdentifyTools((identity) =>
+                  setInterviewer(getDb(), conversationId, identity),
+                ),
+              });
               return await streamed.text;
             },
           },
