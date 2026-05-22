@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
 
 const WIDTH_KEY = "queryme:kbPanelWidth";
 const MIN_PCT = 24;
