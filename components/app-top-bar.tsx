@@ -20,8 +20,8 @@ export type AppTopBarProps = {
   kbHideLabel: string;
 };
 
-const PILL_CLASS =
-  "inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] backdrop-blur transition-colors hover:text-[var(--color-accent)]";
+const ICON_BTN =
+  "inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 text-[var(--color-text-tertiary)] backdrop-blur transition-colors hover:text-[var(--color-accent)]";
 
 /**
  * Slim full-width app chrome. Sits above the two-pane body in the app shell.
@@ -68,34 +68,79 @@ export function AppTopBar({
           type="button"
           onClick={onOpenMcp}
           aria-label={mcpButtonLabel}
+          title={mcpButtonLabel}
           aria-haspopup="dialog"
-          className={PILL_CLASS}
-          style={{ letterSpacing: "0.3em" }}
+          className={ICON_BTN}
         >
-          MCP
+          <McpIcon />
         </button>
         <button
           type="button"
           onClick={onOpenAbout}
           aria-label={aboutButtonLabel}
+          title={aboutButtonLabel}
           aria-haspopup="dialog"
-          className={PILL_CLASS}
-          style={{ letterSpacing: "0.3em" }}
+          className={ICON_BTN}
         >
-          About
+          <InfoIcon />
         </button>
         <LanguageToggle value={lang} onChange={onLangChange} />
         <button
           type="button"
           onClick={onToggleKb}
           aria-label={kbCollapsed ? kbShowLabel : kbHideLabel}
+          title={kbCollapsed ? kbShowLabel : kbHideLabel}
           aria-pressed={!kbCollapsed}
-          className={cn(PILL_CLASS, "hidden sm:inline-flex")}
-          style={{ letterSpacing: "0.3em" }}
+          className={cn(
+            ICON_BTN,
+            "hidden sm:inline-flex",
+            !kbCollapsed && "text-[var(--color-accent)]",
+          )}
         >
-          KB
+          <PanelIcon />
         </button>
       </div>
     </header>
+  );
+}
+
+const ICON_PROPS = {
+  width: 14,
+  height: 14,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+} as const;
+
+/** Plug — "connect via MCP". */
+function McpIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0V8ZM12 16v6" />
+    </svg>
+  );
+}
+
+/** Info circle — "about this project". */
+function InfoIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" />
+    </svg>
+  );
+}
+
+/** Panel with a right pane — toggles the KB side panel. */
+function PanelIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M15 4v16" />
+    </svg>
   );
 }
