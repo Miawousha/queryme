@@ -14,10 +14,12 @@ export type RateLimitResult = {
 
 export async function checkRateLimit(kv: KvClient, input: RateLimitInput): Promise<RateLimitResult> {
   const fullKey = `rl:${input.key}`;
+  // Create the counter with its TTL the first time the key is seen; on every
+  // later call within the window the NX `set` is a no-op. This guarantees the
+  // window can never be left without an expiry — unlike a separate `incr`
+  // then `expire`, where a crash in between would wedge the key forever.
+  await kv.set(fullKey, "0", { ex: input.windowSeconds, nx: true });
   const count = await kv.incr(fullKey);
-  if (count === 1) {
-    await kv.expire(fullKey, input.windowSeconds);
-  }
   const allowed = count <= input.limit;
   return {
     allowed,

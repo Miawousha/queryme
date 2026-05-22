@@ -5,6 +5,7 @@ import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { buildMcpServer } from "@/lib/mcp/server";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
+import { requestIp } from "@/lib/request-ip";
 
 export const runtime = "nodejs";
 
@@ -24,20 +25,38 @@ export const runtime = "nodejs";
 // Streamable-HTTP transport: its `handleRequest` consumes a Web `Request` and
 // returns a Web `Response`, which is exactly what Next.js App Router routes
 // deal in — so no Node `IncomingMessage`/`ServerResponse` shim is needed.
-const transports = new Map<string, WebStandardStreamableHTTPServerTransport>();
+/** Evict a session whose most recent request is older than this. */
+const SESSION_IDLE_MS = 10 * 60 * 1000;
+/** Hard ceiling on concurrent sessions — a backstop against unbounded growth. */
+const MAX_SESSIONS = 100;
 
-function clientIp(req: NextRequest): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
+type Session = {
+  transport: WebStandardStreamableHTTPServerTransport;
+  lastActivity: number;
+};
+const sessions = new Map<string, Session>();
+
+/**
+ * Drop sessions that have gone idle. MCP clients frequently vanish without
+ * sending a clean DELETE, so without this the map — and the McpServer
+ * instances connected to each transport — would grow without bound. Called
+ * lazily on every request; no background timer (serverless-friendly).
+ */
+function sweepIdleSessions(): void {
+  const now = Date.now();
+  for (const [id, session] of sessions) {
+    if (now - session.lastActivity > SESSION_IDLE_MS) {
+      sessions.delete(id);
+      void session.transport.close();
+    }
+  }
 }
 
 // Rate limit MCP traffic by IP. The limit is generous — a single agent issues
 // many JSON-RPC messages per session — and exists to stop abuse, not normal use.
 async function rateLimited(req: NextRequest): Promise<boolean> {
-  const kv = getKv();
-  const result = await checkRateLimit(kv, {
-    key: `mcp:ip:${clientIp(req)}`,
+  const result = await checkRateLimit(getKv(), {
+    key: `mcp:ip:${requestIp(req)}`,
     limit: 120,
     windowSeconds: 60,
   });
@@ -58,12 +77,16 @@ async function handle(req: NextRequest): Promise<Response> {
     return jsonRpcError(-32000, "Rate limit exceeded. Try again shortly.", 429);
   }
 
+  sweepIdleSessions();
+
   try {
     const sessionId = req.headers.get("mcp-session-id") ?? undefined;
 
     // Existing session: route straight to its transport.
-    if (sessionId && transports.has(sessionId)) {
-      return transports.get(sessionId)!.handleRequest(req);
+    if (sessionId && sessions.has(sessionId)) {
+      const session = sessions.get(sessionId)!;
+      session.lastActivity = Date.now();
+      return session.transport.handleRequest(req);
     }
 
     // New session: only a POST carrying an `initialize` request may create one.
@@ -78,19 +101,22 @@ async function handle(req: NextRequest): Promise<Response> {
       }
 
       if (isInitializeRequest(body)) {
+        if (sessions.size >= MAX_SESSIONS) {
+          return jsonRpcError(-32000, "Server busy: too many active sessions.", 503);
+        }
         const transport = new WebStandardStreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (id) => {
             // Register here (not after handleRequest) so follow-up requests
             // that race in immediately after init find the transport.
-            transports.set(id, transport);
+            sessions.set(id, { transport, lastActivity: Date.now() });
           },
           onsessionclosed: (id) => {
-            transports.delete(id);
+            sessions.delete(id);
           },
         });
         transport.onclose = () => {
-          if (transport.sessionId) transports.delete(transport.sessionId);
+          if (transport.sessionId) sessions.delete(transport.sessionId);
         };
 
         const server = buildMcpServer();
@@ -104,8 +130,8 @@ async function handle(req: NextRequest): Promise<Response> {
     // GET/DELETE without a known session id: never an initialize request.
     return jsonRpcError(-32000, "Bad Request: No valid session ID provided", 400);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal error";
-    return jsonRpcError(-32603, message, 500);
+    console.error("mcp: request handling failed", err);
+    return jsonRpcError(-32603, "Internal error", 500);
   }
 }
 

@@ -8,6 +8,9 @@ import { answer } from "@/lib/answerer";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { getDb } from "@/lib/db/client";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
+import { getKv } from "@/lib/kv/client";
+import { checkRateLimit } from "@/lib/kv/rate-limit";
+import { requestIp } from "@/lib/request-ip";
 
 export const runtime = "nodejs";
 
@@ -54,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = RequestBodySchema.safeParse(rawBody);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request shape", details: parsed.error.issues }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request shape" }, { status: 400 });
   }
 
   const userCharCount = parsed.data.messages
@@ -65,6 +68,18 @@ export async function POST(req: NextRequest) {
       { error: `Conversation too long (max ${MAX_TOTAL_USER_CHARS} characters of user text)` },
       { status: 400 },
     );
+  }
+
+  // Rate limit once the request is known well-formed but before the expensive
+  // work — /api/chat calls the paid Anthropic API on every request, so an
+  // unmetered loop is a direct cost-amplification vector.
+  const rate = await checkRateLimit(getKv(), {
+    key: `chat:ip:${requestIp(req)}`,
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
   }
 
   const conversationId = parsed.data.conversationId ?? randomUUID();
@@ -93,18 +108,24 @@ export async function POST(req: NextRequest) {
   return result.toUIMessageStreamResponse({
     headers: { "x-conversation-id": conversationId },
     onFinish: async ({ messages: finalMessages }) => {
-      // After the stream completes, append the assistant's full reply.
-      const last = finalMessages[finalMessages.length - 1];
-      if (last && last.role === "assistant") {
-        const text = last.parts
-          .filter((p): p is { type: "text"; text: string } => p.type === "text")
-          .map((p) => p.text)
-          .join("");
-        await appendTurn(db, conversationId, {
-          role: "assistant",
-          text,
-          at: new Date().toISOString(),
-        });
+      // After the stream completes, append the assistant's full reply. This
+      // runs after the response is already sent, so a throw here would surface
+      // as an unhandled rejection — catch and log instead.
+      try {
+        const last = finalMessages[finalMessages.length - 1];
+        if (last && last.role === "assistant") {
+          const text = last.parts
+            .filter((p): p is { type: "text"; text: string } => p.type === "text")
+            .map((p) => p.text)
+            .join("");
+          await appendTurn(db, conversationId, {
+            role: "assistant",
+            text,
+            at: new Date().toISOString(),
+          });
+        }
+      } catch (err) {
+        console.error("chat: failed to persist assistant turn", err);
       }
     },
   });
