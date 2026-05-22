@@ -9,14 +9,12 @@ import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
 import { useKb } from "@/components/kb/kb-context";
 import { extractCitedPaths } from "@/lib/kb/cited-paths";
+import type { UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
 export type ChatProps = {
-  intro: string;
-  placeholder: string;
-  sendLabel: string;
-  startersTitle: string;
-  starters: string[];
+  /** The full string table for the active language. */
+  t: UiStrings;
 };
 
 function loadOrCreateConversationId(): string {
@@ -30,13 +28,7 @@ function loadOrCreateConversationId(): string {
   return id;
 }
 
-export function Chat({
-  intro,
-  placeholder,
-  sendLabel,
-  startersTitle,
-  starters,
-}: ChatProps) {
+export function Chat({ t }: ChatProps) {
   const { setCitedPaths, openFile } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
@@ -99,9 +91,9 @@ export function Chat({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId, question }),
       });
-      setForwardToast(res.ok ? "Question forwarded to Alexandre." : "Couldn't forward — try again.");
+      setForwardToast(res.ok ? t.forwardSuccess : t.forwardError);
     } catch {
-      setForwardToast("Couldn't forward — try again.");
+      setForwardToast(t.forwardError);
     }
     setTimeout(() => setForwardToast(null), 3000);
   }
@@ -148,7 +140,7 @@ export function Chat({
             className="font-mono text-[10px] uppercase text-[var(--color-text-secondary)]"
             style={{ letterSpacing: "0.3em" }}
           >
-            {isBusy ? "thinking" : "ready"}
+            {isBusy ? t.statusThinking : t.statusReady}
           </span>
         </div>
         <span
@@ -165,7 +157,12 @@ export function Chat({
         className="chat-scroll flex-1 overflow-y-auto px-5 py-6 sm:px-6"
       >
         <div className="fade-up mx-auto flex w-full max-w-3xl flex-col gap-4" style={{ animationDelay: "0.15s" }}>
-          <ChatMessage role="assistant" text={intro} />
+          <ChatMessage
+            role="assistant"
+            text={t.intro}
+            agentLabel={t.agentLabel}
+            forwardLabel={t.forwardAction}
+          />
           {messages.map((m, i) => {
             const isLastMessage = i === messages.length - 1;
             const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
@@ -175,6 +172,8 @@ export function Chat({
                 role={m.role === "user" ? "user" : "assistant"}
                 text={messageText(m)}
                 isStreaming={isStreaming}
+                agentLabel={t.agentLabel}
+                forwardLabel={t.forwardAction}
                 onForward={handleForward}
                 onOpenArtifact={openFile}
               />
@@ -187,10 +186,10 @@ export function Chat({
                 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
                 style={{ letterSpacing: "0.3em" }}
               >
-                {startersTitle}
+                {t.startersTitle}
               </p>
               <div className="flex flex-wrap gap-2">
-                {starters.map((s) => (
+                {t.starters.map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -226,7 +225,7 @@ export function Chat({
           role="alert"
           className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"
         >
-          Something went wrong — please try again.
+          {t.genericError}
         </div>
       )}
 
@@ -241,7 +240,7 @@ export function Chat({
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={placeholder}
+            placeholder={t.placeholder}
             rows={1}
             className="min-h-[42px] resize-none border-transparent bg-transparent text-[14px] focus-visible:border-transparent focus-visible:ring-0"
             disabled={isBusy}
@@ -253,7 +252,7 @@ export function Chat({
             }}
           />
           <Button type="submit" disabled={isBusy || !input.trim()} className="shrink-0">
-            {sendLabel}
+            {t.send}
           </Button>
         </div>
       </form>

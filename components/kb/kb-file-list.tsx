@@ -1,6 +1,7 @@
 "use client";
 
 import type { KbFile } from "@/lib/kb/manifest";
+import { useKb } from "@/components/kb/kb-context";
 import { metaSubtitle } from "@/lib/kb/meta-format";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +69,7 @@ export function KbFileList({
   citedPaths: string[];
   onOpen: (path: string) => void;
 }) {
+  const { strings } = useKb();
   const citedSet = new Set(citedPaths);
   // Cited files first, in citation order; the rest follow in manifest order.
   const cited = citedPaths
@@ -77,9 +79,7 @@ export function KbFileList({
 
   if (manifest.length === 0) {
     return (
-      <p className="px-1 text-xs text-[var(--color-text-tertiary)]">
-        The knowledge base is unavailable.
-      </p>
+      <p className="px-1 text-xs text-[var(--color-text-tertiary)]">{strings.unavailable}</p>
     );
   }
 
@@ -88,7 +88,7 @@ export function KbFileList({
       {cited.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <span className={LABEL} style={{ letterSpacing: "0.24em" }}>
-            Referenced in this conversation
+            {strings.referenced}
           </span>
           {cited.map((f) => (
             <FileRow key={f.path} file={f} cited onOpen={onOpen} />
@@ -98,7 +98,7 @@ export function KbFileList({
       <div className="flex flex-col gap-1.5">
         {cited.length > 0 && (
           <span className={LABEL} style={{ letterSpacing: "0.24em" }}>
-            All documents
+            {strings.allDocuments}
           </span>
         )}
         {rest.map((f) => (

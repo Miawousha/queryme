@@ -22,7 +22,7 @@ export default function Home() {
   const t = UI_STRINGS[lang];
 
   return (
-    <KbProvider>
+    <KbProvider lang={lang}>
       <GridBackground />
 
       <div className="relative z-10 flex h-dvh flex-col">
@@ -43,15 +43,7 @@ export default function Home() {
         <KbLayout
           collapsed={kbCollapsed}
           onCollapsedChange={setKbCollapsed}
-          chat={
-            <Chat
-              intro={t.intro}
-              placeholder={t.placeholder}
-              sendLabel={t.send}
-              startersTitle={t.startersTitle}
-              starters={[...t.starters]}
-            />
-          }
+          chat={<Chat t={t} />}
           panel={<KbPanel />}
         />
       </div>

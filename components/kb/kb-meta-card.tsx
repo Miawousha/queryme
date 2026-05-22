@@ -1,6 +1,7 @@
 "use client";
 
 import type { KbFileMeta } from "@/lib/kb/manifest";
+import { useKb } from "@/components/kb/kb-context";
 import { formatPeriod } from "@/lib/kb/meta-format";
 
 const LABEL =
@@ -39,18 +40,20 @@ function Chips({ label, items }: { label: string; items: string[] }) {
  * so this is the one place a reader sees those fields.
  */
 export function KbMetaCard({ meta }: { meta: KbFileMeta }) {
+  const { strings } = useKb();
+  const m = strings.meta;
   const period = formatPeriod(meta.start, meta.end);
 
   return (
     <div className="mb-4 flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/40 p-4">
       <div className="grid grid-cols-2 gap-3">
-        {meta.company && <Field label="Company">{meta.company}</Field>}
-        {meta.role && <Field label="Role">{meta.role}</Field>}
-        {period && <Field label="Period">{period}</Field>}
-        {meta.location && <Field label="Location">{meta.location}</Field>}
-        {meta.year !== undefined && <Field label="Year">{meta.year}</Field>}
+        {meta.company && <Field label={m.company}>{meta.company}</Field>}
+        {meta.role && <Field label={m.role}>{meta.role}</Field>}
+        {period && <Field label={m.period}>{period}</Field>}
+        {meta.location && <Field label={m.location}>{meta.location}</Field>}
+        {meta.year !== undefined && <Field label={m.year}>{meta.year}</Field>}
         {meta.url && (
-          <Field label="Link">
+          <Field label={m.link}>
             <a
               href={meta.url}
               target="_blank"
@@ -62,8 +65,8 @@ export function KbMetaCard({ meta }: { meta: KbFileMeta }) {
           </Field>
         )}
       </div>
-      {meta.stack && <Chips label="Stack" items={meta.stack} />}
-      {meta.tags && <Chips label="Tags" items={meta.tags} />}
+      {meta.stack && <Chips label={m.stack} items={meta.stack} />}
+      {meta.tags && <Chips label={m.tags} items={meta.tags} />}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useKb } from "@/components/kb/kb-context";
 import { useDialog } from "@/lib/use-dialog";
 
 const WIDTH_KEY = "queryme:kbPanelWidth";
@@ -30,6 +31,7 @@ export function KbLayout({
   collapsed?: boolean;
   onCollapsedChange?: (next: boolean) => void;
 }) {
+  const { strings } = useKb();
   const [widthPct, setWidthPct] = useState(DEFAULT_PCT);
   const [collapsedInternal, setCollapsedInternal] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -87,7 +89,7 @@ export function KbLayout({
           <button
             type="button"
             onClick={() => setCollapsed(false)}
-            aria-label="Show the knowledge base panel"
+            aria-label={strings.showPanel}
             className="hidden w-9 shrink-0 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-card)]/30 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)] sm:flex"
             style={{ writingMode: "vertical-rl", letterSpacing: "0.3em" }}
           >
@@ -98,7 +100,7 @@ export function KbLayout({
             <div
               role="separator"
               aria-orientation="vertical"
-              aria-label="Resize the knowledge base panel"
+              aria-label={strings.resizePanel}
               aria-valuenow={Math.round(widthPct)}
               aria-valuemin={MIN_PCT}
               aria-valuemax={MAX_PCT}
@@ -145,7 +147,7 @@ export function KbLayout({
           ref={drawerRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Knowledge base"
+          aria-label={strings.panelLabel}
           tabIndex={-1}
           className="fixed inset-0 z-40 flex flex-col bg-[var(--color-background)] outline-none sm:hidden"
         >
@@ -153,11 +155,11 @@ export function KbLayout({
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
-              aria-label="Close the knowledge base panel"
+              aria-label={strings.closePanel}
               className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
               style={{ letterSpacing: "0.2em" }}
             >
-              close ›
+              {strings.close} ›
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">{panel}</div>

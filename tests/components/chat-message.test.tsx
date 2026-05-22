@@ -4,14 +4,17 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChatMessage } from "@/components/chat-message";
 
+// Localized labels are required props; tests supply fixed English values.
+const labels = { agentLabel: "agent", forwardLabel: "Send this question to Alexandre" };
+
 describe("ChatMessage", () => {
   it("renders a user message as plain text", () => {
-    render(<ChatMessage role="user" text="Hello there" />);
+    render(<ChatMessage role="user" text="Hello there" {...labels} />);
     expect(screen.getByText("Hello there")).toBeInTheDocument();
   });
 
   it("renders an assistant message with markdown", () => {
-    render(<ChatMessage role="assistant" text="**bold** and _italic_" />);
+    render(<ChatMessage role="assistant" text="**bold** and _italic_" {...labels} />);
     expect(screen.getByText("bold").tagName).toBe("STRONG");
     expect(screen.getByText("italic").tagName).toBe("EM");
   });
@@ -24,6 +27,7 @@ describe("ChatMessage", () => {
         role="assistant"
         text="He founded Matrice [^kb:experience/2022-matrice.md]."
         onOpenArtifact={onOpenArtifact}
+        {...labels}
       />,
     );
     const btn = screen.getByRole("button");
@@ -41,6 +45,7 @@ describe("ChatMessage", () => {
         role="assistant"
         text="See [^kb:experience/2022-matrice.md#highlights]."
         onOpenArtifact={onOpenArtifact}
+        {...labels}
       />,
     );
     await user.click(screen.getByRole("button"));
@@ -52,13 +57,14 @@ describe("ChatMessage", () => {
       <ChatMessage
         role="assistant"
         text="Safe text <script>alert('xss')</script> after."
+        {...labels}
       />,
     );
     expect(document.querySelector("script")).toBeNull();
     expect(screen.getByText(/Safe text/)).toBeInTheDocument();
   });
 
-  it("renders 'Send this question to Alexandre' for [[forward:...]] and passes the question to the callback", async () => {
+  it("renders the forward label for [[forward:...]] and passes the question to the callback", async () => {
     const onForward = vi.fn();
     const user = userEvent.setup();
     render(
@@ -66,6 +72,7 @@ describe("ChatMessage", () => {
         role="assistant"
         text="Not in the KB — [[forward:What were Q1 numbers?]]"
         onForward={onForward}
+        {...labels}
       />,
     );
     const btn = screen.getByRole("button", { name: /send this question/i });

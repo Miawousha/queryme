@@ -8,7 +8,7 @@ import { KbViewer } from "@/components/kb/kb-viewer";
 const BAND = "flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4";
 
 export function KbPanel() {
-  const { manifest, citedPaths, openFilePath, openFile, closeFile } = useKb();
+  const { strings, manifest, citedPaths, openFilePath, openFile, closeFile } = useKb();
   const openFileEntry = openFilePath
     ? manifest.find((f) => f.path === openFilePath) ?? null
     : null;
@@ -30,7 +30,7 @@ export function KbPanel() {
           className="font-mono text-[10px] uppercase text-[var(--color-primary)]"
           style={{ letterSpacing: "0.32em" }}
         >
-          knowledge base
+          {strings.title}
         </span>
         <span className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
           {manifest.length}
@@ -39,9 +39,7 @@ export function KbPanel() {
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {openFilePath ? (
-          <p className="text-xs text-[var(--color-text-tertiary)]">
-            That document isn&apos;t in the knowledge base.
-          </p>
+          <p className="text-xs text-[var(--color-text-tertiary)]">{strings.notInKb}</p>
         ) : (
           <KbFileList manifest={manifest} citedPaths={citedPaths} onOpen={openFile} />
         )}
