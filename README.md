@@ -11,6 +11,14 @@ Live: _coming soon_
 3. The Next.js app loads the KB at runtime, assembles it into a single text blob, and injects it into the system prompt with Anthropic prompt caching so every request after the first is cheap.
 4. The web chat at `/` calls `/api/chat`, which calls a shared `answer()` function. The MCP server at `/api/mcp` calls the same `answer()` — see [MCP server](#mcp-server) below.
 
+### Knowledge-base panel
+
+Alongside the chat, a side panel lists every file in the public knowledge base.
+As the agent cites sources, those files are surfaced to the top of the list and
+highlighted; clicking a citation in an answer opens that file in an in-app
+viewer (markdown, YAML, HTML, and PDF are supported). The panel is resizable and
+collapsible, and becomes a drawer on small screens.
+
 ## Local development
 
 Prereqs: Node 20+, pnpm, an Anthropic API key.
