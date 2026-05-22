@@ -1,7 +1,8 @@
 {
   "name": "queryme",
   "version": "1.0.0",
-  "description": "",
+  "description": "Alexandre Collet's queryable CV — an AI agent that answers questions about his background, with an open knowledge base and an MCP endpoint.",
+  "private": true,
   "scripts": {
     "dev": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_BASE_URL next dev",
     "build": "pnpm validate:kb && next build",
@@ -13,9 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["cv", "ai-agent", "next.js", "knowledge-base", "mcp"],
+  "author": "Alexandre Collet",
+  "license": "MIT",
   "packageManager": "pnpm@10.33.4",
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.79",
@@ -56,7 +57,6 @@
     "msw": "^2.14.6",
     "tsx": "^4.22.3",
     "typescript": "^5.9.3",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.7"
   }
 }

@@ -13,9 +13,6 @@ export function assemblePublicKbText(kb: Kb): string {
   return sections.join("\n\n");
 }
 
-// Back-compat alias — remove once /api/chat route is updated (Task 16).
-export const assembleKbText = assemblePublicKbText;
-
 function renderProfile(kb: Kb): string {
   const { profile } = kb;
   const lines = [

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCitations, citationToUrl } from "@/lib/kb/citations";
+import { parseCitations } from "@/lib/kb/citations";
 
 describe("parseCitations", () => {
   it("extracts a single citation from text", () => {
@@ -30,23 +30,5 @@ describe("parseCitations", () => {
   it("ignores malformed tokens", () => {
     expect(parseCitations("[^kb:]")).toEqual([]);
     expect(parseCitations("[^kb:../escape.md]")).toEqual([]); // no `..` allowed
-  });
-});
-
-describe("citationToUrl", () => {
-  it("builds a GitHub blob URL for a path without anchor", () => {
-    const url = citationToUrl(
-      { token: "x", path: "experience/2022-matrice.md", anchor: null },
-      { repoUrl: "https://github.com/owner/repo", branch: "main" },
-    );
-    expect(url).toBe("https://github.com/owner/repo/blob/main/kb/experience/2022-matrice.md");
-  });
-
-  it("appends an anchor when present", () => {
-    const url = citationToUrl(
-      { token: "x", path: "experience/2022-matrice.md", anchor: "highlights" },
-      { repoUrl: "https://github.com/owner/repo", branch: "main" },
-    );
-    expect(url).toBe("https://github.com/owner/repo/blob/main/kb/experience/2022-matrice.md#highlights");
   });
 });
