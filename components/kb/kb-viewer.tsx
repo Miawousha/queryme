@@ -71,26 +71,26 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
           : "h-full",
       )}
     >
-      <div className="flex items-center gap-2 border-b border-[var(--color-border)] pb-2">
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back to the file list"
-          className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+          className="shrink-0 whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
           style={{ letterSpacing: "0.2em" }}
         >
           ‹ files
         </button>
-        <span className="truncate text-[13px] text-[var(--color-text-primary)]">
+        <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-primary)]">
           {file.title}
         </span>
         <span
-          className="rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-text-secondary)]"
+          className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-text-secondary)]"
           style={{ letterSpacing: "0.16em" }}
         >
           {file.type}
         </span>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           {file.meta && (
             <button
               type="button"
@@ -132,7 +132,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto pt-3">
+      <div className="min-h-0 flex-1 overflow-auto p-4">
         {showMeta && file.meta && <KbMetaCard meta={file.meta} />}
 
         {error && (

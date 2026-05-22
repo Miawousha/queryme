@@ -121,7 +121,7 @@ export function Chat({
         }}
       />
 
-      <header className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3">
+      <header className="flex h-11 shrink-0 items-center justify-between border-b border-[var(--color-border)] px-5">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden
