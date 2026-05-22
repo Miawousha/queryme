@@ -42,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={`${sora.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${dmSans.variable}`}
+      suppressHydrationWarning
     >
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
