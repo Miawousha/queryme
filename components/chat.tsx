@@ -28,6 +28,32 @@ function loadOrCreateConversationId(): string {
   return id;
 }
 
+type ChatIdentity = {
+  name?: string;
+  company?: string;
+  hiringFor?: string;
+};
+
+/**
+ * Find the most recent `identify_interviewer` tool call across the transcript.
+ * The tool call streams as a `tool-identify_interviewer` part whose `input` is
+ * the identity the agent supplied. Live-session only — not rehydrated.
+ */
+function latestIdentity(
+  messages: { parts: { type: string }[] }[],
+): ChatIdentity | null {
+  let found: ChatIdentity | null = null;
+  for (const m of messages) {
+    for (const p of m.parts) {
+      if (p.type === "tool-identify_interviewer") {
+        const input = (p as { input?: ChatIdentity }).input;
+        if (input) found = input;
+      }
+    }
+  }
+  return found;
+}
+
 export function Chat({ t }: ChatProps) {
   const { setCitedPaths, openFile } = useKb();
   const [conversationId, setConversationId] = useState("");
@@ -56,6 +82,17 @@ export function Chat({ t }: ChatProps) {
     [],
   );
   const { messages, sendMessage, status, error } = useChat({ transport });
+
+  const identity = useMemo(() => latestIdentity(messages), [messages]);
+  const identitySummary = identity
+    ? [
+        identity.name,
+        identity.company,
+        identity.hiringFor ? `${t.identity.hiring} ${identity.hiringFor}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
 
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -150,6 +187,17 @@ export function Chat({ t }: ChatProps) {
           /chat
         </span>
       </header>
+
+      {identitySummary && (
+        <div className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-card)]/40 px-5 py-1.5">
+          <span
+            className="font-mono text-[10px] uppercase text-[var(--color-text-secondary)]"
+            style={{ letterSpacing: "0.18em" }}
+          >
+            {t.identity.chipPrefix}: {identitySummary}
+          </span>
+        </div>
+      )}
 
       <div
         ref={scrollRef}
