@@ -103,19 +103,10 @@ export function KbLayout({
               className="hidden w-1 shrink-0 cursor-col-resize bg-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)] sm:block"
             />
             <div
-              className="hidden shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-card)]/30 p-4 sm:flex"
+              className="hidden shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-card)]/30 sm:flex"
               style={{ width: `${widthPct}%` }}
             >
-              <button
-                type="button"
-                onClick={() => setCollapsed(true)}
-                aria-label="Collapse the knowledge base panel"
-                className="mb-2 self-end font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-                style={{ letterSpacing: "0.2em" }}
-              >
-                collapse ›
-              </button>
-              <div className="min-h-0 flex-1">{panel}</div>
+              {panel}
             </div>
           </>
         )}
@@ -131,17 +122,19 @@ export function KbLayout({
         KB
       </button>
       {drawerOpen && (
-        <div className="fixed inset-0 z-40 flex flex-col bg-[var(--color-background)] p-4 sm:hidden">
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(false)}
-            aria-label="Close the knowledge base panel"
-            className="mb-3 self-end font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
-            style={{ letterSpacing: "0.2em" }}
-          >
-            close ›
-          </button>
-          <div className="min-h-0 flex-1 overflow-auto">{panel}</div>
+        <div className="fixed inset-0 z-40 flex flex-col bg-[var(--color-background)] sm:hidden">
+          <div className="flex shrink-0 justify-end px-4 py-2">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Close the knowledge base panel"
+              className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+              style={{ letterSpacing: "0.2em" }}
+            >
+              close ›
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">{panel}</div>
         </div>
       )}
     </>
