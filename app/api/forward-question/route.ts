@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db/client";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
+import { requestIp } from "@/lib/request-ip";
 import { forwardQuestion } from "@/lib/questions/repo";
 
 export const runtime = "nodejs";
@@ -22,12 +23,15 @@ export async function POST(req: NextRequest) {
 
   const parsed = Body.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request shape", details: parsed.error.issues }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request shape" }, { status: 400 });
   }
 
   const kv = getKv();
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-  const limit = await checkRateLimit(kv, { key: `forward:ip:${ip}`, limit: 10, windowSeconds: 3600 });
+  const limit = await checkRateLimit(kv, {
+    key: `forward:ip:${requestIp(req)}`,
+    limit: 10,
+    windowSeconds: 3600,
+  });
   if (!limit.allowed) {
     return NextResponse.json({ error: "Too many forwarded questions" }, { status: 429 });
   }
