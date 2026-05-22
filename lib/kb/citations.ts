@@ -4,11 +4,6 @@ export type Citation = {
   anchor: string | null;
 };
 
-export type CitationConfig = {
-  repoUrl: string;
-  branch: string;
-};
-
 const CITATION_RE = /\[\^kb:([a-zA-Z0-9._/-]+\.(?:md|yaml))(#[a-zA-Z0-9_-]+)?\]/g;
 
 export function parseCitations(text: string): Citation[] {
@@ -23,9 +18,4 @@ export function parseCitations(text: string): Citation[] {
     });
   }
   return out;
-}
-
-export function citationToUrl(citation: Citation, config: CitationConfig): string {
-  const base = `${config.repoUrl.replace(/\/$/, "")}/blob/${config.branch}/kb/${citation.path}`;
-  return citation.anchor ? `${base}#${citation.anchor}` : base;
 }

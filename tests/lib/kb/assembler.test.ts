@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import path from "node:path";
 import { loadKb, type Kb } from "@/lib/kb/loader";
-import { assembleKbText } from "@/lib/kb/assembler";
+import { assemblePublicKbText } from "@/lib/kb/assembler";
 
 const FIXTURE_DIR = path.resolve(__dirname, "../../fixtures/kb");
 
-describe("assembleKbText", () => {
+describe("assemblePublicKbText", () => {
   let kb: Kb;
 
   beforeAll(async () => {
@@ -13,21 +13,21 @@ describe("assembleKbText", () => {
   });
 
   it("includes a top-level profile section with name and headline", () => {
-    const text = assembleKbText(kb);
+    const text = assemblePublicKbText(kb);
     expect(text).toContain("# Profile");
     expect(text).toContain("Test Person");
     expect(text).toContain("Test headline");
   });
 
   it("includes skills with level and years", () => {
-    const text = assembleKbText(kb);
+    const text = assemblePublicKbText(kb);
     expect(text).toContain("# Skills");
     expect(text).toContain("TypeScript");
     expect(text).toMatch(/TypeScript[^\n]*level: 5[^\n]*years: 10/);
   });
 
   it("includes one section per experience entry with file ref", () => {
-    const text = assembleKbText(kb);
+    const text = assemblePublicKbText(kb);
     expect(text).toContain("# Experience");
     expect(text).toContain("## Fixture Co — Engineer (2024-01 → present)");
     expect(text).toContain("[ref: experience/2024-fixture-co.md]");
@@ -35,14 +35,14 @@ describe("assembleKbText", () => {
   });
 
   it("includes one section per project entry with file ref", () => {
-    const text = assembleKbText(kb);
+    const text = assemblePublicKbText(kb);
     expect(text).toContain("# Projects");
     expect(text).toContain("## Fixture Project (2025)");
     expect(text).toContain("[ref: projects/fixture-project.md]");
   });
 
   it("includes education and public contact sections", () => {
-    const text = assembleKbText(kb);
+    const text = assemblePublicKbText(kb);
     expect(text).toContain("# Education");
     expect(text).toContain("Test University");
     expect(text).toContain("# Public contact");
@@ -50,7 +50,7 @@ describe("assembleKbText", () => {
   });
 
   it("includes a file ref for every YAML-sourced section so claims are citable", () => {
-    const text = assembleKbText(kb);
+    const text = assemblePublicKbText(kb);
     expect(text).toContain("[ref: profile.yaml]");
     expect(text).toContain("[ref: skills.yaml]");
     expect(text).toContain("[ref: education.yaml]");
@@ -58,6 +58,6 @@ describe("assembleKbText", () => {
   });
 
   it("is deterministic — same input produces same output", () => {
-    expect(assembleKbText(kb)).toBe(assembleKbText(kb));
+    expect(assemblePublicKbText(kb)).toBe(assemblePublicKbText(kb));
   });
 });

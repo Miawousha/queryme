@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { loadKb } from "@/lib/kb/loader";
-import { assemblePublicKbText } from "@/lib/kb/assembler";
+import { getCachedPublicKbText } from "@/lib/kb/cache";
 import { answer } from "@/lib/answerer";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { getDb } from "@/lib/db/client";
@@ -36,16 +34,6 @@ const RequestBodySchema = z.object({
   messages: z.array(UIMessageSchema).min(1).max(MAX_TURNS),
   conversationId: z.string().uuid().optional(),
 });
-
-let cachedPublicKbText: string | null = null;
-
-async function getPublicKbText(): Promise<string> {
-  if (cachedPublicKbText !== null) return cachedPublicKbText;
-  const kbDir = path.resolve(process.cwd(), "kb");
-  const kb = await loadKb(kbDir);
-  cachedPublicKbText = assemblePublicKbText(kb);
-  return cachedPublicKbText;
-}
 
 export async function POST(req: NextRequest) {
   let rawBody: unknown;
@@ -87,7 +75,7 @@ export async function POST(req: NextRequest) {
 
   await getOrCreateConversation(db, { id: conversationId, channel: "chat" });
 
-  const publicKbText = await getPublicKbText();
+  const publicKbText = await getCachedPublicKbText();
 
   // Append the last user turn to the transcript before streaming.
   const lastMessage = parsed.data.messages[parsed.data.messages.length - 1];

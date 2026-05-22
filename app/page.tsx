@@ -10,9 +10,7 @@ import { KbPanel } from "@/components/kb/kb-panel";
 import { KbLayout } from "@/components/kb/kb-layout";
 import { McpModal } from "@/components/mcp-modal";
 import { UI_STRINGS, type UiLang } from "@/lib/language";
-
-const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/Miawousha/queryme";
-const BRANCH = process.env.NEXT_PUBLIC_REPO_BRANCH ?? "main";
+import { REPO_URL, REPO_BRANCH } from "@/lib/repo";
 
 export default function Home() {
   const [lang, setLang] = useState<UiLang>("en");
@@ -61,7 +59,7 @@ export default function Home() {
           repo: t.footer.repo,
         }}
         repoUrl={REPO_URL}
-        branch={BRANCH}
+        branch={REPO_BRANCH}
       />
     </KbProvider>
   );

@@ -1,19 +1,12 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
-import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
+import { getCachedKbManifest } from "@/lib/kb/cache";
 import type { KbFileType } from "@/lib/kb/file-type";
 
 export const runtime = "nodejs";
 
 const KB_DIR = path.resolve(process.cwd(), "kb");
-
-let cached: KbFile[] | null = null;
-async function getManifest(): Promise<KbFile[]> {
-  if (cached) return cached;
-  cached = await loadKbManifest(KB_DIR);
-  return cached;
-}
 
 const CONTENT_TYPE: Record<KbFileType, string> = {
   md: "text/plain; charset=utf-8",
@@ -30,7 +23,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   // Whitelist: the path must be an exact manifest entry. Anything else —
   // including traversal attempts — is rejected before touching the filesystem.
-  const manifest = await getManifest();
+  const manifest = await getCachedKbManifest();
   const entry = manifest.find((f) => f.path === requested);
   if (!entry) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });

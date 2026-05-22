@@ -8,15 +8,13 @@ import type { KbFile } from "@/lib/kb/manifest";
 import { KbMetaCard } from "@/components/kb/kb-meta-card";
 import { useKb } from "@/components/kb/kb-context";
 import { useDialog } from "@/lib/use-dialog";
+import { REPO_URL, REPO_BRANCH } from "@/lib/repo";
 import { cn } from "@/lib/utils";
 
 /** Strips a leading YAML frontmatter block so it never reaches the renderer. */
 function stripFrontmatter(text: string): string {
   return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
 }
-
-const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/Miawousha/queryme";
-const BRANCH = process.env.NEXT_PUBLIC_REPO_BRANCH ?? "main";
 
 function fileUrl(path: string): string {
   return `/api/kb/file?path=${encodeURIComponent(path)}`;
@@ -115,7 +113,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
             </button>
           )}
           <a
-            href={`${REPO_URL.replace(/\/$/, "")}/blob/${BRANCH}/kb/${file.path}`}
+            href={`${REPO_URL.replace(/\/$/, "")}/blob/${REPO_BRANCH}/kb/${file.path}`}
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"

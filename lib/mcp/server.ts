@@ -1,8 +1,6 @@
-import path from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getDb } from "@/lib/db/client";
-import { loadKb } from "@/lib/kb/loader";
-import { assemblePublicKbText } from "@/lib/kb/assembler";
+import { getCachedPublicKbText } from "@/lib/kb/cache";
 import { answer } from "@/lib/answerer";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 import { forwardQuestion } from "@/lib/questions/repo";
@@ -12,16 +10,6 @@ import {
   AskInputSchema,
   ForwardQuestionInputSchema,
 } from "@/lib/mcp/tools";
-
-// Public KB text is immutable for the process lifetime — load once.
-let cachedPublicKbText: string | null = null;
-
-async function loadPublicKbText(): Promise<string> {
-  if (cachedPublicKbText !== null) return cachedPublicKbText;
-  const kb = await loadKb(path.resolve(process.cwd(), "kb"));
-  cachedPublicKbText = assemblePublicKbText(kb);
-  return cachedPublicKbText;
-}
 
 // Wrap a handler result object into a standard MCP tool result: JSON text
 // content, with `isError` set when the handler reports a failure.
@@ -67,7 +55,7 @@ export function buildMcpServer(): McpServer {
             db: getDb(),
             getOrCreateConversation,
             appendTurn,
-            loadPublicKbText,
+            loadPublicKbText: getCachedPublicKbText,
             produceAnswer: async ({ messages, kbText }) => {
               const streamed = await answer({ messages, kbText });
               return await streamed.text;

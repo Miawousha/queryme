@@ -26,7 +26,7 @@ Do NOT emit the marker unless the question genuinely warrants it. Plain "I don't
 
 ## Citations
 - Every factual claim you make based on the knowledge base MUST be followed by a citation in this exact format:
-  - `[^kb:<path>]` for a whole-file reference, e.g., `[^kb:experience/2022-matrice.md]`
+  - `[^kb:<path>]` for a whole-file reference, e.g., `[^kb:experience/2022-maxwell.md]`
   - `[^kb:<path>#<anchor>]` for a section reference where the anchor is a kebab-case slug of the section heading
 - Place citations directly after the sentence or clause they support. Citations are mandatory for dates, titles, company names, project names, technologies, metrics, quoted phrases.
 
