@@ -80,9 +80,16 @@ export function ChatMessage({ role, text, onForward, onOpenArtifact }: ChatMessa
         className={cn(
           "relative max-w-[85%] rounded-2xl px-4 py-3",
           isAssistant
-            ? "border border-[var(--color-border)] bg-[rgba(var(--color-primary-rgb),0.06)]"
-            : "bg-[rgba(var(--color-accent-rgb),0.12)] text-[var(--color-text-primary)] ring-1 ring-[rgba(var(--color-accent-rgb),0.25)]",
+            ? "border border-[var(--color-border)] bg-[var(--color-card)]"
+            : "bg-[var(--color-card)] text-[var(--color-text-primary)] ring-1 ring-[rgba(var(--color-accent-rgb),0.25)]",
         )}
+        // Opaque `--color-card` fill with a flat tint painted on top, so the
+        // dot-grid background never shows through the bubble.
+        style={{
+          backgroundImage: isAssistant
+            ? "linear-gradient(rgba(var(--color-primary-rgb),0.06), rgba(var(--color-primary-rgb),0.06))"
+            : "linear-gradient(rgba(var(--color-accent-rgb),0.12), rgba(var(--color-accent-rgb),0.12))",
+        }}
       >
         {isAssistant && (
           <span

@@ -183,10 +183,9 @@ export function Chat({
                     onClick={() => submit(s)}
                     disabled={isBusy}
                     className={cn(
-                      "group rounded-full border border-[var(--color-border)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
+                      "group rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
                       "transition-all duration-200",
                       "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
-                      "hover:bg-[rgba(var(--color-primary-rgb),0.10)]",
                       "disabled:cursor-not-allowed disabled:opacity-50",
                     )}
                   >
@@ -218,7 +217,7 @@ export function Chat({
       )}
 
       <form
-        className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/40"
+        className="border-t border-[var(--color-border)] bg-[var(--color-surface)]"
         onSubmit={(e) => {
           e.preventDefault();
           submit(input);
