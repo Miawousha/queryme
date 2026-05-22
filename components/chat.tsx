@@ -151,51 +151,51 @@ export function Chat({
 
       <div ref={scrollRef} className="chat-scroll flex-1 overflow-y-auto px-5 py-6 sm:px-6">
         <div className="fade-up mx-auto flex w-full max-w-3xl flex-col gap-4" style={{ animationDelay: "0.15s" }}>
-        <ChatMessage role="assistant" text={intro} />
-        {messages.map((m, i) => {
-          const isLastMessage = i === messages.length - 1;
-          const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
-          return (
-            <StreamingMessage
-              key={m.id}
-              role={m.role === "user" ? "user" : "assistant"}
-              text={messageText(m)}
-              isStreaming={isStreaming}
-              onForward={handleForward}
-              onOpenArtifact={openFile}
-            />
-          );
-        })}
+          <ChatMessage role="assistant" text={intro} />
+          {messages.map((m, i) => {
+            const isLastMessage = i === messages.length - 1;
+            const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
+            return (
+              <StreamingMessage
+                key={m.id}
+                role={m.role === "user" ? "user" : "assistant"}
+                text={messageText(m)}
+                isStreaming={isStreaming}
+                onForward={handleForward}
+                onOpenArtifact={openFile}
+              />
+            );
+          })}
 
-        {messages.length === 0 && (
-          <div className="mt-3 flex flex-col gap-3">
-            <p
-              className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
-              style={{ letterSpacing: "0.3em" }}
-            >
-              {startersTitle}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {starters.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => submit(s)}
-                  disabled={isBusy}
-                  className={cn(
-                    "group rounded-full border border-[var(--color-border)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
-                    "transition-all duration-200",
-                    "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
-                    "hover:bg-[rgba(var(--color-primary-rgb),0.10)]",
-                    "disabled:cursor-not-allowed disabled:opacity-50",
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
+          {messages.length === 0 && (
+            <div className="mt-3 flex flex-col gap-3">
+              <p
+                className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+                style={{ letterSpacing: "0.3em" }}
+              >
+                {startersTitle}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {starters.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => submit(s)}
+                    disabled={isBusy}
+                    className={cn(
+                      "group rounded-full border border-[var(--color-border)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
+                      "transition-all duration-200",
+                      "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
+                      "hover:bg-[rgba(var(--color-primary-rgb),0.10)]",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
