@@ -189,7 +189,11 @@ export function Chat({ t }: ChatProps) {
       </header>
 
       {identitySummary && (
-        <div className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-card)]/40 px-5 py-1.5">
+        <div
+          role="status"
+          aria-live="polite"
+          className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-card)]/40 px-5 py-1.5"
+        >
           <span
             className="font-mono text-[10px] uppercase text-[var(--color-text-secondary)]"
             style={{ letterSpacing: "0.18em" }}
