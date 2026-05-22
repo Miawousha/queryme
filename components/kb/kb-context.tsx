@@ -10,8 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
+import { UI_STRINGS, type KbStrings, type UiLang } from "@/lib/language";
 
 type KbContextValue = {
+  /** Localized KB UI strings for the active language. */
+  strings: KbStrings;
   /** Every public KB file. Empty until the manifest fetch resolves. */
   manifest: KbFile[];
   /** Ordered KB paths the agent has cited so far this conversation. */
@@ -31,7 +34,8 @@ export function useKb(): KbContextValue {
   return ctx;
 }
 
-export function KbProvider({ children }: { children: ReactNode }) {
+export function KbProvider({ lang, children }: { lang: UiLang; children: ReactNode }) {
+  const strings = UI_STRINGS[lang].kb;
   const [manifest, setManifest] = useState<KbFile[]>([]);
   const [citedPaths, setCitedPaths] = useState<string[]>([]);
   const [openFilePath, setOpenFilePath] = useState<string | null>(null);
@@ -55,8 +59,8 @@ export function KbProvider({ children }: { children: ReactNode }) {
   const closeFile = useCallback(() => setOpenFilePath(null), []);
 
   const value = useMemo(
-    () => ({ manifest, citedPaths, setCitedPaths, openFilePath, openFile, closeFile }),
-    [manifest, citedPaths, openFilePath, openFile, closeFile],
+    () => ({ strings, manifest, citedPaths, setCitedPaths, openFilePath, openFile, closeFile }),
+    [strings, manifest, citedPaths, openFilePath, openFile, closeFile],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

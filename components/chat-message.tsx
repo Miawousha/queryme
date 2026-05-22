@@ -28,6 +28,10 @@ function urlTransform(url: string): string {
 export type ChatMessageProps = {
   role: "user" | "assistant";
   text: string;
+  /** Localized label for the assistant role tag. */
+  agentLabel: string;
+  /** Localized label for the inline "forward to Alexandre" button. */
+  forwardLabel: string;
   onForward?: (question: string) => void;
   onOpenArtifact?: (path: string) => void;
 };
@@ -64,7 +68,14 @@ function rewriteCitations(text: string): string {
   return out;
 }
 
-export function ChatMessage({ role, text, onForward, onOpenArtifact }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  text,
+  agentLabel,
+  forwardLabel,
+  onForward,
+  onOpenArtifact,
+}: ChatMessageProps) {
   const isAssistant = role === "assistant";
   const rendered = isAssistant ? rewriteCitations(text) : text;
   const chunks = isAssistant ? splitOnMarkers(rendered) : [];
@@ -96,7 +107,7 @@ export function ChatMessage({ role, text, onForward, onOpenArtifact }: ChatMessa
             className="mb-1 block font-mono text-[9px] uppercase text-[var(--color-primary)]"
             style={{ letterSpacing: "0.32em" }}
           >
-            agent
+            {agentLabel}
           </span>
         )}
         {isAssistant ? (
@@ -110,7 +121,7 @@ export function ChatMessage({ role, text, onForward, onOpenArtifact }: ChatMessa
                     onClick={() => onForward?.(chunk.question)}
                     className="mt-2 mr-2 inline-flex rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)] hover:bg-[rgba(var(--color-primary-rgb),0.10)]"
                   >
-                    Send this question to Alexandre
+                    {forwardLabel}
                   </button>
                 );
               }

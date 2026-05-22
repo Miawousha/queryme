@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { KbFile } from "@/lib/kb/manifest";
 import { KbMetaCard } from "@/components/kb/kb-meta-card";
+import { useKb } from "@/components/kb/kb-context";
 import { useDialog } from "@/lib/use-dialog";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ function fileUrl(path: string): string {
 }
 
 export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void }) {
+  const { strings } = useKb();
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [focus, setFocus] = useState(false);
@@ -76,11 +78,11 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back to the file list"
+          aria-label={strings.backToList}
           className="shrink-0 whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
           style={{ letterSpacing: "0.2em" }}
         >
-          ‹ files
+          ‹ {strings.back}
         </button>
         <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-primary)]">
           {file.title}
@@ -96,9 +98,9 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
             <button
               type="button"
               onClick={() => setShowMeta((v) => !v)}
-              aria-label={showMeta ? "Hide file details" : "Show file details"}
+              aria-label={showMeta ? strings.hideDetails : strings.showDetails}
               aria-pressed={showMeta}
-              title="File details"
+              title={strings.details}
               className={cn(
                 "inline-flex h-6 w-6 items-center justify-center rounded-full border transition-colors",
                 showMeta
@@ -119,16 +121,16 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
             className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
             style={{ letterSpacing: "0.2em" }}
           >
-            GitHub
+            {strings.github}
           </a>
           <button
             type="button"
             onClick={() => setFocus((v) => !v)}
-            aria-label={focus ? "Exit focus mode" : "Expand to focus mode"}
+            aria-label={focus ? strings.exitFocus : strings.expandFocus}
             className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
             style={{ letterSpacing: "0.2em" }}
           >
-            {focus ? "minimize" : "expand"}
+            {focus ? strings.minimize : strings.expand}
           </button>
         </div>
       </div>
@@ -136,12 +138,10 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {showMeta && file.meta && <KbMetaCard meta={file.meta} />}
 
-        {error && (
-          <p className="text-xs text-red-500">Couldn&apos;t load this file.</p>
-        )}
+        {error && <p className="text-xs text-red-500">{strings.loadError}</p>}
 
         {needsText && !error && text === null && (
-          <p className="text-xs text-[var(--color-text-tertiary)]">Loading…</p>
+          <p className="text-xs text-[var(--color-text-tertiary)]">{strings.loading}</p>
         )}
 
         {file.type === "md" && text !== null && (
