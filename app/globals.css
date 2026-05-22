@@ -23,7 +23,7 @@
 
   --color-text-primary: #e4ebf5;
   --color-text-secondary: #7b90a8;
-  --color-text-tertiary: #4a6178;
+  --color-text-tertiary: #788da3;
   --color-text-primary-rgb: 228, 235, 245;
 
   /* shadcn-compatible aliases so existing primitives still work. */
@@ -63,7 +63,7 @@
 
   --color-text-primary: #0c1824;
   --color-text-secondary: #5c6b7e;
-  --color-text-tertiary: #8694a6;
+  --color-text-tertiary: #69788a;
   --color-text-primary-rgb: 12, 24, 36;
 
   color-scheme: light;
@@ -97,6 +97,22 @@ body {
 ::selection {
   background: rgba(var(--color-accent-rgb), 0.25);
   color: var(--color-text-primary);
+}
+
+/*
+ * Respect the OS "reduce motion" setting — collapse every CSS animation and
+ * transition. The animated dot-grid and the streamed-text reveal opt out
+ * separately in their components, which check the same media query in JS.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @keyframes matPulse {

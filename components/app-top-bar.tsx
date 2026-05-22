@@ -43,6 +43,7 @@ export function AppTopBar({
 }: AppTopBarProps) {
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-2.5 backdrop-blur sm:px-6">
+      <h1 className="sr-only">Alexandre Collet — Queryable CV</h1>
       <div className="flex shrink-0 items-center gap-3">
         <MatriceLogo size={28} animated />
         {/* Name hidden on mobile — the controls cluster needs the full row width. */}

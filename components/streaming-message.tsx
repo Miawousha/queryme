@@ -52,13 +52,20 @@ function useSmoothStream(target: string, isStreaming: boolean): string {
     }
   };
 
+  // Honor "reduce motion": skip the character-by-character reveal entirely
+  // and show each message in full.
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   // (Re)arm the reveal loop whenever new text arrives or streaming state flips.
   useEffect(() => {
+    if (prefersReducedMotion) return;
     if (rafRef.current == null && lengthRef.current < target.length) {
       lastTsRef.current = null;
       rafRef.current = requestAnimationFrame((t) => tickRef.current(t));
     }
-  }, [target, isStreaming]);
+  }, [target, isStreaming, prefersReducedMotion]);
 
   useEffect(() => {
     return () => {
@@ -66,7 +73,7 @@ function useSmoothStream(target: string, isStreaming: boolean): string {
     };
   }, []);
 
-  return target.slice(0, lengthRef.current);
+  return prefersReducedMotion ? target : target.slice(0, lengthRef.current);
 }
 
 export type StreamingMessageProps = Omit<ChatMessageProps, "text"> & {
