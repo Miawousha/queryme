@@ -5,7 +5,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { KbFile } from "@/lib/kb/manifest";
+import { KbMetaCard } from "@/components/kb/kb-meta-card";
 import { cn } from "@/lib/utils";
+
+/** Strips a leading YAML frontmatter block so it never reaches the renderer. */
+function stripFrontmatter(text: string): string {
+  return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+}
 
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/Miawousha/queryme";
 const BRANCH = process.env.NEXT_PUBLIC_REPO_BRANCH ?? "main";
@@ -18,6 +24,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [showMeta, setShowMeta] = useState(false);
 
   // md and yaml are fetched as text and rendered inline; html and pdf are
   // loaded directly by an <iframe> from the file endpoint.
@@ -25,6 +32,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
 
   useEffect(() => {
     setFocus(false);
+    setShowMeta(false);
   }, [file.path]);
 
   useEffect(() => {
@@ -83,6 +91,26 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
           {file.type}
         </span>
         <div className="ml-auto flex items-center gap-3">
+          {file.meta && (
+            <button
+              type="button"
+              onClick={() => setShowMeta((v) => !v)}
+              aria-label={showMeta ? "Hide file details" : "Show file details"}
+              aria-pressed={showMeta}
+              title="File details"
+              className={cn(
+                "inline-flex h-6 w-6 items-center justify-center rounded-full border transition-colors",
+                showMeta
+                  ? "border-[var(--color-accent)] text-[var(--color-accent)]"
+                  : "border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]",
+              )}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+            </button>
+          )}
           <a
             href={`${REPO_URL.replace(/\/$/, "")}/blob/${BRANCH}/kb/${file.path}`}
             target="_blank"
@@ -105,6 +133,8 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto pt-3">
+        {showMeta && file.meta && <KbMetaCard meta={file.meta} />}
+
         {error && (
           <p className="text-xs text-red-500">Couldn&apos;t load this file.</p>
         )}
@@ -116,7 +146,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
         {file.type === "md" && text !== null && (
           <div className="prose-chat">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-              {text}
+              {stripFrontmatter(text)}
             </ReactMarkdown>
           </div>
         )}

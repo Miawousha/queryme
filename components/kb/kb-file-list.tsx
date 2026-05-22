@@ -1,6 +1,7 @@
 "use client";
 
 import type { KbFile } from "@/lib/kb/manifest";
+import { metaSubtitle } from "@/lib/kb/meta-format";
 import { cn } from "@/lib/utils";
 
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
@@ -14,6 +15,8 @@ function FileRow({
   cited: boolean;
   onOpen: (path: string) => void;
 }) {
+  const subtitle = metaSubtitle(file.meta);
+
   return (
     <button
       type="button"
@@ -31,16 +34,23 @@ function FileRow({
           className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]"
         />
       )}
-      <span
-        className={cn(
-          "truncate text-[13px]",
-          cited ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]",
+      <span className="flex min-w-0 flex-col">
+        <span
+          className={cn(
+            "truncate text-[13px]",
+            cited ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]",
+          )}
+        >
+          {file.title}
+        </span>
+        {subtitle && (
+          <span className="truncate text-[11px] text-[var(--color-text-tertiary)]">
+            {subtitle}
+          </span>
         )}
-      >
-        {file.title}
       </span>
       <span
-        className="ml-auto shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)]"
+        className="ml-auto shrink-0 self-start font-mono text-[9px] uppercase text-[var(--color-text-tertiary)]"
         style={{ letterSpacing: "0.16em" }}
       >
         {file.type}
