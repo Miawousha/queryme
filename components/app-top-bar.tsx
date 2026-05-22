@@ -43,17 +43,18 @@ export function AppTopBar({
 }: AppTopBarProps) {
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-2.5 backdrop-blur sm:px-6">
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <MatriceLogo size={28} animated />
-        <div className="flex flex-col leading-tight">
+        {/* Name hidden on mobile — the controls cluster needs the full row width. */}
+        <div className="hidden flex-col leading-tight sm:flex">
           <span
-            className="font-mono text-[10px] uppercase text-[var(--color-primary)]"
+            className="whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-primary)]"
             style={{ letterSpacing: "0.32em" }}
           >
             Alexandre Collet
           </span>
           <span
-            className="font-display text-[14px] font-medium text-[var(--color-text-primary)]"
+            className="whitespace-nowrap font-display text-[14px] font-medium text-[var(--color-text-primary)]"
             style={{ letterSpacing: "-0.01em" }}
           >
             Queryable CV
@@ -61,7 +62,7 @@ export function AppTopBar({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <ThemeToggle label={themeToggleLabel} />
         <button
           type="button"
