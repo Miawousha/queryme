@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useDialog } from "@/lib/use-dialog";
 
 export type AboutPopoverStrings = {
   title: string;
@@ -31,14 +31,7 @@ export function AboutPopover({
   repoUrl,
   branch,
 }: AboutPopoverProps) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  const dialogRef = useDialog<HTMLDivElement>(open, onClose);
 
   if (!open) return null;
 
@@ -52,16 +45,21 @@ export function AboutPopover({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={strings.title}
+      aria-labelledby="about-popover-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 shadow-2xl"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 shadow-2xl outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="font-display text-base font-semibold text-[var(--color-text-primary)]">
+          <h2
+            id="about-popover-title"
+            className="font-display text-base font-semibold text-[var(--color-text-primary)]"
+          >
             {strings.title}
           </h2>
           <button
