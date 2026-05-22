@@ -111,13 +111,10 @@ export function Chat({
   }, [messages, setCitedPaths]);
 
   return (
-    <section
-      className="fade-up relative flex h-[68vh] min-h-[480px] flex-col overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-[var(--color-card)]/70 backdrop-blur-md"
-      style={{ animationDelay: "0.25s" }}
-    >
+    <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-card)]/20">
       <span
         aria-hidden
-        className="pointer-events-none absolute -top-24 left-1/2 h-[260px] w-[260px] -translate-x-1/2 rounded-full"
+        className="pointer-events-none absolute -top-24 left-1/2 h-[260px] w-[420px] -translate-x-1/2 rounded-full"
         style={{
           background: "radial-gradient(circle, rgba(var(--color-accent-rgb),0.10) 0%, transparent 70%)",
           filter: "blur(20px)",
@@ -152,58 +149,60 @@ export function Chat({
         </span>
       </header>
 
-      <div ref={scrollRef} className="chat-scroll flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
-        <ChatMessage role="assistant" text={intro} />
-        {messages.map((m, i) => {
-          const isLastMessage = i === messages.length - 1;
-          const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
-          return (
-            <StreamingMessage
-              key={m.id}
-              role={m.role === "user" ? "user" : "assistant"}
-              text={messageText(m)}
-              isStreaming={isStreaming}
-              onForward={handleForward}
-              onOpenArtifact={openFile}
-            />
-          );
-        })}
+      <div ref={scrollRef} className="chat-scroll flex-1 overflow-y-auto px-5 py-6 sm:px-6">
+        <div className="fade-up mx-auto flex w-full max-w-3xl flex-col gap-4" style={{ animationDelay: "0.15s" }}>
+          <ChatMessage role="assistant" text={intro} />
+          {messages.map((m, i) => {
+            const isLastMessage = i === messages.length - 1;
+            const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
+            return (
+              <StreamingMessage
+                key={m.id}
+                role={m.role === "user" ? "user" : "assistant"}
+                text={messageText(m)}
+                isStreaming={isStreaming}
+                onForward={handleForward}
+                onOpenArtifact={openFile}
+              />
+            );
+          })}
 
-        {messages.length === 0 && (
-          <div className="mt-3 flex flex-col gap-3">
-            <p
-              className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
-              style={{ letterSpacing: "0.3em" }}
-            >
-              {startersTitle}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {starters.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => submit(s)}
-                  disabled={isBusy}
-                  className={cn(
-                    "group rounded-full border border-[var(--color-border)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
-                    "transition-all duration-200",
-                    "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
-                    "hover:bg-[rgba(var(--color-primary-rgb),0.10)]",
-                    "disabled:cursor-not-allowed disabled:opacity-50",
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
+          {messages.length === 0 && (
+            <div className="mt-3 flex flex-col gap-3">
+              <p
+                className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+                style={{ letterSpacing: "0.3em" }}
+              >
+                {startersTitle}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {starters.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => submit(s)}
+                    disabled={isBusy}
+                    className={cn(
+                      "group rounded-full border border-[var(--color-border)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
+                      "transition-all duration-200",
+                      "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
+                      "hover:bg-[rgba(var(--color-primary-rgb),0.10)]",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {forwardToast && (
         <div
           role="status"
-          className="mx-5 mb-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-2 text-xs text-[var(--color-text-secondary)]"
+          className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-2 text-xs text-[var(--color-text-secondary)]"
         >
           {forwardToast}
         </div>
@@ -212,36 +211,38 @@ export function Chat({
       {error && (
         <div
           role="alert"
-          className="mx-5 mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"
+          className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"
         >
           Something went wrong — please try again.
         </div>
       )}
 
       <form
-        className="flex items-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-surface)]/40 px-4 py-3 sm:px-5"
+        className="border-t border-[var(--color-border)] bg-[var(--color-surface)]/40"
         onSubmit={(e) => {
           e.preventDefault();
           submit(input);
         }}
       >
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={placeholder}
-          rows={1}
-          className="min-h-[42px] resize-none border-transparent bg-transparent text-[14px] focus-visible:border-transparent focus-visible:ring-0"
-          disabled={isBusy}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit(input);
-            }
-          }}
-        />
-        <Button type="submit" disabled={isBusy || !input.trim()} className="shrink-0">
-          {sendLabel}
-        </Button>
+        <div className="mx-auto flex w-full max-w-3xl items-end gap-2 px-4 py-3 sm:px-5">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={placeholder}
+            rows={1}
+            className="min-h-[42px] resize-none border-transparent bg-transparent text-[14px] focus-visible:border-transparent focus-visible:ring-0"
+            disabled={isBusy}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                submit(input);
+              }
+            }}
+          />
+          <Button type="submit" disabled={isBusy || !input.trim()} className="shrink-0">
+            {sendLabel}
+          </Button>
+        </div>
       </form>
     </section>
   );
