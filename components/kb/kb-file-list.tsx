@@ -86,9 +86,11 @@ export function KbFileList({
         </div>
       )}
       <div className="flex flex-col gap-1.5">
-        <span className={LABEL} style={{ letterSpacing: "0.24em" }}>
-          {cited.length > 0 ? "All documents" : "Knowledge base"}
-        </span>
+        {cited.length > 0 && (
+          <span className={LABEL} style={{ letterSpacing: "0.24em" }}>
+            All documents
+          </span>
+        )}
         {rest.map((f) => (
           <FileRow key={f.path} file={f} cited={false} onOpen={onOpen} />
         ))}
