@@ -8,16 +8,37 @@ const MAX_PCT = 60;
 const DEFAULT_PCT = 38;
 
 /**
- * Two-pane layout: `chat` on the left, `panel` on the right.
+ * Two-pane app-shell body: `chat` on the left, `panel` on the right. Fills the
+ * viewport edge-to-edge — the KB pane is flush to the right screen edge.
  * Desktop (>= sm): a draggable divider sets the panel width (persisted); the
- * panel collapses to a rail. Mobile: single column, the panel is a slide-over
- * drawer toggled by the floating button.
+ * panel collapses to a flush rail. Mobile: single column, the panel is a
+ * full-screen overlay toggled by the floating button.
+ *
+ * `collapsed` is optionally controlled: when `collapsed`/`onCollapsedChange`
+ * are passed (by the app shell, so the top-bar KB button can drive it) they
+ * win; otherwise the component keeps the state internally.
  */
-export function KbLayout({ chat, panel }: { chat: ReactNode; panel: ReactNode }) {
+export function KbLayout({
+  chat,
+  panel,
+  collapsed: collapsedProp,
+  onCollapsedChange,
+}: {
+  chat: ReactNode;
+  panel: ReactNode;
+  collapsed?: boolean;
+  onCollapsedChange?: (next: boolean) => void;
+}) {
   const [widthPct, setWidthPct] = useState(DEFAULT_PCT);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsedInternal, setCollapsedInternal] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const dragging = useRef(false);
+
+  const collapsed = collapsedProp ?? collapsedInternal;
+  const setCollapsed = (next: boolean) => {
+    onCollapsedChange?.(next);
+    if (collapsedProp === undefined) setCollapsedInternal(next);
+  };
 
   useEffect(() => {
     const stored = Number(localStorage.getItem(WIDTH_KEY));
@@ -53,7 +74,7 @@ export function KbLayout({ chat, panel }: { chat: ReactNode; panel: ReactNode })
         `chat` is rendered EXACTLY ONCE — it owns a `useChat` instance, so a
         second mount would create a second conversation. `panel` is stateless
         (it reads `KbContext`); rendering it in both the desktop pane and the
-        mobile drawer is a harmless minor duplication.
+        mobile overlay is a harmless minor duplication.
       */}
       <div className="flex min-h-0 flex-1">
         {/* Chat — single instance, in flow on every breakpoint. */}
@@ -65,7 +86,7 @@ export function KbLayout({ chat, panel }: { chat: ReactNode; panel: ReactNode })
             type="button"
             onClick={() => setCollapsed(false)}
             aria-label="Show the knowledge base panel"
-            className="ml-2 hidden w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/60 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)] sm:flex"
+            className="hidden w-9 shrink-0 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-card)]/30 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)] sm:flex"
             style={{ writingMode: "vertical-rl", letterSpacing: "0.3em" }}
           >
             KB
@@ -79,30 +100,28 @@ export function KbLayout({ chat, panel }: { chat: ReactNode; panel: ReactNode })
                 dragging.current = true;
                 document.body.style.userSelect = "none";
               }}
-              className="mx-1 hidden w-1 shrink-0 cursor-col-resize rounded-full bg-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)] sm:block"
+              className="hidden w-1 shrink-0 cursor-col-resize bg-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)] sm:block"
             />
             <div
-              className="hidden shrink-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/40 p-3 sm:block"
+              className="hidden shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-card)]/30 p-4 sm:flex"
               style={{ width: `${widthPct}%` }}
             >
-              <div className="flex h-full flex-col">
-                <button
-                  type="button"
-                  onClick={() => setCollapsed(true)}
-                  aria-label="Collapse the knowledge base panel"
-                  className="mb-2 self-end font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-                  style={{ letterSpacing: "0.2em" }}
-                >
-                  collapse ›
-                </button>
-                <div className="min-h-0 flex-1">{panel}</div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                aria-label="Collapse the knowledge base panel"
+                className="mb-2 self-end font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+                style={{ letterSpacing: "0.2em" }}
+              >
+                collapse ›
+              </button>
+              <div className="min-h-0 flex-1">{panel}</div>
             </div>
           </>
         )}
       </div>
 
-      {/* Mobile drawer trigger (< sm only). */}
+      {/* Mobile KB trigger (< sm only). */}
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
@@ -112,25 +131,17 @@ export function KbLayout({ chat, panel }: { chat: ReactNode; panel: ReactNode })
         KB
       </button>
       {drawerOpen && (
-        <div
-          className="fixed inset-0 z-40 flex justify-end bg-black/50 sm:hidden"
-          onClick={() => setDrawerOpen(false)}
-        >
-          <div
-            className="h-full w-[88%] max-w-sm overflow-auto border-l border-[var(--color-border)] bg-[var(--color-background)] p-4"
-            onClick={(e) => e.stopPropagation()}
+        <div className="fixed inset-0 z-40 flex flex-col bg-[var(--color-background)] p-4 sm:hidden">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Close the knowledge base panel"
+            className="mb-3 self-end font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+            style={{ letterSpacing: "0.2em" }}
           >
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              aria-label="Close the knowledge base panel"
-              className="mb-2 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
-              style={{ letterSpacing: "0.2em" }}
-            >
-              close ›
-            </button>
-            {panel}
-          </div>
+            close ›
+          </button>
+          <div className="min-h-0 flex-1 overflow-auto">{panel}</div>
         </div>
       )}
     </>
