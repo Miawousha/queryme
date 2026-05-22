@@ -62,8 +62,6 @@ export default function Home() {
         <KbLayout
           chat={
             <Chat
-              repoUrl={REPO_URL}
-              branch={BRANCH}
               intro={t.intro}
               placeholder={t.placeholder}
               sendLabel={t.send}

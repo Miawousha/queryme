@@ -4,62 +4,47 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChatMessage } from "@/components/chat-message";
 
-const REPO = "https://github.com/test/repo";
-const BRANCH = "main";
-
 describe("ChatMessage", () => {
   it("renders a user message as plain text", () => {
-    render(
-      <ChatMessage role="user" text="Hello there" repoUrl={REPO} branch={BRANCH} />,
-    );
+    render(<ChatMessage role="user" text="Hello there" />);
     expect(screen.getByText("Hello there")).toBeInTheDocument();
   });
 
   it("renders an assistant message with markdown", () => {
-    render(
-      <ChatMessage
-        role="assistant"
-        text="**bold** and _italic_"
-        repoUrl={REPO}
-        branch={BRANCH}
-      />,
-    );
+    render(<ChatMessage role="assistant" text="**bold** and _italic_" />);
     expect(screen.getByText("bold").tagName).toBe("STRONG");
     expect(screen.getByText("italic").tagName).toBe("EM");
   });
 
-  it("converts a citation token into a superscript link to the github file", () => {
+  it("converts a citation token into a superscript button that opens the cited file", async () => {
+    const onOpenArtifact = vi.fn();
+    const user = userEvent.setup();
     render(
       <ChatMessage
         role="assistant"
         text="He founded Matrice [^kb:experience/2022-matrice.md]."
-        repoUrl={REPO}
-        branch={BRANCH}
+        onOpenArtifact={onOpenArtifact}
       />,
     );
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute(
-      "href",
-      "https://github.com/test/repo/blob/main/kb/experience/2022-matrice.md",
-    );
-    expect(link.tagName).toBe("A");
-    expect(link.closest("sup")).not.toBeNull();
+    const btn = screen.getByRole("button");
+    expect(btn.tagName).toBe("BUTTON");
+    expect(btn.closest("sup")).not.toBeNull();
+    await user.click(btn);
+    expect(onOpenArtifact).toHaveBeenCalledWith("experience/2022-matrice.md");
   });
 
-  it("preserves citation anchors in the href", () => {
+  it("opens the cited file for an anchored citation token", async () => {
+    const onOpenArtifact = vi.fn();
+    const user = userEvent.setup();
     render(
       <ChatMessage
         role="assistant"
         text="See [^kb:experience/2022-matrice.md#highlights]."
-        repoUrl={REPO}
-        branch={BRANCH}
+        onOpenArtifact={onOpenArtifact}
       />,
     );
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute(
-      "href",
-      "https://github.com/test/repo/blob/main/kb/experience/2022-matrice.md#highlights",
-    );
+    await user.click(screen.getByRole("button"));
+    expect(onOpenArtifact).toHaveBeenCalledWith("experience/2022-matrice.md");
   });
 
   it("strips dangerous HTML emitted by the model", () => {
@@ -67,8 +52,6 @@ describe("ChatMessage", () => {
       <ChatMessage
         role="assistant"
         text="Safe text <script>alert('xss')</script> after."
-        repoUrl={REPO}
-        branch={BRANCH}
       />,
     );
     expect(document.querySelector("script")).toBeNull();
@@ -82,8 +65,6 @@ describe("ChatMessage", () => {
       <ChatMessage
         role="assistant"
         text="Not in the KB — [[forward:What were Q1 numbers?]]"
-        repoUrl={REPO}
-        branch={BRANCH}
         onForward={onForward}
       />,
     );

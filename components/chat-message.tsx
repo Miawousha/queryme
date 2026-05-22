@@ -1,25 +1,35 @@
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import { parseCitations, citationToUrl } from "@/lib/kb/citations";
+import { parseCitations } from "@/lib/kb/citations";
 import { cn } from "@/lib/utils";
 
 const sanitizeSchema = {
   ...defaultSchema,
   tagNames: [...(defaultSchema.tagNames ?? []), "sup"],
+  protocols: {
+    ...defaultSchema.protocols,
+    href: [...(defaultSchema.protocols?.href ?? []), "kb"],
+  },
   attributes: {
     ...defaultSchema.attributes,
     a: [...((defaultSchema.attributes?.a as unknown[]) ?? []), ["target"], ["rel"]],
   },
 };
 
+// `react-markdown`'s default URL transform drops unknown protocols, which would
+// strip our internal `kb://` citation links before they reach the `a`
+// renderer. Pass `kb://` URLs through untouched; sanitize everything else.
+function urlTransform(url: string): string {
+  return url.startsWith("kb://") ? url : defaultUrlTransform(url);
+}
+
 export type ChatMessageProps = {
   role: "user" | "assistant";
   text: string;
-  repoUrl: string;
-  branch: string;
   onForward?: (question: string) => void;
+  onOpenArtifact?: (path: string) => void;
 };
 
 type MarkerChunk =
@@ -40,22 +50,23 @@ function splitOnMarkers(text: string): MarkerChunk[] {
   return out;
 }
 
-function rewriteCitations(text: string, repoUrl: string, branch: string): string {
+function rewriteCitations(text: string): string {
   const cites = parseCitations(text);
   let i = 0;
   let out = text;
   for (const c of cites) {
     i += 1;
-    const url = citationToUrl(c, { repoUrl, branch });
-    const replacement = `<sup>[\\[${i}\\]](${url})</sup>`;
+    // `kb://<path>` is an internal sentinel — the `a` renderer below turns it
+    // into a button that opens the file in the KB panel.
+    const replacement = `<sup>[\\[${i}\\]](kb://${c.path})</sup>`;
     out = out.replace(c.token, replacement);
   }
   return out;
 }
 
-export function ChatMessage({ role, text, repoUrl, branch, onForward }: ChatMessageProps) {
+export function ChatMessage({ role, text, onForward, onOpenArtifact }: ChatMessageProps) {
   const isAssistant = role === "assistant";
-  const rendered = isAssistant ? rewriteCitations(text, repoUrl, branch) : text;
+  const rendered = isAssistant ? rewriteCitations(text) : text;
   const chunks = isAssistant ? splitOnMarkers(rendered) : [];
 
   return (
@@ -102,12 +113,27 @@ export function ChatMessage({ role, text, repoUrl, branch, onForward }: ChatMess
                   key={`text-${i}`}
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+                  urlTransform={urlTransform}
                   components={{
-                    a: ({ href, children }) => (
-                      <a href={href} target="_blank" rel="noopener noreferrer">
-                        {children}
-                      </a>
-                    ),
+                    a: ({ href, children }) => {
+                      if (href?.startsWith("kb://")) {
+                        const path = href.slice("kb://".length);
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => onOpenArtifact?.(path)}
+                            className="kb-citation"
+                          >
+                            {children}
+                          </button>
+                        );
+                      }
+                      return (
+                        <a href={href} target="_blank" rel="noopener noreferrer">
+                          {children}
+                        </a>
+                      );
+                    },
                   }}
                 >
                   {chunk.value}

@@ -245,6 +245,16 @@ body {
   margin-left: 0.1em;
 }
 
+.prose-chat sup .kb-citation {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  color: var(--color-accent);
+}
+
 .prose-chat h1,
 .prose-chat h2,
 .prose-chat h3 {

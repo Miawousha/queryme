@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
+import { useKb } from "@/components/kb/kb-context";
+import { extractCitedPaths } from "@/lib/kb/cited-paths";
 import { cn } from "@/lib/utils";
 
 export type ChatProps = {
-  repoUrl: string;
-  branch: string;
   intro: string;
   placeholder: string;
   sendLabel: string;
@@ -31,14 +31,13 @@ function loadOrCreateConversationId(): string {
 }
 
 export function Chat({
-  repoUrl,
-  branch,
   intro,
   placeholder,
   sendLabel,
   startersTitle,
   starters,
 }: ChatProps) {
+  const { setCitedPaths, openFile } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
   useEffect(() => {
@@ -104,6 +103,13 @@ export function Chat({
       .join("");
   }
 
+  useEffect(() => {
+    const assistantTexts = messages
+      .filter((m) => m.role !== "user")
+      .map((m) => messageText(m));
+    setCitedPaths(extractCitedPaths(assistantTexts));
+  }, [messages, setCitedPaths]);
+
   return (
     <section
       className="fade-up relative flex h-[68vh] min-h-[480px] flex-col overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-[var(--color-card)]/70 backdrop-blur-md"
@@ -147,7 +153,7 @@ export function Chat({
       </header>
 
       <div ref={scrollRef} className="chat-scroll flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
-        <ChatMessage role="assistant" text={intro} repoUrl={repoUrl} branch={branch} />
+        <ChatMessage role="assistant" text={intro} />
         {messages.map((m, i) => {
           const isLastMessage = i === messages.length - 1;
           const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
@@ -157,9 +163,8 @@ export function Chat({
               role={m.role === "user" ? "user" : "assistant"}
               text={messageText(m)}
               isStreaming={isStreaming}
-              repoUrl={repoUrl}
-              branch={branch}
               onForward={handleForward}
+              onOpenArtifact={openFile}
             />
           );
         })}
