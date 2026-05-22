@@ -81,13 +81,20 @@ export function AdminDashboard({ data }: { data: AdminData }) {
           </div>
         </header>
 
-        <nav className="flex h-11 shrink-0 items-center border-b border-[var(--color-border)] px-2 sm:px-4">
+        <div
+          role="tablist"
+          aria-label="Admin sections"
+          className="flex h-11 shrink-0 items-center border-b border-[var(--color-border)] px-2 sm:px-4"
+        >
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
+              role="tab"
+              id={`tab-${t.id}`}
+              aria-selected={tab === t.id}
+              aria-controls={`panel-${t.id}`}
               onClick={() => setTab(t.id)}
-              aria-current={tab === t.id ? "page" : undefined}
               className={cn(
                 "relative flex h-full items-center gap-1.5 px-3 font-mono text-[10px] uppercase transition-colors",
                 "after:absolute after:inset-x-3 after:-bottom-px after:h-[2px] after:content-['']",
@@ -107,9 +114,14 @@ export function AdminDashboard({ data }: { data: AdminData }) {
           >
             <TabMeta tab={tab} stats={stats} interviewers={interviewers} />
           </span>
-        </nav>
+        </div>
 
-        <div className="min-h-0 flex-1 overflow-auto px-4 py-6 sm:px-6">
+        <div
+          role="tabpanel"
+          id={`panel-${tab}`}
+          aria-labelledby={`tab-${tab}`}
+          className="min-h-0 flex-1 overflow-auto px-4 py-6 sm:px-6"
+        >
           {tab === "interviewers" && (
             <InterviewersPanel interviewers={interviewers} onOpenConversation={openConversation} />
           )}
