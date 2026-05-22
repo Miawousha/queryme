@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { KbFile } from "@/lib/kb/manifest";
 import { KbMetaCard } from "@/components/kb/kb-meta-card";
+import { useDialog } from "@/lib/use-dialog";
 import { cn } from "@/lib/utils";
 
 /** Strips a leading YAML frontmatter block so it never reaches the renderer. */
@@ -53,19 +54,19 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
     };
   }, [file.path, needsText]);
 
-  useEffect(() => {
-    if (!focus) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setFocus(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [focus]);
+  // In focus mode the viewer is a full-screen overlay — treat it as a modal
+  // dialog (focus trap + restore + Escape). Inert when focus is false.
+  const focusRef = useDialog<HTMLDivElement>(focus, () => setFocus(false));
 
   return (
     <div
+      ref={focusRef}
+      tabIndex={-1}
+      role={focus ? "dialog" : undefined}
+      aria-modal={focus ? "true" : undefined}
+      aria-label={focus ? file.title : undefined}
       className={cn(
-        "flex flex-col",
+        "flex flex-col outline-none",
         focus
           ? "fixed inset-0 z-50 bg-[var(--color-background)] p-4 sm:p-8"
           : "h-full",
