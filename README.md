@@ -81,6 +81,19 @@ pnpm typecheck     # TS only
 pnpm build         # full Next.js build (runs KB validation first)
 ```
 
+## Evals
+
+Golden-question regression suite. Each YAML under `evals/questions/` describes a
+question, the KB files the answer must cite, phrases that must appear, and
+phrases that must not. Run them against the live model:
+
+```bash
+ANTHROPIC_API_KEY=... pnpm evals
+```
+
+Exits non-zero on any failure. Add new questions by dropping a new `*.yaml` in
+the folder.
+
 ## MCP server
 
 queryme exposes the CV agent over the [Model Context Protocol](https://modelcontextprotocol.io)
