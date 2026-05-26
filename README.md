@@ -91,8 +91,12 @@ phrases that must not. Run them against the live model:
 ANTHROPIC_API_KEY=... pnpm evals
 ```
 
-Exits non-zero on any failure. Add new questions by dropping a new `*.yaml` in
-the folder.
+Exits non-zero on any failure: exit `1` means at least one eval failed (a
+real regression in answer quality); exit `2` means the runner could not
+start (missing API key, KB load error). CI can gate on `== 1` to surface
+quality regressions separately from infrastructure flakes.
+
+Add new questions by dropping a new `*.yaml` in the folder.
 
 ## MCP server
 

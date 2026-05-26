@@ -4,5 +4,5 @@ language: en
 mustCite:
   - public-contact.yaml
 mustContain:
-  - linkedin
+  - LinkedIn
 mustNotContain: []
