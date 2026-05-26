@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { AdminData, AdminStats } from "@/lib/admin/data";
 import { CONVERSATION_LIMIT } from "@/lib/admin/data";
 import type { Conversation, QuestionForAlex, InterviewerIdentity } from "@/lib/db/schema";
@@ -8,6 +8,8 @@ import { GridBackground } from "@/components/grid-background";
 import { MatriceLogo } from "@/components/matrice-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/admin/logout-button";
+import { RecordList } from "@/components/admin/record-list";
+import { DetailSidebar } from "@/components/admin/detail-sidebar";
 import { cn } from "@/lib/utils";
 
 function fmt(value: Date | string | null): string {
@@ -24,27 +26,57 @@ function fmt(value: Date | string | null): string {
 }
 
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
-const CARD = "rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/60";
 
 type TabId = "interviewers" | "conversations" | "questions";
 
 export function AdminDashboard({ data }: { data: AdminData }) {
   const { stats, conversations, questions, interviewers } = data;
   const [tab, setTab] = useState<TabId>("interviewers");
+  // One open record per tab — switching tabs preserves what was open in each.
+  const [selected, setSelected] = useState<Record<TabId, string | null>>({
+    interviewers: null,
+    conversations: null,
+    questions: null,
+  });
 
-  // Cross-link from an interviewer card: jump to the Conversations tab and
-  // open + scroll to that conversation. The row only exists in the DOM once
-  // the Conversations panel renders, so the scroll waits a frame.
+  const selectedId = selected[tab];
+  function select(id: string | null) {
+    setSelected((s) => ({ ...s, [tab]: id }));
+  }
+
+  // Cross-link from an interviewer row: jump to the Conversations tab and
+  // open that conversation's detail sidebar. The conversation list might not
+  // be mounted yet, so we sequence with a microtask.
   function openConversation(conversationId: string) {
     setTab("conversations");
-    requestAnimationFrame(() => {
-      const el = document.getElementById(`conv-${conversationId}`);
-      if (el instanceof HTMLDetailsElement) {
-        el.open = true;
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
+    setSelected((s) => ({ ...s, conversations: conversationId }));
   }
+
+  // Lookup tables keep the detail-panel render trivial regardless of which
+  // tab is active.
+  const conversationById = useMemo(
+    () => new Map(conversations.map((c) => [c.id, c])),
+    [conversations],
+  );
+  const interviewerById = useMemo(
+    () => new Map(interviewers.map((c) => [c.id, c])),
+    [interviewers],
+  );
+  const questionById = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
+
+  // If the selected id is no longer in the data set (e.g. data refreshed),
+  // drop it so the sidebar closes rather than showing stale framing.
+  useEffect(() => {
+    if (selected.interviewers && !interviewerById.has(selected.interviewers)) {
+      setSelected((s) => ({ ...s, interviewers: null }));
+    }
+    if (selected.conversations && !conversationById.has(selected.conversations)) {
+      setSelected((s) => ({ ...s, conversations: null }));
+    }
+    if (selected.questions && !questionById.has(selected.questions)) {
+      setSelected((s) => ({ ...s, questions: null }));
+    }
+  }, [selected, interviewerById, conversationById, questionById]);
 
   const tabs: { id: TabId; label: string; count: number }[] = [
     { id: "interviewers", label: "Interviewers", count: interviewers.length },
@@ -123,12 +155,81 @@ export function AdminDashboard({ data }: { data: AdminData }) {
           className="min-h-0 flex-1 overflow-auto px-4 py-6 sm:px-6"
         >
           {tab === "interviewers" && (
-            <InterviewersPanel interviewers={interviewers} onOpenConversation={openConversation} />
+            <RecordList
+              items={interviewers}
+              getId={(c) => c.id}
+              selectedId={selectedId}
+              onSelect={select}
+              ariaLabel="Identified interviewers"
+              empty="No interviewers identified yet."
+              renderRow={(c) => <InterviewerRow conversation={c} identity={c.interviewer!} />}
+            />
           )}
-          {tab === "conversations" && <ConversationsPanel conversations={conversations} />}
-          {tab === "questions" && <QuestionsPanel questions={questions} />}
+          {tab === "conversations" && (
+            <RecordList
+              items={conversations}
+              getId={(c) => c.id}
+              selectedId={selectedId}
+              onSelect={select}
+              rowIdPrefix="conv"
+              ariaLabel="Conversations"
+              empty="No conversations yet."
+              renderRow={(c) => <ConversationRow conversation={c} />}
+            />
+          )}
+          {tab === "questions" && (
+            <RecordList
+              items={questions}
+              getId={(q) => q.id}
+              selectedId={selectedId}
+              onSelect={select}
+              ariaLabel="Forwarded questions"
+              empty="No forwarded questions."
+              renderRow={(q) => <QuestionRow question={q} />}
+            />
+          )}
         </div>
       </div>
+
+      <DetailSidebar
+        open={selectedId !== null}
+        onClose={() => select(null)}
+        eyebrow={
+          tab === "interviewers"
+            ? "Interviewer"
+            : tab === "conversations"
+              ? "Conversation"
+              : "Question"
+        }
+        title={
+          tab === "interviewers"
+            ? (selectedId && interviewerById.get(selectedId)?.interviewer?.name) ||
+              "Unknown name"
+            : tab === "conversations"
+              ? selectedId && conversationById.get(selectedId)
+                ? `${conversationById.get(selectedId)!.channel} · ${
+                    (conversationById.get(selectedId)!.transcript ?? []).length
+                  } turns`
+                : "Conversation"
+              : "Question"
+        }
+      >
+        {tab === "interviewers" && selectedId && interviewerById.has(selectedId) && (
+          <InterviewerDetail
+            conversation={interviewerById.get(selectedId)!}
+            onOpenConversation={openConversation}
+          />
+        )}
+        {tab === "conversations" && selectedId && conversationById.has(selectedId) && (
+          <ConversationDetail conversation={conversationById.get(selectedId)!} />
+        )}
+        {tab === "questions" && selectedId && questionById.has(selectedId) && (
+          <QuestionDetail
+            question={questionById.get(selectedId)!}
+            onOpenConversation={openConversation}
+          />
+        )}
+      </DetailSidebar>
     </>
   );
 }
@@ -155,55 +256,7 @@ function TabMeta({
   return <>{`${stated} stated · ${interviewers.length - stated} inferred`}</>;
 }
 
-function InterviewersPanel({
-  interviewers,
-  onOpenConversation,
-}: {
-  interviewers: Conversation[];
-  onOpenConversation: (conversationId: string) => void;
-}) {
-  if (interviewers.length === 0) return <Empty>No interviewers identified yet.</Empty>;
-  return (
-    <div className="flex flex-col gap-2">
-      {interviewers.map((c) => (
-        <InterviewerCard
-          key={c.id}
-          conversation={c}
-          identity={c.interviewer!}
-          onOpen={onOpenConversation}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ConversationsPanel({ conversations }: { conversations: Conversation[] }) {
-  if (conversations.length === 0) return <Empty>No conversations yet.</Empty>;
-  return (
-    <div className="flex flex-col gap-2">
-      {conversations.map((c) => (
-        <ConversationRow key={c.id} conversation={c} />
-      ))}
-    </div>
-  );
-}
-
-function QuestionsPanel({ questions }: { questions: QuestionForAlex[] }) {
-  if (questions.length === 0) return <Empty>No forwarded questions.</Empty>;
-  return (
-    <div className="flex flex-col gap-2">
-      {questions.map((q) => (
-        <QuestionRow key={q.id} question={q} />
-      ))}
-    </div>
-  );
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs text-[var(--color-text-tertiary)]">{children}</p>;
-}
-
-function Badge({ children }: { children: React.ReactNode }) {
+function Badge({ children }: { children: ReactNode }) {
   return (
     <span
       className="rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-text-secondary)]"
@@ -214,47 +267,37 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={LABEL}>{label}</span>
+      <span className="text-[13px] text-[var(--color-text-primary)]">{value}</span>
+    </div>
+  );
+}
+
+// -------- Row renderers (compact, list-cell content) --------------------
+
 function ConversationRow({ conversation }: { conversation: Conversation }) {
   const turns = conversation.transcript ?? [];
   return (
-    <details id={`conv-${conversation.id}`} className={`${CARD} group`}>
-      <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3 text-[13px] text-[var(--color-text-secondary)]">
-        <Badge>{conversation.channel}</Badge>
-        {conversation.language && <Badge>{conversation.language}</Badge>}
-        {conversation.interviewer && (
-          <Badge>{conversation.interviewer.name ?? "identified"}</Badge>
-        )}
-        <span className="ml-auto flex items-center gap-3 text-[var(--color-text-tertiary)]">
-          <span>{turns.length} turns</span>
-          <span>{fmt(conversation.lastMessageAt)}</span>
-        </span>
-      </summary>
-      <div className="flex flex-col gap-3 border-t border-[var(--color-border)] px-4 py-3">
-        <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
-          id {conversation.id} · started {fmt(conversation.startedAt)}
-        </p>
-        {turns.length === 0 ? (
-          <Empty>Empty transcript.</Empty>
-        ) : (
-          turns.map((t, i) => (
-            <div key={i} className="flex flex-col gap-1">
-              <span className={LABEL}>
-                {t.role} · {fmt(t.at)}
-              </span>
-              <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--color-text-primary)]">
-                {t.text}
-              </p>
-            </div>
-          ))
-        )}
-      </div>
-    </details>
+    <div className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+      <Badge>{conversation.channel}</Badge>
+      {conversation.language && <Badge>{conversation.language}</Badge>}
+      {conversation.interviewer && (
+        <Badge>{conversation.interviewer.name ?? "identified"}</Badge>
+      )}
+      <span className="ml-auto flex items-center gap-3 text-[var(--color-text-tertiary)]">
+        <span>{turns.length} turns</span>
+        <span>{fmt(conversation.lastMessageAt)}</span>
+      </span>
+    </div>
   );
 }
 
 function QuestionRow({ question }: { question: QuestionForAlex }) {
   return (
-    <div className={`${CARD} flex flex-col gap-1.5 px-4 py-3`}>
+    <div className="flex flex-col gap-1.5">
       <p className="text-[13px] text-[var(--color-text-primary)]">{question.question}</p>
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--color-text-tertiary)]">
         <span>{fmt(question.createdAt)}</span>
@@ -272,41 +315,86 @@ function QuestionRow({ question }: { question: QuestionForAlex }) {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className={LABEL}>{label}</span>
-      <span className="text-[13px] text-[var(--color-text-primary)]">{value}</span>
-    </div>
-  );
-}
-
-function InterviewerCard({
+function InterviewerRow({
   conversation,
   identity,
-  onOpen,
 }: {
   conversation: Conversation;
   identity: InterviewerIdentity;
-  onOpen: (conversationId: string) => void;
 }) {
+  const subtitle = [identity.role, identity.company].filter(Boolean).join(" · ");
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(conversation.id)}
-      className={cn(
-        CARD,
-        "flex w-full flex-col gap-3 px-4 py-3 text-left transition-colors",
-        "hover:border-[var(--color-primary)] focus-visible:border-[var(--color-primary)]",
-      )}
-    >
+    <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-display text-sm text-[var(--color-text-primary)]">
           {identity.name ?? "Unknown name"}
         </span>
         <Badge>{identity.basis}</Badge>
         <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
-          {fmt(identity.updatedAt)}
+          {fmt(conversation.lastMessageAt)}
+        </span>
+      </div>
+      {subtitle && (
+        <span className="text-[12px] text-[var(--color-text-tertiary)]">{subtitle}</span>
+      )}
+    </div>
+  );
+}
+
+// -------- Detail renderers (sidebar body) --------------------------------
+
+function ConversationDetail({ conversation }: { conversation: Conversation }) {
+  const turns = conversation.transcript ?? [];
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge>{conversation.channel}</Badge>
+        {conversation.language && <Badge>{conversation.language}</Badge>}
+        {conversation.interviewer && (
+          <Badge>{conversation.interviewer.name ?? "identified"}</Badge>
+        )}
+        <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          {turns.length} turns
+        </span>
+      </div>
+      <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+        id {conversation.id} · started {fmt(conversation.startedAt)} · last{" "}
+        {fmt(conversation.lastMessageAt)}
+      </p>
+      {turns.length === 0 ? (
+        <p className="text-xs text-[var(--color-text-tertiary)]">Empty transcript.</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {turns.map((t, i) => (
+            <div key={i} className="flex flex-col gap-1">
+              <span className={LABEL}>
+                {t.role} · {fmt(t.at)}
+              </span>
+              <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--color-text-primary)]">
+                {t.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InterviewerDetail({
+  conversation,
+  onOpenConversation,
+}: {
+  conversation: Conversation;
+  onOpenConversation: (conversationId: string) => void;
+}) {
+  const identity = conversation.interviewer!;
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge>{identity.basis}</Badge>
+        <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          updated {fmt(identity.updatedAt)}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -316,10 +404,77 @@ function InterviewerCard({
         {identity.contact && <Field label="Contact" value={identity.contact} />}
       </div>
       {identity.notes && (
-        <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
-          {identity.notes}
+        <div className="flex flex-col gap-1">
+          <span className={LABEL}>Notes</span>
+          <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+            {identity.notes}
+          </p>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => onOpenConversation(conversation.id)}
+        className={cn(
+          "self-start rounded-md border border-[var(--color-border)] px-3 py-1.5",
+          "font-mono text-[10px] uppercase text-[var(--color-text-secondary)] transition-colors",
+          "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
+          "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
+        )}
+        style={{ letterSpacing: "0.18em" }}
+      >
+        Open conversation →
+      </button>
+    </div>
+  );
+}
+
+function QuestionDetail({
+  question,
+  onOpenConversation,
+}: {
+  question: QuestionForAlex;
+  onOpenConversation: (conversationId: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        {question.answeredAt ? (
+          <Badge>answered</Badge>
+        ) : (
+          <span
+            className="rounded-full border border-[var(--color-accent)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-accent)]"
+            style={{ letterSpacing: "0.16em" }}
+          >
+            unanswered
+          </span>
+        )}
+        <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          {fmt(question.createdAt)}
+        </span>
+      </div>
+      <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[var(--color-text-primary)]">
+        {question.question}
+      </p>
+      {question.answeredAt && (
+        <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          answered {fmt(question.answeredAt)}
         </p>
       )}
-    </button>
+      {question.conversationId && (
+        <button
+          type="button"
+          onClick={() => onOpenConversation(question.conversationId!)}
+          className={cn(
+            "self-start rounded-md border border-[var(--color-border)] px-3 py-1.5",
+            "font-mono text-[10px] uppercase text-[var(--color-text-secondary)] transition-colors",
+            "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
+            "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
+          )}
+          style={{ letterSpacing: "0.18em" }}
+        >
+          Open conversation →
+        </button>
+      )}
+    </div>
   );
 }
