@@ -9,12 +9,18 @@ import {
   PublicContactSchema,
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
+  TalkFrontmatterSchema,
+  OpenSourceFrontmatterSchema,
+  RecommendationFrontmatterSchema,
   type Profile,
   type Skills,
   type Education,
   type PublicContact,
   type ExperienceFrontmatter,
   type ProjectFrontmatter,
+  type TalkFrontmatter,
+  type OpenSourceFrontmatter,
+  type RecommendationFrontmatter,
 } from "./schemas";
 
 export type ExperienceEntry = {
@@ -31,6 +37,27 @@ export type ProjectEntry = {
   body: string;
 };
 
+export type TalkEntry = {
+  slug: string;
+  relativePath: string;
+  frontmatter: TalkFrontmatter;
+  body: string;
+};
+
+export type OpenSourceEntry = {
+  slug: string;
+  relativePath: string;
+  frontmatter: OpenSourceFrontmatter;
+  body: string;
+};
+
+export type RecommendationEntry = {
+  slug: string;
+  relativePath: string;
+  frontmatter: RecommendationFrontmatter;
+  body: string;
+};
+
 export type Kb = {
   profile: Profile;
   skills: Skills;
@@ -38,6 +65,9 @@ export type Kb = {
   publicContact: PublicContact;
   experience: ExperienceEntry[];
   projects: ProjectEntry[];
+  talks: TalkEntry[];
+  openSource: OpenSourceEntry[];
+  recommendations: RecommendationEntry[];
 };
 
 async function readYamlFile<T>(file: string, schema: { parse: (v: unknown) => T }, label: string): Promise<T> {
@@ -108,17 +138,29 @@ export async function loadKb(rootDir: string): Promise<Kb> {
     throw new Error(`KB: root directory does not exist: ${rootDir}`);
   }
 
-  const [profile, skills, education, publicContact, experience, projects] = await Promise.all([
+  const [
+    profile, skills, education, publicContact,
+    experience, projects,
+    talks, openSource, recommendations,
+  ] = await Promise.all([
     readYamlFile(path.join(rootDir, "profile.yaml"), ProfileSchema, "profile.yaml"),
     readYamlFile(path.join(rootDir, "skills.yaml"), SkillsSchema, "skills.yaml"),
     readYamlFile(path.join(rootDir, "education.yaml"), EducationSchema, "education.yaml"),
     readYamlFile(path.join(rootDir, "public-contact.yaml"), PublicContactSchema, "public-contact.yaml"),
     readMarkdownDir(path.join(rootDir, "experience"), ExperienceFrontmatterSchema, "experience"),
     readMarkdownDir(path.join(rootDir, "projects"), ProjectFrontmatterSchema, "projects"),
+    readMarkdownDir(path.join(rootDir, "talks"), TalkFrontmatterSchema, "talks"),
+    readMarkdownDir(path.join(rootDir, "open-source"), OpenSourceFrontmatterSchema, "open-source"),
+    readMarkdownDir(path.join(rootDir, "recommendations"), RecommendationFrontmatterSchema, "recommendations"),
   ]);
 
   experience.sort((a, b) => (startSortKey(a.frontmatter.start) < startSortKey(b.frontmatter.start) ? 1 : -1));
   projects.sort((a, b) => (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0));
+  talks.sort((a, b) => b.frontmatter.year - a.frontmatter.year);
+  openSource.sort((a, b) =>
+    (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0) || a.frontmatter.name.localeCompare(b.frontmatter.name),
+  );
+  recommendations.sort((a, b) => (a.frontmatter.date < b.frontmatter.date ? 1 : -1));
 
   return {
     profile,
@@ -127,5 +169,8 @@ export async function loadKb(rootDir: string): Promise<Kb> {
     publicContact,
     experience,
     projects,
+    talks,
+    openSource,
+    recommendations,
   };
 }

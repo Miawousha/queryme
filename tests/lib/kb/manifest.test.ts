@@ -17,10 +17,13 @@ describe("loadKbManifest", () => {
       "education.yaml",
       "experience/2020-older-co.md",
       "experience/2024-fixture-co.md",
+      "open-source/queryme.md",
       "profile.yaml",
       "projects/fixture-project.md",
       "public-contact.yaml",
+      "recommendations/2024-09-jane-doe.md",
       "skills.yaml",
+      "talks/2024-evs37.md",
     ]);
   });
 
