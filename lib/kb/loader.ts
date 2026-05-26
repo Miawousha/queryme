@@ -70,6 +70,27 @@ export type Kb = {
   recommendations: RecommendationEntry[];
 };
 
+export type KbLang = "en" | "fr";
+
+/**
+ * Resolves a KB file path to its localized variant when one exists, else
+ * falls back to the canonical English file. `base` is the path WITHOUT the
+ * extension (e.g. `kb/experience/2024-fixture-co` for an `.md` file, or
+ * `kb/profile` for a `.yaml` file).
+ */
+async function pickFile(base: string, ext: string, lang: KbLang): Promise<string> {
+  if (lang !== "en") {
+    const localized = `${base}.${lang}.${ext}`;
+    try {
+      await fs.access(localized);
+      return localized;
+    } catch {
+      /* sidecar missing — fall through */
+    }
+  }
+  return `${base}.${ext}`;
+}
+
 async function readYamlFile<T>(file: string, schema: { parse: (v: unknown) => T }, label: string): Promise<T> {
   let raw: string;
   try {
@@ -94,6 +115,7 @@ async function readMarkdownDir<F>(
   dir: string,
   schema: { parse: (v: unknown) => F },
   label: string,
+  lang: KbLang,
 ): Promise<Array<{ slug: string; relativePath: string; frontmatter: F; body: string }>> {
   let files: string[];
   try {
@@ -101,15 +123,21 @@ async function readMarkdownDir<F>(
   } catch {
     return [];
   }
-  const md = files.filter((f) => f.endsWith(".md")).sort();
+  // Filter out localized sidecars at directory listing — we resolve them via
+  // pickFile per canonical entry below.
+  const md = files
+    .filter((f) => f.endsWith(".md") && !/\.[a-z]{2}\.md$/.test(f))
+    .sort();
   const out = [];
   for (const file of md) {
-    const full = path.join(dir, file);
+    const canonicalRel = `${path.basename(dir)}/${file}`;
+    const base = path.join(dir, file.replace(/\.md$/, ""));
+    const actual = await pickFile(base, "md", lang);
     let raw: string;
     try {
-      raw = await fs.readFile(full, "utf8");
+      raw = await fs.readFile(actual, "utf8");
     } catch (err) {
-      throw new Error(`KB: failed to read ${label} (${full}): ${(err as Error).message}`);
+      throw new Error(`KB: failed to read ${label} (${actual}): ${(err as Error).message}`);
     }
     const parsed = matter(raw);
     let frontmatter: F;
@@ -120,7 +148,9 @@ async function readMarkdownDir<F>(
     }
     out.push({
       slug: file.replace(/\.md$/, ""),
-      relativePath: `${path.basename(dir)}/${file}`,
+      // CANONICAL path — citations cite this regardless of which variant we
+      // actually read, so citation tokens stay stable across languages.
+      relativePath: canonicalRel,
       frontmatter,
       body: parsed.content.trim(),
     });
@@ -132,7 +162,7 @@ function startSortKey(start: string) {
   return start === "present" ? "9999-99" : start;
 }
 
-export async function loadKb(rootDir: string): Promise<Kb> {
+export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> {
   const stat = await fs.stat(rootDir).catch(() => null);
   if (!stat || !stat.isDirectory()) {
     throw new Error(`KB: root directory does not exist: ${rootDir}`);
@@ -143,15 +173,15 @@ export async function loadKb(rootDir: string): Promise<Kb> {
     experience, projects,
     talks, openSource, recommendations,
   ] = await Promise.all([
-    readYamlFile(path.join(rootDir, "profile.yaml"), ProfileSchema, "profile.yaml"),
-    readYamlFile(path.join(rootDir, "skills.yaml"), SkillsSchema, "skills.yaml"),
-    readYamlFile(path.join(rootDir, "education.yaml"), EducationSchema, "education.yaml"),
-    readYamlFile(path.join(rootDir, "public-contact.yaml"), PublicContactSchema, "public-contact.yaml"),
-    readMarkdownDir(path.join(rootDir, "experience"), ExperienceFrontmatterSchema, "experience"),
-    readMarkdownDir(path.join(rootDir, "projects"), ProjectFrontmatterSchema, "projects"),
-    readMarkdownDir(path.join(rootDir, "talks"), TalkFrontmatterSchema, "talks"),
-    readMarkdownDir(path.join(rootDir, "open-source"), OpenSourceFrontmatterSchema, "open-source"),
-    readMarkdownDir(path.join(rootDir, "recommendations"), RecommendationFrontmatterSchema, "recommendations"),
+    readYamlFile(await pickFile(path.join(rootDir, "profile"), "yaml", lang), ProfileSchema, "profile.yaml"),
+    readYamlFile(await pickFile(path.join(rootDir, "skills"), "yaml", lang), SkillsSchema, "skills.yaml"),
+    readYamlFile(await pickFile(path.join(rootDir, "education"), "yaml", lang), EducationSchema, "education.yaml"),
+    readYamlFile(await pickFile(path.join(rootDir, "public-contact"), "yaml", lang), PublicContactSchema, "public-contact.yaml"),
+    readMarkdownDir(path.join(rootDir, "experience"), ExperienceFrontmatterSchema, "experience", lang),
+    readMarkdownDir(path.join(rootDir, "projects"), ProjectFrontmatterSchema, "projects", lang),
+    readMarkdownDir(path.join(rootDir, "talks"), TalkFrontmatterSchema, "talks", lang),
+    readMarkdownDir(path.join(rootDir, "open-source"), OpenSourceFrontmatterSchema, "open-source", lang),
+    readMarkdownDir(path.join(rootDir, "recommendations"), RecommendationFrontmatterSchema, "recommendations", lang),
   ]);
 
   experience.sort((a, b) => (startSortKey(a.frontmatter.start) < startSortKey(b.frontmatter.start) ? 1 : -1));

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { loadKb } from "@/lib/kb/loader";
+import { loadKb, type KbLang } from "@/lib/kb/loader";
 import { assemblePublicKbText } from "@/lib/kb/assembler";
 import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
 
@@ -11,14 +11,15 @@ import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
 
 const KB_DIR = path.resolve(process.cwd(), "kb");
 
-let publicKbText: string | null = null;
+const publicKbTextByLang = new Map<KbLang, string>();
 
 /** The assembled public KB text given to the chat / MCP agent. */
-export async function getCachedPublicKbText(): Promise<string> {
-  if (publicKbText === null) {
-    publicKbText = assemblePublicKbText(await loadKb(KB_DIR));
-  }
-  return publicKbText;
+export async function getCachedPublicKbText(lang: KbLang = "en"): Promise<string> {
+  const cached = publicKbTextByLang.get(lang);
+  if (cached !== undefined) return cached;
+  const text = assemblePublicKbText(await loadKb(KB_DIR, lang));
+  publicKbTextByLang.set(lang, text);
+  return text;
 }
 
 let manifest: KbFile[] | null = null;

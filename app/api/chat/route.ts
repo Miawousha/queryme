@@ -75,9 +75,11 @@ export async function POST(req: NextRequest) {
   const conversationId = parsed.data.conversationId ?? randomUUID();
   const db = getDb();
 
-  await getOrCreateConversation(db, { id: conversationId, channel: "chat" });
-
-  const publicKbText = await getCachedPublicKbText();
+  // Determine the conversation's preferred language; default to English for
+  // fresh conversations until something sets it.
+  const conv = await getOrCreateConversation(db, { id: conversationId, channel: "chat" });
+  const lang = (conv.language ?? "en") as "en" | "fr";
+  const publicKbText = await getCachedPublicKbText(lang);
 
   // Append the last user turn to the transcript before streaming.
   const lastMessage = parsed.data.messages[parsed.data.messages.length - 1];

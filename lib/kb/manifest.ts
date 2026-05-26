@@ -99,6 +99,10 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
     const rel = path.relative(baseDir, abs);
     const type = fileTypeFromPath(rel);
     if (!type) continue;
+    // Skip localized sidecars like `foo.fr.md` / `foo.fr.yaml`. The manifest
+    // lists canonical files; the file route resolves the right variant at
+    // read time via `?lang=`.
+    if (/\.[a-z]{2}\.(md|yaml)$/.test(rel)) continue;
     if (type === "md") {
       const { title, meta } = await readMarkdown(abs, rel);
       out.push({ path: rel, title, type, ...(meta ? { meta } : {}) });
