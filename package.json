@@ -38,6 +38,7 @@
     "drizzle-orm": "^0.45.2",
     "gray-matter": "^4.0.3",
     "next": "^15.5.18",
+    "postgres": "^3.4.9",
     "radix-ui": "^1.4.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
