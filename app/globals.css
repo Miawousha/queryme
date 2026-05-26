@@ -182,7 +182,7 @@ body {
 
 .prose-chat strong {
   color: var(--color-text-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .prose-chat em {
@@ -283,12 +283,53 @@ body {
 
 .prose-chat h1 {
   font-size: 1.25rem;
+  font-weight: 600;
 }
 .prose-chat h2 {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 .prose-chat h3 {
   font-size: 1rem;
+  font-weight: 600;
+}
+.prose-chat h4 {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.prose-chat table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.875em;
+}
+
+.prose-chat thead {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.prose-chat th,
+.prose-chat td {
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.prose-chat th {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.prose-chat tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .prose-chat blockquote {
