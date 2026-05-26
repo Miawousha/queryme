@@ -60,4 +60,26 @@ describe("assemblePublicKbText", () => {
   it("is deterministic — same input produces same output", () => {
     expect(assemblePublicKbText(kb)).toBe(assemblePublicKbText(kb));
   });
+
+  it("includes a Talks section with [ref: talks/...] markers when talks exist", () => {
+    const text = assemblePublicKbText(kb);
+    expect(text).toContain("# Talks");
+    expect(text).toContain("[ref: talks/2024-evs37.md]");
+    expect(text).toContain("Battery emulation at scale");
+    expect(text).toContain("EVS37");
+  });
+
+  it("includes an Open source section with [ref: open-source/...] markers", () => {
+    const text = assemblePublicKbText(kb);
+    expect(text).toContain("# Open source");
+    expect(text).toContain("[ref: open-source/queryme.md]");
+    expect(text).toContain("queryme");
+  });
+
+  it("includes a Recommendations section with [ref: recommendations/...] markers", () => {
+    const text = assemblePublicKbText(kb);
+    expect(text).toContain("# Recommendations");
+    expect(text).toContain("[ref: recommendations/2024-09-jane-doe.md]");
+    expect(text).toContain("Jane Doe");
+  });
 });
