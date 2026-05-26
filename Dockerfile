@@ -24,6 +24,8 @@ COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/kb ./kb
 COPY --from=builder /app/prompts ./prompts
 COPY --from=builder /app/lib/db/migrations ./lib/db/migrations
-COPY --from=builder /app/scripts ./scripts
+# Only the migrate script ships in the runner; eval / validate-kb scripts are
+# build-time utilities and don't belong in the production image.
+COPY --from=builder /app/scripts/migrate.ts ./scripts/migrate.ts
 EXPOSE 3000
 CMD ["pnpm", "start"]
