@@ -40,3 +40,12 @@ export async function recordReply(
   if (!updated) throw new Error(`recordReply: no row with id ${id}`);
   return updated;
 }
+
+export async function getQuestion(db: Db, id: string): Promise<QuestionForAlex | null> {
+  const rows = await db
+    .select()
+    .from(questionsForAlex)
+    .where(eq(questionsForAlex.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
