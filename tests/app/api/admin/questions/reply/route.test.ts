@@ -88,6 +88,8 @@ describe("POST /api/admin/questions/[id]/reply", () => {
     expect(t.sent).toHaveLength(1);
     expect(t.sent[0].to).toBe("sarah@acme.example");
     expect(t.sent[0].text).toContain("A");
+    const body = await res.json();
+    expect(body.emailed).toBe(true);
   });
 
   it("does not email when there is no contact", async () => {
@@ -107,5 +109,7 @@ describe("POST /api/admin/questions/[id]/reply", () => {
     });
     expect(res.status).toBe(200);
     expect(t.sent).toHaveLength(0);
+    const body = await res.json();
+    expect(body.emailed).toBe(false);
   });
 });

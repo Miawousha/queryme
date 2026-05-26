@@ -6,6 +6,7 @@ type Row = {
   conversationId: string | null;
   question: string;
   contact: string | null;
+  reply: string | null;
   answeredAt: Date | null;
   createdAt: Date;
 };
@@ -24,6 +25,7 @@ function makeDb() {
                 conversationId: v.conversationId ?? null,
                 question: v.question,
                 contact: v.contact ?? null,
+                reply: null,
                 answeredAt: null,
                 createdAt: new Date(),
               };

@@ -39,6 +39,11 @@ export async function handleReply(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const updated = await recordReply(db, id, parsed.data.reply);
+  // Best-effort email — symmetry with `handleForward`'s `notified` flag. Reply
+  // is already persisted; if the visitor's transport fails the admin can
+  // resend manually. `emailed` is `false` either when there was no contact
+  // or when the send threw.
+  let emailed = false;
   if (existing.contact) {
     try {
       await deps.transport.send({
@@ -49,11 +54,12 @@ export async function handleReply(
           `You asked:\n\n${existing.question}\n\n` +
           `Alexandre replied:\n\n${updated.reply}\n`,
       });
-    } catch {
-      // Best-effort. Reply is already persisted; admin can resend manually.
+      emailed = true;
+    } catch (err) {
+      console.error("admin reply email failed", err);
     }
   }
-  return NextResponse.json({ ok: true, id: updated.id });
+  return NextResponse.json({ ok: true, id: updated.id, emailed });
 }
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
