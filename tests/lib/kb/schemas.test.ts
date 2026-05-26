@@ -6,6 +6,9 @@ import {
   PublicContactSchema,
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
+  TalkFrontmatterSchema,
+  OpenSourceFrontmatterSchema,
+  RecommendationFrontmatterSchema,
 } from "@/lib/kb/schemas";
 
 describe("ProfileSchema", () => {
@@ -97,5 +100,54 @@ describe("ProjectFrontmatterSchema", () => {
       url: "https://github.com/x/queryme",
     };
     expect(ProjectFrontmatterSchema.parse(data)).toEqual(data);
+  });
+});
+
+describe("TalkFrontmatterSchema", () => {
+  it("accepts a minimal talk", () => {
+    expect(() =>
+      TalkFrontmatterSchema.parse({
+        title: "Battery emulation at scale",
+        venue: "EVS37",
+        year: 2024,
+      }),
+    ).not.toThrow();
+  });
+  it("rejects a talk missing title or venue", () => {
+    expect(() => TalkFrontmatterSchema.parse({ venue: "X", year: 2024 })).toThrow();
+    expect(() => TalkFrontmatterSchema.parse({ title: "T", year: 2024 })).toThrow();
+  });
+});
+
+describe("OpenSourceFrontmatterSchema", () => {
+  it("accepts a minimal project", () => {
+    expect(() =>
+      OpenSourceFrontmatterSchema.parse({
+        name: "queryme",
+        url: "https://github.com/Miawousha/queryme",
+        role: "author",
+      }),
+    ).not.toThrow();
+  });
+  it("rejects an invalid role", () => {
+    expect(() =>
+      OpenSourceFrontmatterSchema.parse({
+        name: "x",
+        url: "https://example.com/x",
+        role: "owner",
+      }),
+    ).toThrow();
+  });
+});
+
+describe("RecommendationFrontmatterSchema", () => {
+  it("accepts a minimal recommendation", () => {
+    expect(() =>
+      RecommendationFrontmatterSchema.parse({
+        from: "Jane Doe",
+        title: "VP Engineering at Acme",
+        date: "2024-09",
+      }),
+    ).not.toThrow();
   });
 });

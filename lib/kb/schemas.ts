@@ -76,3 +76,32 @@ export const ProjectFrontmatterSchema = z.object({
   url: z.url().optional(),
 });
 export type ProjectFrontmatter = z.infer<typeof ProjectFrontmatterSchema>;
+
+export const TalkFrontmatterSchema = z.object({
+  title: z.string().min(1),
+  venue: z.string().min(1),
+  year: z.number().int().min(1900).max(2100),
+  location: z.string().optional(),
+  url: z.url().optional(),
+  tags: z.array(z.string()).optional(),
+});
+export type TalkFrontmatter = z.infer<typeof TalkFrontmatterSchema>;
+
+export const OpenSourceFrontmatterSchema = z.object({
+  name: z.string().min(1),
+  url: z.url(),
+  role: z.enum(["author", "maintainer", "contributor"]),
+  description: z.string().optional(),
+  year: z.number().int().min(1900).max(2100).optional(),
+  tags: z.array(z.string()).optional(),
+});
+export type OpenSourceFrontmatter = z.infer<typeof OpenSourceFrontmatterSchema>;
+
+export const RecommendationFrontmatterSchema = z.object({
+  from: z.string().min(1),
+  title: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}$/),
+  relationship: z.string().optional(),
+  url: z.url().optional(),
+});
+export type RecommendationFrontmatter = z.infer<typeof RecommendationFrontmatterSchema>;
