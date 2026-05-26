@@ -435,10 +435,40 @@ function QuestionDetail({
   question: QuestionForAlex;
   onOpenConversation: (conversationId: string) => void;
 }) {
+  const [draft, setDraft] = useState(question.reply ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(
+    question.answeredAt ? new Date(question.answeredAt) : null,
+  );
+
+  async function submit() {
+    if (!draft.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/questions/${question.id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reply: draft }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.error ?? `HTTP ${res.status}`);
+      } else {
+        setSavedAt(new Date());
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        {question.answeredAt ? (
+        {savedAt ? (
           <Badge>answered</Badge>
         ) : (
           <span
@@ -455,11 +485,38 @@ function QuestionDetail({
       <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[var(--color-text-primary)]">
         {question.question}
       </p>
-      {question.answeredAt && (
-        <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
-          answered {fmt(question.answeredAt)}
-        </p>
+      {question.contact && (
+        <Field label="Visitor contact" value={question.contact} />
       )}
+      <div className="flex flex-col gap-1">
+        <span className={LABEL}>Reply</span>
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={6}
+          className="rounded-md border border-[var(--color-border)] bg-transparent p-2 text-[13px]"
+          placeholder="Write the reply Alexandre wants to send…"
+        />
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+            {question.contact ? "Will email the visitor on send." : "No contact — saved locally only."}
+          </span>
+          <button
+            type="button"
+            disabled={busy || !draft.trim()}
+            onClick={submit}
+            className={cn(
+              "rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-[10px] uppercase",
+              "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+            )}
+            style={{ letterSpacing: "0.18em" }}
+          >
+            {busy ? "Sending…" : savedAt ? "Update reply" : "Send reply"}
+          </button>
+        </div>
+        {error && <span className="text-xs text-red-400">{error}</span>}
+      </div>
       {question.conversationId && (
         <button
           type="button"
