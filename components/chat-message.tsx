@@ -3,6 +3,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { parseCitations } from "@/lib/kb/citations";
+import { splitOnMarkers } from "@/lib/markers";
 import { cn } from "@/lib/utils";
 
 const sanitizeSchema = {
@@ -35,24 +36,6 @@ export type ChatMessageProps = {
   onForward?: (question: string) => void;
   onOpenArtifact?: (path: string) => void;
 };
-
-type MarkerChunk =
-  | { kind: "text"; value: string }
-  | { kind: "forward"; question: string };
-
-function splitOnMarkers(text: string): MarkerChunk[] {
-  const out: MarkerChunk[] = [];
-  const re = /\[\[(forward:[^\]]+)\]\]/g;
-  let last = 0;
-  for (const m of text.matchAll(re)) {
-    const idx = m.index ?? 0;
-    if (idx > last) out.push({ kind: "text", value: text.slice(last, idx) });
-    out.push({ kind: "forward", question: m[1].slice("forward:".length).trim() });
-    last = idx + m[0].length;
-  }
-  if (last < text.length) out.push({ kind: "text", value: text.slice(last) });
-  return out;
-}
 
 function rewriteCitations(text: string): string {
   const cites = parseCitations(text);
