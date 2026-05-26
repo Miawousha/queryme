@@ -140,6 +140,11 @@ Then open [http://localhost:3000](http://localhost:3000). The web container's
 compose `command` override runs `pnpm db:migrate` before `pnpm start` on every
 boot, so a fresh database is initialized automatically.
 
+`ADMIN_PASSWORD` doubles as the HMAC secret for admin session cookies. The
+compose file defaults it to `admin` for one-command bring-up — **change it
+in `.env` before exposing the container to any network you don't fully
+trust.** Rotating the value also invalidates every existing admin session.
+
 The compose stack uses the TCP-Postgres driver path (added in
 `lib/db/client.ts`) and the generic Redis driver via `REDIS_URL`. Vercel-deployed
 prod continues to use Neon over HTTP and Upstash KV.
