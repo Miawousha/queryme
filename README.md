@@ -135,3 +135,9 @@ Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optio
 ## License
 
 MIT.
+
+## Talk to it from your own agent
+
+queryme is also an MCP server. See [docs/MCP.md](docs/MCP.md) for connector
+configs (Claude Desktop, Cursor, raw HTTP).
+

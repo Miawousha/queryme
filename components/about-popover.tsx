@@ -9,6 +9,7 @@ export type AboutPopoverStrings = {
   systemPrompt: string;
   kb: string;
   repo: string;
+  mcpDocs: string;
 };
 
 export type AboutPopoverProps = {
@@ -36,6 +37,7 @@ export function AboutPopover({
   if (!open) return null;
 
   const links: { href: string; label: string }[] = [
+    { href: `${repoUrl}/blob/${branch}/docs/MCP.md`, label: strings.mcpDocs },
     { href: `${repoUrl}/blob/${branch}/prompts/system.md`, label: strings.systemPrompt },
     { href: `${repoUrl}/tree/${branch}/kb`, label: strings.kb },
     { href: repoUrl, label: strings.repo },

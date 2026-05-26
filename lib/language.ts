@@ -36,6 +36,7 @@ export const UI_STRINGS = {
       systemPrompt: "View the system prompt",
       kb: "View the knowledge base",
       repo: "GitHub repo",
+      mcpDocs: "Connect from your agent (MCP docs)",
     },
     mcp: {
       buttonLabel: "Connect via MCP",
@@ -141,6 +142,7 @@ export const UI_STRINGS = {
       systemPrompt: "Voir le prompt système",
       kb: "Voir la base de connaissances",
       repo: "Dépôt GitHub",
+      mcpDocs: "Se connecter depuis votre agent (docs MCP)",
     },
     mcp: {
       buttonLabel: "Se connecter via MCP",
