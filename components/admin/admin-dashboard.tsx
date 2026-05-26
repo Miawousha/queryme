@@ -225,6 +225,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
         )}
         {tab === "questions" && selectedId && questionById.has(selectedId) && (
           <QuestionDetail
+            key={selectedId}
             question={questionById.get(selectedId)!}
             onOpenConversation={openConversation}
           />
