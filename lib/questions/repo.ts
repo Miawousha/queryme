@@ -1,4 +1,4 @@
-import { desc, isNull } from "drizzle-orm";
+import { desc, eq, isNull } from "drizzle-orm";
 import { questionsForAlex, type QuestionForAlex } from "@/lib/db/schema";
 import type { getDb } from "@/lib/db/client";
 
@@ -25,4 +25,18 @@ export async function listOpenQuestions(db: Db): Promise<QuestionForAlex[]> {
     .from(questionsForAlex)
     .where(isNull(questionsForAlex.answeredAt))
     .orderBy(desc(questionsForAlex.createdAt));
+}
+
+export async function recordReply(
+  db: Db,
+  id: string,
+  reply: string,
+): Promise<QuestionForAlex> {
+  const [updated] = await db
+    .update(questionsForAlex)
+    .set({ reply, answeredAt: new Date() })
+    .where(eq(questionsForAlex.id, id))
+    .returning();
+  if (!updated) throw new Error(`recordReply: no row with id ${id}`);
+  return updated;
 }

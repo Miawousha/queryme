@@ -16,6 +16,7 @@ export const questionsForAlex = pgTable("questions_for_alex", {
   conversationId: uuid("conversation_id").references(() => conversations.id),
   question: text("question").notNull(),
   contact: text("contact"), // optional visitor contact (email / phone / handle)
+  reply: text("reply"),
   answeredAt: timestamp("answered_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

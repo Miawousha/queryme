@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { forwardQuestion } from "@/lib/questions/repo";
+import { forwardQuestion, recordReply } from "@/lib/questions/repo";
 
 type Row = {
   id: string;
@@ -54,5 +54,39 @@ describe("forwardQuestion", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const row = await forwardQuestion(db as any, { question: "q" });
     expect(row.contact).toBeNull();
+  });
+});
+
+describe("recordReply", () => {
+  function makeDb() {
+    const rows = [{ id: "q1", question: "q", reply: null as string | null, answeredAt: null as Date | null, contact: null as string | null, conversationId: null as string | null, createdAt: new Date() }];
+    return {
+      rows,
+      update() {
+        return {
+          set(v: { reply: string; answeredAt: Date }) {
+            return {
+              where() {
+                return {
+                  async returning() {
+                    rows[0].reply = v.reply;
+                    rows[0].answeredAt = v.answeredAt;
+                    return [rows[0]];
+                  },
+                };
+              },
+            };
+          },
+        };
+      },
+    };
+  }
+
+  it("persists reply text and stamps answered_at", async () => {
+    const db = makeDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = await recordReply(db as any, "q1", "Thanks for asking — here's the answer.");
+    expect(r.reply).toBe("Thanks for asking — here's the answer.");
+    expect(r.answeredAt).toBeInstanceOf(Date);
   });
 });
