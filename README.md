@@ -125,6 +125,25 @@ Requests are rate-limited per client IP.
 
 Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optionally) override `NEXT_PUBLIC_REPO_URL` / `NEXT_PUBLIC_REPO_BRANCH` if you've forked.
 
+## Self-host with Docker
+
+A `docker-compose.yml` ships Postgres, Redis, and a multi-stage Next.js
+container so the whole stack stands up locally.
+
+```bash
+cp .env.example .env
+# At minimum, set ANTHROPIC_API_KEY in .env
+docker compose up --build
+```
+
+Then open [http://localhost:3000](http://localhost:3000). The web container's
+compose `command` override runs `pnpm db:migrate` before `pnpm start` on every
+boot, so a fresh database is initialized automatically.
+
+The compose stack uses the TCP-Postgres driver path (added in
+`lib/db/client.ts`) and the generic Redis driver via `REDIS_URL`. Vercel-deployed
+prod continues to use Neon over HTTP and Upstash KV.
+
 ## What's in this version
 
 - Public chat at `/` answering questions about Alexandre, grounded in `kb/`.
