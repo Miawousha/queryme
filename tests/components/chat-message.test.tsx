@@ -77,6 +77,57 @@ describe("ChatMessage", () => {
     );
     const btn = screen.getByRole("button", { name: /send this question/i });
     await user.click(btn);
-    expect(onForward).toHaveBeenCalledWith("What were Q1 numbers?");
+    expect(onForward).toHaveBeenCalledWith("What were Q1 numbers?", "");
+  });
+
+  it("clicking forward opens a contact prompt; submitting calls onForward with question + contact", async () => {
+    const onForward = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChatMessage
+        role="assistant"
+        text="Here's a thing. [[forward:What's the cache hit rate at Maxwell?]]"
+        agentLabel="agent"
+        forwardLabel="Forward"
+        forwardStrings={{
+          prompt: "Want a reply? Leave a contact (optional).",
+          placeholder: "Email or LinkedIn URL",
+          send: "Send to Alexandre",
+          cancel: "Cancel",
+        }}
+        onForward={onForward}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /forward/i }));
+    expect(screen.getByText(/want a reply/i)).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText(/email or linkedin/i), "sarah@acme.example");
+    await user.click(screen.getByRole("button", { name: /send to alexandre/i }));
+    expect(onForward).toHaveBeenCalledWith(
+      "What's the cache hit rate at Maxwell?",
+      "sarah@acme.example",
+    );
+  });
+
+  it("submitting without a contact still forwards with empty contact", async () => {
+    const onForward = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChatMessage
+        role="assistant"
+        text="[[forward:plain question]]"
+        agentLabel="agent"
+        forwardLabel="Forward"
+        forwardStrings={{
+          prompt: "Want a reply? Leave a contact (optional).",
+          placeholder: "Email or LinkedIn URL",
+          send: "Send to Alexandre",
+          cancel: "Cancel",
+        }}
+        onForward={onForward}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /forward/i }));
+    await user.click(screen.getByRole("button", { name: /send to alexandre/i }));
+    expect(onForward).toHaveBeenCalledWith("plain question", "");
   });
 });

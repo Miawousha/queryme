@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -33,7 +36,19 @@ export type ChatMessageProps = {
   agentLabel: string;
   /** Localized label for the inline "forward to Alexandre" button. */
   forwardLabel: string;
-  onForward?: (question: string) => void;
+  /**
+   * Localized strings for the contact-collection modal. When provided, the
+   * forward button opens a modal that lets the visitor optionally leave a
+   * contact before submitting. When omitted, clicking forward submits
+   * immediately with an empty contact (legacy direct-call behavior).
+   */
+  forwardStrings?: {
+    prompt: string;
+    placeholder: string;
+    send: string;
+    cancel: string;
+  };
+  onForward?: (question: string, contact: string) => void;
   onOpenArtifact?: (path: string) => void;
 };
 
@@ -56,12 +71,15 @@ export function ChatMessage({
   text,
   agentLabel,
   forwardLabel,
+  forwardStrings,
   onForward,
   onOpenArtifact,
 }: ChatMessageProps) {
   const isAssistant = role === "assistant";
   const rendered = isAssistant ? rewriteCitations(text) : text;
   const chunks = isAssistant ? splitOnMarkers(rendered) : [];
+  const [pendingForward, setPendingForward] = useState<string | null>(null);
+  const [contact, setContact] = useState("");
 
   return (
     <div
@@ -101,7 +119,14 @@ export function ChatMessage({
                   <button
                     key={`forward-${i}`}
                     type="button"
-                    onClick={() => onForward?.(chunk.question)}
+                    onClick={() => {
+                      if (forwardStrings) {
+                        setContact("");
+                        setPendingForward(chunk.question);
+                      } else {
+                        onForward?.(chunk.question, "");
+                      }
+                    }}
                     className="mt-2 mr-2 inline-flex rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)] hover:bg-[rgba(var(--color-primary-rgb),0.10)]"
                   >
                     {forwardLabel}
@@ -141,6 +166,43 @@ export function ChatMessage({
                 </ReactMarkdown>
               );
             })}
+            {pendingForward !== null && forwardStrings && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="mt-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+              >
+                <p className="mb-2 text-xs text-[var(--color-text-secondary)]">
+                  {forwardStrings.prompt}
+                </p>
+                <input
+                  type="text"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  placeholder={forwardStrings.placeholder}
+                  className="mb-2 w-full rounded border border-[var(--color-border)] bg-transparent px-2 py-1 text-sm"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPendingForward(null)}
+                    className="rounded px-2 py-1 text-xs text-[var(--color-text-tertiary)]"
+                  >
+                    {forwardStrings.cancel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onForward?.(pendingForward, contact);
+                      setPendingForward(null);
+                    }}
+                    className="rounded bg-[var(--color-primary)] px-3 py-1 text-xs text-[var(--color-on-primary)]"
+                  >
+                    {forwardStrings.send}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <p className="whitespace-pre-wrap text-[14px] leading-relaxed">{text}</p>
