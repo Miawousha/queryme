@@ -50,6 +50,12 @@ Persistence needs Postgres (via Vercel/Neon) and Upstash Redis (via Vercel KV).
 
 After this, `pnpm dev` will work end-to-end.
 
+## Environment
+
+- `RESEND_API_KEY` — API key for the Resend transactional-email service.
+- `FORWARD_NOTIFICATION_TO` — email address that receives forwarded questions.
+- `FORWARD_NOTIFICATION_FROM` — verified sender address used as the `from`.
+
 ## Editing the knowledge base
 
 The KB is just files. Edit them and commit; the agent picks up the new content on the next build.
