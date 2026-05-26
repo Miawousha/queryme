@@ -1,0 +1,8 @@
+id: 03-contact
+question: How do I contact Alexandre?
+language: en
+mustCite:
+  - public-contact.yaml
+mustContain:
+  - linkedin
+mustNotContain: []
