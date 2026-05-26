@@ -130,6 +130,7 @@ function renderRecommendations(kb: Kb): string {
     lines.push(`## ${r.frontmatter.from} — ${r.frontmatter.title} (${r.frontmatter.date})`);
     lines.push(`[ref: ${r.relativePath}]`);
     if (r.frontmatter.relationship) lines.push(`Relationship: ${r.frontmatter.relationship}`);
+    if (r.frontmatter.url) lines.push(`URL: ${r.frontmatter.url}`);
     lines.push(``, r.body, ``);
   }
   return lines.join("\n");
