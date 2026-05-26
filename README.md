@@ -50,6 +50,12 @@ Persistence needs Postgres (via Vercel/Neon) and Upstash Redis (via Vercel KV).
 
 After this, `pnpm dev` will work end-to-end.
 
+## Environment
+
+- `RESEND_API_KEY` — API key for the Resend transactional-email service.
+- `FORWARD_NOTIFICATION_TO` — email address that receives forwarded questions.
+- `FORWARD_NOTIFICATION_FROM` — verified sender address used as the `from`.
+
 ## Editing the knowledge base
 
 The KB is just files. Edit them and commit; the agent picks up the new content on the next build.
@@ -74,6 +80,23 @@ pnpm test          # unit tests
 pnpm typecheck     # TS only
 pnpm build         # full Next.js build (runs KB validation first)
 ```
+
+## Evals
+
+Golden-question regression suite. Each YAML under `evals/questions/` describes a
+question, the KB files the answer must cite, phrases that must appear, and
+phrases that must not. Run them against the live model:
+
+```bash
+ANTHROPIC_API_KEY=... pnpm evals
+```
+
+Exits non-zero on any failure: exit `1` means at least one eval failed (a
+real regression in answer quality); exit `2` means the runner could not
+start (missing API key, KB load error). CI can gate on `== 1` to surface
+quality regressions separately from infrastructure flakes.
+
+Add new questions by dropping a new `*.yaml` in the folder.
 
 ## MCP server
 
@@ -102,6 +125,30 @@ Requests are rate-limited per client IP.
 
 Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optionally) override `NEXT_PUBLIC_REPO_URL` / `NEXT_PUBLIC_REPO_BRANCH` if you've forked.
 
+## Self-host with Docker
+
+A `docker-compose.yml` ships Postgres, Redis, and a multi-stage Next.js
+container so the whole stack stands up locally.
+
+```bash
+cp .env.example .env
+# At minimum, set ANTHROPIC_API_KEY in .env
+docker compose up --build
+```
+
+Then open [http://localhost:3000](http://localhost:3000). The web container's
+compose `command` override runs `pnpm db:migrate` before `pnpm start` on every
+boot, so a fresh database is initialized automatically.
+
+`ADMIN_PASSWORD` doubles as the HMAC secret for admin session cookies. The
+compose file defaults it to `admin` for one-command bring-up — **change it
+in `.env` before exposing the container to any network you don't fully
+trust.** Rotating the value also invalidates every existing admin session.
+
+The compose stack uses the TCP-Postgres driver path (added in
+`lib/db/client.ts`) and the generic Redis driver via `REDIS_URL`. Vercel-deployed
+prod continues to use Neon over HTTP and Upstash KV.
+
 ## What's in this version
 
 - Public chat at `/` answering questions about Alexandre, grounded in `kb/`.
@@ -112,3 +159,9 @@ Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optio
 ## License
 
 MIT.
+
+## Talk to it from your own agent
+
+queryme is also an MCP server. See [docs/MCP.md](docs/MCP.md) for connector
+configs (Claude Desktop, Cursor, raw HTTP).
+

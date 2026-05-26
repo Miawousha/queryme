@@ -1,0 +1,1 @@
+ALTER TABLE "questions_for_alex" ADD COLUMN "contact" text;

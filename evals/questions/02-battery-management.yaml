@@ -1,0 +1,8 @@
+id: 02-battery-management
+question: How much battery-management experience does Alexandre have?
+language: en
+mustCite:
+  - skills.yaml
+mustContain:
+  - 15 years
+mustNotContain: []

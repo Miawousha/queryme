@@ -121,18 +121,29 @@ export function Chat({ t }: ChatProps) {
     setInput("");
   }
 
-  async function handleForward(question: string) {
+  async function handleForward(question: string, contact: string) {
     try {
+      const trimmedContact = contact.trim();
       const res = await fetch("/api/forward-question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, question }),
+        body: JSON.stringify({
+          conversationId,
+          question,
+          contact: trimmedContact || undefined,
+        }),
       });
-      setForwardToast(res.ok ? t.forwardSuccess : t.forwardError);
+      if (!res.ok) {
+        setForwardToast(t.forward.errorRetry);
+      } else if (trimmedContact) {
+        setForwardToast(t.forward.successWithContact);
+      } else {
+        setForwardToast(t.forward.successNoContact);
+      }
     } catch {
-      setForwardToast(t.forwardError);
+      setForwardToast(t.forward.errorRetry);
     }
-    setTimeout(() => setForwardToast(null), 3000);
+    setTimeout(() => setForwardToast(null), 4000);
   }
 
   function messageText(m: (typeof messages)[number]): string {
@@ -226,6 +237,7 @@ export function Chat({ t }: ChatProps) {
                 isStreaming={isStreaming}
                 agentLabel={t.agentLabel}
                 forwardLabel={t.forwardAction}
+                forwardStrings={t.forward}
                 onForward={handleForward}
                 onOpenArtifact={openFile}
               />

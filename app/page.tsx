@@ -57,6 +57,7 @@ export default function Home() {
           systemPrompt: t.footer.systemPrompt,
           kb: t.footer.kb,
           repo: t.footer.repo,
+          mcpDocs: t.footer.mcpDocs,
         }}
         repoUrl={REPO_URL}
         branch={REPO_BRANCH}

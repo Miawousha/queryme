@@ -27,7 +27,7 @@ function fmt(value: Date | string | null): string {
 
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
 
-type TabId = "interviewers" | "conversations" | "questions";
+type TabId = "interviewers" | "conversations" | "questions" | "analytics";
 
 export function AdminDashboard({ data }: { data: AdminData }) {
   const { stats, conversations, questions, interviewers } = data;
@@ -37,6 +37,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
     interviewers: null,
     conversations: null,
     questions: null,
+    analytics: null,
   });
 
   const selectedId = selected[tab];
@@ -82,6 +83,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
     { id: "interviewers", label: "Interviewers", count: interviewers.length },
     { id: "conversations", label: "Conversations", count: conversations.length },
     { id: "questions", label: "Questions", count: questions.length },
+    { id: "analytics", label: "Analytics", count: 0 },
   ];
 
   return (
@@ -188,6 +190,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
               renderRow={(q) => <QuestionRow question={q} />}
             />
           )}
+          {tab === "analytics" && <AnalyticsPanel />}
         </div>
       </div>
 
@@ -225,6 +228,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
         )}
         {tab === "questions" && selectedId && questionById.has(selectedId) && (
           <QuestionDetail
+            key={selectedId}
             question={questionById.get(selectedId)!}
             onOpenConversation={openConversation}
           />
@@ -252,8 +256,113 @@ function TabMeta({
   if (tab === "questions") {
     return <>{stats.unanswered > 0 ? `${stats.unanswered} unanswered` : "all answered"}</>;
   }
+  if (tab === "analytics") return null;
   const stated = interviewers.filter((c) => c.interviewer?.basis === "stated").length;
   return <>{`${stated} stated · ${interviewers.length - stated} inferred`}</>;
+}
+
+type AnalyticsData = {
+  perDay: { date: string; count: number }[];
+  topics: { topic: string; count: number }[];
+  density: { conversationId: string; assistantTurns: number; avgCitations: number }[];
+};
+
+function AnalyticsPanel() {
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/admin/analytics")
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(setData)
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
+  }, []);
+  if (error) return <p className="text-xs text-red-400">{error}</p>;
+  if (!data)
+    return (
+      <p className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+        Loading…
+      </p>
+    );
+
+  const maxDay = Math.max(1, ...data.perDay.map((d) => d.count));
+  const maxTopic = Math.max(1, ...data.topics.map((t) => t.count));
+
+  return (
+    <div className="flex flex-col gap-8">
+      <section className="flex flex-col gap-2">
+        <span className={LABEL}>Conversations per day (last 30)</span>
+        <svg viewBox="0 0 300 60" preserveAspectRatio="none" className="h-16 w-full">
+          {data.perDay.map((d, i) => {
+            const x = (i / Math.max(1, data.perDay.length - 1)) * 300;
+            const h = (d.count / maxDay) * 56;
+            return (
+              <rect
+                key={d.date}
+                x={x - 3}
+                y={60 - h}
+                width={6}
+                height={h}
+                fill="var(--color-accent)"
+                opacity={0.85}
+              />
+            );
+          })}
+        </svg>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <span className={LABEL}>Top forwarded-question topics</span>
+        <div className="flex flex-col gap-1">
+          {data.topics.length === 0 && (
+            <p className="text-xs text-[var(--color-text-tertiary)]">No data yet.</p>
+          )}
+          {data.topics.map((t) => (
+            <div key={t.topic} className="flex items-center gap-3">
+              <span className="w-24 font-mono text-[10px] uppercase text-[var(--color-text-secondary)]">
+                {t.topic}
+              </span>
+              <div className="h-2 flex-1 rounded bg-[var(--color-border)]">
+                <div
+                  className="h-2 rounded bg-[var(--color-primary)]"
+                  style={{ width: `${(t.count / maxTopic) * 100}%` }}
+                />
+              </div>
+              <span className="w-8 text-right font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                {t.count}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <span className={LABEL}>Citation density per conversation</span>
+        <table className="w-full border-collapse text-[12px]">
+          <thead>
+            <tr className="border-b border-[var(--color-border)] text-left font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+              <th className="py-1.5 pr-3">Conversation</th>
+              <th className="py-1.5 pr-3">Assistant turns</th>
+              <th className="py-1.5">Avg citations</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.density.map((d) => (
+              <tr key={d.conversationId} className="border-b border-[var(--color-border)]/40">
+                <td className="py-1.5 pr-3 font-mono text-[10px] text-[var(--color-text-secondary)]">
+                  {d.conversationId.slice(0, 8)}
+                </td>
+                <td className="py-1.5 pr-3">{d.assistantTurns}</td>
+                <td className="py-1.5">{d.avgCitations.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  );
 }
 
 function Badge({ children }: { children: ReactNode }) {
@@ -435,10 +544,40 @@ function QuestionDetail({
   question: QuestionForAlex;
   onOpenConversation: (conversationId: string) => void;
 }) {
+  const [draft, setDraft] = useState(question.reply ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(
+    question.answeredAt ? new Date(question.answeredAt) : null,
+  );
+
+  async function submit() {
+    if (!draft.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/questions/${question.id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reply: draft }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.error ?? `HTTP ${res.status}`);
+      } else {
+        setSavedAt(new Date());
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        {question.answeredAt ? (
+        {savedAt ? (
           <Badge>answered</Badge>
         ) : (
           <span
@@ -455,11 +594,38 @@ function QuestionDetail({
       <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[var(--color-text-primary)]">
         {question.question}
       </p>
-      {question.answeredAt && (
-        <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
-          answered {fmt(question.answeredAt)}
-        </p>
+      {question.contact && (
+        <Field label="Visitor contact" value={question.contact} />
       )}
+      <div className="flex flex-col gap-1">
+        <span className={LABEL}>Reply</span>
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={6}
+          className="rounded-md border border-[var(--color-border)] bg-transparent p-2 text-[13px]"
+          placeholder="Write the reply Alexandre wants to send…"
+        />
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+            {question.contact ? "Will email the visitor on send." : "No contact — saved locally only."}
+          </span>
+          <button
+            type="button"
+            disabled={busy || !draft.trim()}
+            onClick={submit}
+            className={cn(
+              "rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-[10px] uppercase",
+              "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+            )}
+            style={{ letterSpacing: "0.18em" }}
+          >
+            {busy ? "Sending…" : savedAt ? "Update reply" : "Send reply"}
+          </button>
+        </div>
+        {error && <span className="text-xs text-red-400">{error}</span>}
+      </div>
       {question.conversationId && (
         <button
           type="button"

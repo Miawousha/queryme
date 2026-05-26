@@ -1,0 +1,9 @@
+id: 01-most-recent-role
+question: What is Alexandre's most recent role?
+language: en
+mustCite:
+  - experience/2025-altergo.md
+mustContain:
+  - Altergo
+mustNotContain:
+  - I am Alexandre

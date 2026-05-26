@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: queryme
+      POSTGRES_PASSWORD: queryme
+      POSTGRES_DB: queryme
+    volumes:
+      - pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U queryme -d queryme"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  web:
+    build: .
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      POSTGRES_URL: postgres://queryme:queryme@postgres:5432/queryme
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com/v1}
+      NEXT_PUBLIC_REPO_URL: ${NEXT_PUBLIC_REPO_URL:-https://github.com/Miawousha/queryme}
+      NEXT_PUBLIC_REPO_BRANCH: ${NEXT_PUBLIC_REPO_BRANCH:-main}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      FORWARD_NOTIFICATION_TO: ${FORWARD_NOTIFICATION_TO:-}
+      FORWARD_NOTIFICATION_FROM: ${FORWARD_NOTIFICATION_FROM:-queryme@localhost}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    command: sh -c "pnpm db:migrate && pnpm start"
+    ports:
+      - "3000:3000"
+
+volumes:
+  pg:

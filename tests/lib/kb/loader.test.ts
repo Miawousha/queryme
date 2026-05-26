@@ -53,4 +53,44 @@ describe("loadKb", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("loads talks, open-source, and recommendations entries", async () => {
+    const kb = await loadKb(FIXTURE_DIR);
+    expect(kb.talks).toHaveLength(1);
+    expect(kb.talks[0].frontmatter.title).toBe("Battery emulation at scale");
+    expect(kb.talks[0].relativePath).toBe("talks/2024-evs37.md");
+
+    expect(kb.openSource).toHaveLength(1);
+    expect(kb.openSource[0].frontmatter.name).toBe("queryme");
+    expect(kb.openSource[0].relativePath).toBe("open-source/queryme.md");
+
+    expect(kb.recommendations).toHaveLength(1);
+    expect(kb.recommendations[0].frontmatter.from).toBe("Jane Doe");
+    expect(kb.recommendations[0].relativePath).toBe("recommendations/2024-09-jane-doe.md");
+  });
+
+  it("prefers a *.fr.md sidecar when lang=fr is requested", async () => {
+    const kb = await loadKb(FIXTURE_DIR, "fr");
+    const fixture = kb.experience.find((e) => e.slug === "2024-fixture-co");
+    expect(fixture).toBeDefined();
+    expect(fixture!.body).toContain("Corps de fixture.");
+    // relativePath stays canonical so citations remain stable across languages.
+    expect(fixture!.relativePath).toBe("experience/2024-fixture-co.md");
+  });
+
+  it("falls back to the base file when no fr sidecar exists", async () => {
+    const kb = await loadKb(FIXTURE_DIR, "fr");
+    const older = kb.experience.find((e) => e.slug === "2020-older-co");
+    expect(older).toBeDefined();
+    // No fr sidecar — should still be the English original.
+    expect(older!.body).toBeTruthy();
+  });
+
+  it("defaults to English when no lang argument is provided (back-compat)", async () => {
+    const kb = await loadKb(FIXTURE_DIR);
+    const fixture = kb.experience.find((e) => e.slug === "2024-fixture-co");
+    expect(fixture).toBeDefined();
+    // Body comes from the canonical .md, NOT the .fr.md sidecar.
+    expect(fixture!.body).not.toContain("Corps de fixture.");
+  });
 });

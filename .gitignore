@@ -15,3 +15,6 @@ coverage/
 
 # Superpowers brainstorm scratch
 .superpowers/
+
+# Graphify code-graph output — regenerable with `graphify update .`
+graphify-out/

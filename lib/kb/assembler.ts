@@ -9,6 +9,9 @@ export function assemblePublicKbText(kb: Kb): string {
   sections.push(renderPublicContact(kb));
   sections.push(renderExperience(kb));
   sections.push(renderProjects(kb));
+  if (kb.talks.length) sections.push(renderTalks(kb));
+  if (kb.openSource.length) sections.push(renderOpenSource(kb));
+  if (kb.recommendations.length) sections.push(renderRecommendations(kb));
 
   return sections.join("\n\n");
 }
@@ -89,6 +92,46 @@ function renderProjects(kb: Kb): string {
     lines.push(``);
     lines.push(p.body);
     lines.push(``);
+  }
+  return lines.join("\n");
+}
+
+function renderTalks(kb: Kb): string {
+  const lines = [`# Talks`, ``];
+  for (const t of kb.talks) {
+    const where = t.frontmatter.location ? ` — ${t.frontmatter.location}` : "";
+    lines.push(`## ${t.frontmatter.title} (${t.frontmatter.year})`);
+    lines.push(`[ref: ${t.relativePath}]`);
+    lines.push(`Venue: ${t.frontmatter.venue}${where}`);
+    if (t.frontmatter.url) lines.push(`URL: ${t.frontmatter.url}`);
+    if (t.frontmatter.tags?.length) lines.push(`Tags: ${t.frontmatter.tags.join(", ")}`);
+    lines.push(``, t.body, ``);
+  }
+  return lines.join("\n");
+}
+
+function renderOpenSource(kb: Kb): string {
+  const lines = [`# Open source`, ``];
+  for (const p of kb.openSource) {
+    lines.push(`## ${p.frontmatter.name}`);
+    lines.push(`[ref: ${p.relativePath}]`);
+    lines.push(`Role: ${p.frontmatter.role}`);
+    lines.push(`URL: ${p.frontmatter.url}`);
+    if (p.frontmatter.description) lines.push(`Description: ${p.frontmatter.description}`);
+    if (p.frontmatter.tags?.length) lines.push(`Tags: ${p.frontmatter.tags.join(", ")}`);
+    lines.push(``, p.body, ``);
+  }
+  return lines.join("\n");
+}
+
+function renderRecommendations(kb: Kb): string {
+  const lines = [`# Recommendations`, ``];
+  for (const r of kb.recommendations) {
+    lines.push(`## ${r.frontmatter.from} — ${r.frontmatter.title} (${r.frontmatter.date})`);
+    lines.push(`[ref: ${r.relativePath}]`);
+    if (r.frontmatter.relationship) lines.push(`Relationship: ${r.frontmatter.relationship}`);
+    if (r.frontmatter.url) lines.push(`URL: ${r.frontmatter.url}`);
+    lines.push(``, r.body, ``);
   }
   return lines.join("\n");
 }

@@ -17,8 +17,15 @@ export const UI_STRINGS = {
     statusThinking: "thinking",
     statusReady: "ready",
     forwardAction: "Send this question to Alexandre",
-    forwardSuccess: "Question forwarded to Alexandre.",
-    forwardError: "Couldn't forward — try again.",
+    forward: {
+      prompt: "Want a reply? Leave a contact (optional).",
+      placeholder: "Email or LinkedIn URL",
+      send: "Send to Alexandre",
+      cancel: "Cancel",
+      successWithContact: "Sent. Alexandre will reply at the contact you left.",
+      successNoContact: "Sent. Alexandre will see it next time he checks.",
+      errorRetry: "Couldn't send — try again.",
+    },
     genericError: "Something went wrong — please try again.",
     identity: {
       chipPrefix: "Recognized you as",
@@ -29,6 +36,7 @@ export const UI_STRINGS = {
       systemPrompt: "View the system prompt",
       kb: "View the knowledge base",
       repo: "GitHub repo",
+      mcpDocs: "Connect from your agent (MCP docs)",
     },
     mcp: {
       buttonLabel: "Connect via MCP",
@@ -115,8 +123,15 @@ export const UI_STRINGS = {
     statusThinking: "réflexion",
     statusReady: "prêt",
     forwardAction: "Envoyer cette question à Alexandre",
-    forwardSuccess: "Question envoyée à Alexandre.",
-    forwardError: "Échec de l'envoi — réessayez.",
+    forward: {
+      prompt: "Souhaitez-vous une réponse ? Laissez un contact (facultatif).",
+      placeholder: "E-mail ou URL LinkedIn",
+      send: "Envoyer à Alexandre",
+      cancel: "Annuler",
+      successWithContact: "Envoyé. Alexandre vous répondra au contact laissé.",
+      successNoContact: "Envoyé. Alexandre le verra lors de son prochain passage.",
+      errorRetry: "Échec de l'envoi — réessayez.",
+    },
     genericError: "Une erreur s'est produite — réessayez.",
     identity: {
       chipPrefix: "Vous avez été reconnu·e comme",
@@ -127,6 +142,7 @@ export const UI_STRINGS = {
       systemPrompt: "Voir le prompt système",
       kb: "Voir la base de connaissances",
       repo: "Dépôt GitHub",
+      mcpDocs: "Se connecter depuis votre agent (docs MCP)",
     },
     mcp: {
       buttonLabel: "Se connecter via MCP",

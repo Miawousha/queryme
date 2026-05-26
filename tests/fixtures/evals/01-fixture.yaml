@@ -1,0 +1,9 @@
+id: 01-fixture
+question: "What is X?"
+language: en
+mustCite:
+  - profile.yaml
+mustContain:
+  - fixture
+mustNotContain:
+  - forbidden

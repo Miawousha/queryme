@@ -29,8 +29,31 @@ export async function GET(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
+  const langParam = new URL(req.url).searchParams.get("lang");
+  const lang = langParam === "fr" ? "fr" : "en";
+
+  // Try the localized sidecar first when lang is non-English. Build the
+  // candidate path by injecting `.<lang>` before the extension.
+  async function resolveFile(): Promise<string> {
+    if (lang !== "en") {
+      const dot = entry!.path.lastIndexOf(".");
+      if (dot > 0) {
+        const localized = `${entry!.path.slice(0, dot)}.${lang}${entry!.path.slice(dot)}`;
+        const candidate = path.join(KB_DIR, localized);
+        try {
+          await fs.access(candidate);
+          return candidate;
+        } catch {
+          /* fall through to canonical */
+        }
+      }
+    }
+    return path.join(KB_DIR, entry!.path);
+  }
+
   try {
-    const buffer = await fs.readFile(path.join(KB_DIR, entry.path));
+    const filePath = await resolveFile();
+    const buffer = await fs.readFile(filePath);
     return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {

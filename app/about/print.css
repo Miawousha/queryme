@@ -1,0 +1,6 @@
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  a { color: #000 !important; text-decoration: none !important; }
+  nav, footer, .no-print { display: none !important; }
+  article { max-width: none !important; }
+}
