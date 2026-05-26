@@ -17,8 +17,6 @@ export const UI_STRINGS = {
     statusThinking: "thinking",
     statusReady: "ready",
     forwardAction: "Send this question to Alexandre",
-    forwardSuccess: "Question forwarded to Alexandre.",
-    forwardError: "Couldn't forward — try again.",
     forward: {
       prompt: "Want a reply? Leave a contact (optional).",
       placeholder: "Email or LinkedIn URL",
@@ -124,8 +122,6 @@ export const UI_STRINGS = {
     statusThinking: "réflexion",
     statusReady: "prêt",
     forwardAction: "Envoyer cette question à Alexandre",
-    forwardSuccess: "Question envoyée à Alexandre.",
-    forwardError: "Échec de l'envoi — réessayez.",
     forward: {
       prompt: "Souhaitez-vous une réponse ? Laissez un contact (facultatif).",
       placeholder: "E-mail ou URL LinkedIn",
