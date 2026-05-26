@@ -33,6 +33,20 @@ describe("topQuestionTopics", () => {
     expect(out.map((t) => t.topic)).toContain("contact");
     expect(out.map((t) => t.topic)).toContain("role");
   });
+
+  it("anchors short tokens on word boundaries — no false positives", () => {
+    // 'ai' must not match 'main' or 'chairman'; 'soc' must not match
+    // 'society'; 'hire' must not match 'shire'. None of these should bucket.
+    const out = topQuestionTopics([
+      { question: "What is the main thing about chairman society and shire?" },
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  it("matches the anchored token when present as a whole word", () => {
+    const out = topQuestionTopics([{ question: "Does he use AI tools?" }]);
+    expect(out).toEqual([{ topic: "ai", count: 1 }]);
+  });
 });
 
 describe("citationDensityPerConversation", () => {

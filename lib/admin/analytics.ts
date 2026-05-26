@@ -20,6 +20,12 @@ export function conversationsPerDay(
   return [...buckets.entries()].map(([date, count]) => ({ date, count }));
 }
 
+/**
+ * v1 keyword classifier. English-only. Short tokens like "ai" and "soc" are
+ * anchored on word boundaries to avoid matching "main", "chairman",
+ * "society", etc. as false positives. If French question volume grows enough
+ * to matter, add stems here (e.g. "contacter", "poste", "batterie").
+ */
 const TOPIC_KEYWORDS: { topic: string; words: string[] }[] = [
   { topic: "battery", words: ["battery", "bms", "soc", "soh", "balancing"] },
   { topic: "contact", words: ["contact", "email", "reach", "linkedin"] },
@@ -28,14 +34,20 @@ const TOPIC_KEYWORDS: { topic: string; words: string[] }[] = [
   { topic: "leadership", words: ["cto", "founder", "team", "manage", "hire"] },
 ];
 
+const TOPIC_PATTERNS: { topic: string; re: RegExp }[] = TOPIC_KEYWORDS.map(
+  (t) => ({
+    topic: t.topic,
+    re: new RegExp(`\\b(?:${t.words.join("|")})\\b`, "i"),
+  }),
+);
+
 export function topQuestionTopics(
   rows: { question: string }[],
 ): { topic: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const r of rows) {
-    const lower = r.question.toLowerCase();
-    for (const t of TOPIC_KEYWORDS) {
-      if (t.words.some((w) => lower.includes(w))) {
+    for (const t of TOPIC_PATTERNS) {
+      if (t.re.test(r.question)) {
         counts.set(t.topic, (counts.get(t.topic) ?? 0) + 1);
       }
     }

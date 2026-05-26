@@ -20,8 +20,14 @@ export async function GET() {
   return NextResponse.json({
     perDay: conversationsPerDay(convs, 30, new Date()),
     topics: topQuestionTopics(qs),
-    density: convs.map((c) =>
-      citationDensityPerConversation({ id: c.id, transcript: c.transcript ?? [] }),
-    ),
+    // Drop conversations with no assistant turns (nothing to assess) and
+    // surface low-citation answers first — they're the ones most likely
+    // ungrounded and worth reviewing.
+    density: convs
+      .map((c) =>
+        citationDensityPerConversation({ id: c.id, transcript: c.transcript ?? [] }),
+      )
+      .filter((d) => d.assistantTurns > 0)
+      .sort((a, b) => a.avgCitations - b.avgCitations),
   });
 }
