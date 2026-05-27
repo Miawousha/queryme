@@ -2,6 +2,7 @@
 name: queryme
 url: https://github.com/Miawousha/queryme
 role: author
+visibility: public
 description: "Agent-driven CV — answers questions about Alexandre from a YAML/Markdown knowledge base."
 year: 2026
 tags: [ai, software, typescript, nextjs]

@@ -54,15 +54,16 @@ describe("loadKb", () => {
     }
   });
 
-  it("loads talks, open-source, and recommendations entries", async () => {
+  it("loads talks, code, and recommendations entries", async () => {
     const kb = await loadKb(FIXTURE_DIR);
     expect(kb.talks).toHaveLength(1);
     expect(kb.talks[0].frontmatter.title).toBe("Battery emulation at scale");
     expect(kb.talks[0].relativePath).toBe("talks/2024-evs37.md");
 
-    expect(kb.openSource).toHaveLength(1);
-    expect(kb.openSource[0].frontmatter.name).toBe("queryme");
-    expect(kb.openSource[0].relativePath).toBe("open-source/queryme.md");
+    expect(kb.code).toHaveLength(1);
+    expect(kb.code[0].frontmatter.name).toBe("queryme");
+    expect(kb.code[0].frontmatter.visibility).toBe("public");
+    expect(kb.code[0].relativePath).toBe("code/queryme.md");
 
     expect(kb.recommendations).toHaveLength(1);
     expect(kb.recommendations[0].frontmatter.from).toBe("Jane Doe");

@@ -14,10 +14,10 @@ describe("loadKbManifest", () => {
   it("includes every public yaml and markdown file, with paths relative to the kb dir", () => {
     const paths = manifest.map((f) => f.path).sort();
     expect(paths).toEqual([
+      "code/queryme.md",
       "education.yaml",
       "experience/2020-older-co.md",
       "experience/2024-fixture-co.md",
-      "open-source/queryme.md",
       "profile.yaml",
       "projects/fixture-project.md",
       "public-contact.yaml",

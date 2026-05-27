@@ -92,15 +92,20 @@ export const TalkFrontmatterSchema = z.object({
 });
 export type TalkFrontmatter = z.infer<typeof TalkFrontmatterSchema>;
 
-export const OpenSourceFrontmatterSchema = z.object({
+export const RepoFrontmatterSchema = z.object({
   name: z.string().min(1),
-  url: z.url(),
+  url: z.url().optional(),
   role: z.enum(["author", "maintainer", "contributor"]),
+  visibility: z.enum(["public", "private"]).default("public"),
   description: z.string().optional(),
   year: z.number().int().min(1900).max(2100).optional(),
+  language: z.string().optional(),
+  stars: z.number().int().min(0).optional(),
+  archived: z.boolean().optional(),
+  stack: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
 });
-export type OpenSourceFrontmatter = z.infer<typeof OpenSourceFrontmatterSchema>;
+export type RepoFrontmatter = z.infer<typeof RepoFrontmatterSchema>;
 
 export const RecommendationFrontmatterSchema = z.object({
   from: z.string().min(1),

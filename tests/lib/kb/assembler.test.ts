@@ -69,10 +69,10 @@ describe("assemblePublicKbText", () => {
     expect(text).toContain("EVS37");
   });
 
-  it("includes an Open source section with [ref: open-source/...] markers", () => {
+  it("includes a Code section with [ref: code/...] markers", () => {
     const text = assemblePublicKbText(kb);
-    expect(text).toContain("# Open source");
-    expect(text).toContain("[ref: open-source/queryme.md]");
+    expect(text).toContain("# Code");
+    expect(text).toContain("[ref: code/queryme.md]");
     expect(text).toContain("queryme");
   });
 

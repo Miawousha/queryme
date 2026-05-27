@@ -7,7 +7,7 @@ import {
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
   TalkFrontmatterSchema,
-  OpenSourceFrontmatterSchema,
+  RepoFrontmatterSchema,
   RecommendationFrontmatterSchema,
 } from "@/lib/kb/schemas";
 
@@ -119,22 +119,67 @@ describe("TalkFrontmatterSchema", () => {
   });
 });
 
-describe("OpenSourceFrontmatterSchema", () => {
-  it("accepts a minimal project", () => {
+describe("RepoFrontmatterSchema", () => {
+  it("accepts a minimal public repo (visibility defaults to public)", () => {
+    const parsed = RepoFrontmatterSchema.parse({
+      name: "queryme",
+      url: "https://github.com/Miawousha/queryme",
+      role: "author",
+    });
+    expect(parsed.visibility).toBe("public");
+  });
+
+  it("accepts a private repo without a url", () => {
     expect(() =>
-      OpenSourceFrontmatterSchema.parse({
-        name: "queryme",
-        url: "https://github.com/Miawousha/queryme",
+      RepoFrontmatterSchema.parse({
+        name: "internal-tool",
         role: "author",
+        visibility: "private",
       }),
     ).not.toThrow();
   });
+
+  it("accepts optional language/stars/archived fields", () => {
+    const parsed = RepoFrontmatterSchema.parse({
+      name: "x",
+      url: "https://example.com/x",
+      role: "author",
+      language: "TypeScript",
+      stars: 42,
+      archived: true,
+    });
+    expect(parsed.language).toBe("TypeScript");
+    expect(parsed.stars).toBe(42);
+    expect(parsed.archived).toBe(true);
+  });
+
   it("rejects an invalid role", () => {
     expect(() =>
-      OpenSourceFrontmatterSchema.parse({
+      RepoFrontmatterSchema.parse({
         name: "x",
         url: "https://example.com/x",
         role: "owner",
+      }),
+    ).toThrow();
+  });
+
+  it("rejects an invalid visibility", () => {
+    expect(() =>
+      RepoFrontmatterSchema.parse({
+        name: "x",
+        role: "author",
+        visibility: "secret",
+      }),
+    ).toThrow();
+  });
+
+  it("rejects negative stars", () => {
+    expect(() =>
+      RepoFrontmatterSchema.parse({
+        name: "x",
+        url: "https://example.com/x",
+        role: "author",
+        stars: -1,
       }),
     ).toThrow();
   });

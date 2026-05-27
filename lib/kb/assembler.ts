@@ -10,7 +10,7 @@ export function assemblePublicKbText(kb: Kb): string {
   sections.push(renderExperience(kb));
   sections.push(renderProjects(kb));
   if (kb.talks.length) sections.push(renderTalks(kb));
-  if (kb.openSource.length) sections.push(renderOpenSource(kb));
+  if (kb.code.length) sections.push(renderRepos(kb));
   if (kb.recommendations.length) sections.push(renderRecommendations(kb));
 
   return sections.join("\n\n");
@@ -110,13 +110,15 @@ function renderTalks(kb: Kb): string {
   return lines.join("\n");
 }
 
-function renderOpenSource(kb: Kb): string {
-  const lines = [`# Open source`, ``];
-  for (const p of kb.openSource) {
+function renderRepos(kb: Kb): string {
+  const lines = [`# Code`, ``];
+  for (const p of kb.code) {
     lines.push(`## ${p.frontmatter.name}`);
     lines.push(`[ref: ${p.relativePath}]`);
     lines.push(`Role: ${p.frontmatter.role}`);
-    lines.push(`URL: ${p.frontmatter.url}`);
+    lines.push(`Visibility: ${p.frontmatter.visibility}`);
+    if (p.frontmatter.url) lines.push(`URL: ${p.frontmatter.url}`);
+    if (p.frontmatter.language) lines.push(`Language: ${p.frontmatter.language}`);
     if (p.frontmatter.description) lines.push(`Description: ${p.frontmatter.description}`);
     if (p.frontmatter.tags?.length) lines.push(`Tags: ${p.frontmatter.tags.join(", ")}`);
     lines.push(``, p.body, ``);

@@ -10,7 +10,7 @@ import {
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
   TalkFrontmatterSchema,
-  OpenSourceFrontmatterSchema,
+  RepoFrontmatterSchema,
   RecommendationFrontmatterSchema,
   type Profile,
   type Skills,
@@ -19,7 +19,7 @@ import {
   type ExperienceFrontmatter,
   type ProjectFrontmatter,
   type TalkFrontmatter,
-  type OpenSourceFrontmatter,
+  type RepoFrontmatter,
   type RecommendationFrontmatter,
 } from "./schemas";
 
@@ -44,10 +44,10 @@ export type TalkEntry = {
   body: string;
 };
 
-export type OpenSourceEntry = {
+export type RepoEntry = {
   slug: string;
   relativePath: string;
-  frontmatter: OpenSourceFrontmatter;
+  frontmatter: RepoFrontmatter;
   body: string;
 };
 
@@ -66,7 +66,7 @@ export type Kb = {
   experience: ExperienceEntry[];
   projects: ProjectEntry[];
   talks: TalkEntry[];
-  openSource: OpenSourceEntry[];
+  code: RepoEntry[];
   recommendations: RecommendationEntry[];
 };
 
@@ -171,7 +171,7 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
   const [
     profile, skills, education, publicContact,
     experience, projects,
-    talks, openSource, recommendations,
+    talks, code, recommendations,
   ] = await Promise.all([
     readYamlFile(await pickFile(path.join(rootDir, "profile"), "yaml", lang), ProfileSchema, "profile.yaml"),
     readYamlFile(await pickFile(path.join(rootDir, "skills"), "yaml", lang), SkillsSchema, "skills.yaml"),
@@ -180,14 +180,14 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
     readMarkdownDir(path.join(rootDir, "experience"), ExperienceFrontmatterSchema, "experience", lang),
     readMarkdownDir(path.join(rootDir, "projects"), ProjectFrontmatterSchema, "projects", lang),
     readMarkdownDir(path.join(rootDir, "talks"), TalkFrontmatterSchema, "talks", lang),
-    readMarkdownDir(path.join(rootDir, "open-source"), OpenSourceFrontmatterSchema, "open-source", lang),
+    readMarkdownDir(path.join(rootDir, "code"), RepoFrontmatterSchema, "code", lang),
     readMarkdownDir(path.join(rootDir, "recommendations"), RecommendationFrontmatterSchema, "recommendations", lang),
   ]);
 
   experience.sort((a, b) => (startSortKey(a.frontmatter.start) < startSortKey(b.frontmatter.start) ? 1 : -1));
   projects.sort((a, b) => (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0));
   talks.sort((a, b) => b.frontmatter.year - a.frontmatter.year);
-  openSource.sort((a, b) =>
+  code.sort((a, b) =>
     (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0) || a.frontmatter.name.localeCompare(b.frontmatter.name),
   );
   recommendations.sort((a, b) => (a.frontmatter.date < b.frontmatter.date ? 1 : -1));
@@ -200,7 +200,7 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
     experience,
     projects,
     talks,
-    openSource,
+    code,
     recommendations,
   };
 }
