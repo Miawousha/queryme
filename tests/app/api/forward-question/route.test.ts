@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { POST, handleForward } from "@/app/api/forward-question/route";
+import { POST } from "@/app/api/forward-question/route";
+import { handleForward } from "@/app/api/forward-question/handler";
 import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/db/client", () => ({ getDb: vi.fn(() => ({})) }));
