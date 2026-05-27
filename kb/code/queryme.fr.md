@@ -5,7 +5,7 @@ role: author
 visibility: public
 description: "CV piloté par agent — répond aux questions sur Alexandre à partir d'une base de connaissances YAML/Markdown."
 year: 2026
-tags: [ai, software, typescript, nextjs]
+tags: [ai, agent, mcp, typescript, nextjs]
 ---
 
 queryme est le système qui sert cette page. Construit avec Next.js 15, le Vercel AI

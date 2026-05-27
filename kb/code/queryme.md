@@ -5,7 +5,7 @@ role: author
 visibility: public
 description: "Agent-driven CV — answers questions about Alexandre from a YAML/Markdown knowledge base."
 year: 2026
-tags: [ai, software, typescript, nextjs]
+tags: [ai, agent, mcp, typescript, nextjs]
 ---
 
 queryme is the system serving this page. Built with Next.js 15, the Vercel AI

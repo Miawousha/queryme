@@ -119,6 +119,11 @@ function renderRepos(kb: Kb): string {
     lines.push(`Visibility: ${p.frontmatter.visibility}`);
     if (p.frontmatter.url) lines.push(`URL: ${p.frontmatter.url}`);
     if (p.frontmatter.language) lines.push(`Language: ${p.frontmatter.language}`);
+    if (p.frontmatter.year !== undefined) lines.push(`Year: ${p.frontmatter.year}`);
+    if (p.frontmatter.last_active) lines.push(`Last active: ${p.frontmatter.last_active}`);
+    if (p.frontmatter.code_bytes !== undefined) lines.push(`Code size: ${p.frontmatter.code_bytes} bytes`);
+    if (p.frontmatter.stars !== undefined) lines.push(`Stars: ${p.frontmatter.stars}`);
+    if (p.frontmatter.archived) lines.push(`Archived: yes`);
     if (p.frontmatter.description) lines.push(`Description: ${p.frontmatter.description}`);
     if (p.frontmatter.tags?.length) lines.push(`Tags: ${p.frontmatter.tags.join(", ")}`);
     lines.push(``, p.body, ``);

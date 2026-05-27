@@ -22,6 +22,7 @@ import {
   type RepoFrontmatter,
   type RecommendationFrontmatter,
 } from "./schemas";
+import { loadCodeIndex, resolveRepoTags } from "./code-index";
 
 export type ExperienceEntry = {
   slug: string;
@@ -172,6 +173,7 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
     profile, skills, education, publicContact,
     experience, projects,
     talks, code, recommendations,
+    codeIndex,
   ] = await Promise.all([
     readYamlFile(await pickFile(path.join(rootDir, "profile"), "yaml", lang), ProfileSchema, "profile.yaml"),
     readYamlFile(await pickFile(path.join(rootDir, "skills"), "yaml", lang), SkillsSchema, "skills.yaml"),
@@ -182,7 +184,18 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
     readMarkdownDir(path.join(rootDir, "talks"), TalkFrontmatterSchema, "talks", lang),
     readMarkdownDir(path.join(rootDir, "code"), RepoFrontmatterSchema, "code", lang),
     readMarkdownDir(path.join(rootDir, "recommendations"), RecommendationFrontmatterSchema, "recommendations", lang),
+    loadCodeIndex(rootDir),
   ]);
+
+  // Apply the code-index: validate per-repo tags against the registry and
+  // fill missing tags from `assignments`. Throws on unknown tags so typos
+  // surface at load time.
+  for (const repo of code) {
+    repo.frontmatter = {
+      ...repo.frontmatter,
+      tags: resolveRepoTags(repo.slug, repo.frontmatter.tags, codeIndex),
+    };
+  }
 
   experience.sort((a, b) => (startSortKey(a.frontmatter.start) < startSortKey(b.frontmatter.start) ? 1 : -1));
   projects.sort((a, b) => (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0));

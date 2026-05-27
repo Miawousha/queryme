@@ -39,6 +39,13 @@ function sortGroup(files: KbFile[], group: GroupKey): KbFile[] {
   });
 }
 
+function formatBytes(n: number | undefined): string | null {
+  if (n === undefined || n <= 0) return null;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function FileRow({
   file,
   cited,
@@ -51,11 +58,16 @@ function FileRow({
   onOpen: (path: string) => void;
 }) {
   const { strings } = useKb();
-  const subtitle = variant === "code" ? null : metaSubtitle(file.meta);
+  // For code rows, the description (one-line subtitle) replaces the generic
+  // role/period subtitle so the panel reads like a project list.
+  const subtitle =
+    variant === "code" ? file.meta?.description ?? null : metaSubtitle(file.meta);
   const url = file.meta?.url;
   const language = file.meta?.language;
   const isPrivate = file.meta?.visibility === "private";
   const tags = file.meta?.tags;
+  const size = variant === "code" ? formatBytes(file.meta?.code_bytes) : null;
+  const lastActive = variant === "code" ? file.meta?.last_active : undefined;
 
   return (
     <button
@@ -107,7 +119,7 @@ function FileRow({
           </span>
         )}
 
-        {variant === "code" && (language || isPrivate || (tags && tags.length > 0)) && (
+        {variant === "code" && (language || isPrivate || size || lastActive || (tags && tags.length > 0)) && (
           <span className="mt-0.5 flex flex-wrap items-center gap-1">
             {isPrivate && (
               <span
@@ -122,6 +134,21 @@ function FileRow({
                 className="rounded-full border border-[var(--color-border)] px-1.5 py-px font-mono text-[9px] text-[var(--color-text-secondary)]"
               >
                 {language}
+              </span>
+            )}
+            {size && (
+              <span
+                className="rounded-full border border-[var(--color-border)] px-1.5 py-px font-mono text-[9px] text-[var(--color-text-tertiary)]"
+              >
+                {size}
+              </span>
+            )}
+            {lastActive && (
+              <span
+                className="font-mono text-[9px] text-[var(--color-text-tertiary)]"
+                title={lastActive}
+              >
+                · {lastActive}
               </span>
             )}
             {tags?.slice(0, 4).map((tag) => (

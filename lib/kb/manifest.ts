@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { fileTypeFromPath, type KbFileType } from "@/lib/kb/file-type";
+import { loadCodeIndex, type CodeIndex } from "@/lib/kb/code-index";
 
 /**
  * Frontmatter fields surfaced to the UI. A loose superset of the experience
@@ -22,6 +23,9 @@ export type KbFileMeta = {
   visibility?: "public" | "private";
   language?: string;
   stars?: number;
+  code_bytes?: number;
+  last_active?: string;
+  description?: string;
 };
 
 export type KbFile = {
@@ -76,6 +80,9 @@ function pickMeta(data: Record<string, unknown>): KbFileMeta | null {
     visibility: asVisibility(data.visibility),
     language: asString(data.language),
     stars: asNumber(data.stars),
+    code_bytes: asNumber(data.code_bytes),
+    last_active: asString(data.last_active),
+    description: asString(data.description),
   };
   const hasAny = Object.values(meta).some((v) => v !== undefined);
   return hasAny ? meta : null;
@@ -83,31 +90,41 @@ function pickMeta(data: Record<string, unknown>): KbFileMeta | null {
 
 /**
  * Reads a markdown file once: derives the title (first `# Heading`, falling
- * back to the humanized path) and the parsed frontmatter.
+ * back to the humanized path) and the parsed frontmatter. For files under
+ * `code/`, also merges in tag assignments from the code index when the
+ * frontmatter omits `tags`.
  */
 async function readMarkdown(
   absPath: string,
   relPath: string,
+  codeIndex: CodeIndex,
 ): Promise<{ title: string; meta?: KbFileMeta }> {
   const raw = await fs.readFile(absPath, "utf8");
   const { data, content } = matter(raw);
   const heading = content.split("\n").find((line) => /^#\s+/.test(line));
   const title = heading ? heading.replace(/^#\s+/, "").trim() : humanize(relPath);
   const meta = pickMeta(data as Record<string, unknown>);
+  if (meta && relPath.startsWith("code/") && (!meta.tags || meta.tags.length === 0)) {
+    const slug = path.basename(relPath, ".md");
+    const assigned = codeIndex.assignments[slug];
+    if (assigned && assigned.length > 0) meta.tags = assigned;
+  }
   return meta ? { title, meta } : { title };
 }
 
-async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> {
+async function walk(dir: string, baseDir: string, out: KbFile[], codeIndex: CodeIndex): Promise<void> {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name.startsWith(".")) continue;
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (path.relative(baseDir, abs) === EXCLUDED_DIR) continue;
-      await walk(abs, baseDir, out);
+      await walk(abs, baseDir, out, codeIndex);
       continue;
     }
     const rel = path.relative(baseDir, abs);
+    // The code index isn't a KB document — it's loader config.
+    if (rel === "code/index.yaml") continue;
     const type = fileTypeFromPath(rel);
     if (!type) continue;
     // Skip localized sidecars like `foo.fr.md` / `foo.fr.yaml`. The manifest
@@ -115,7 +132,7 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
     // read time via `?lang=`.
     if (/\.[a-z]{2}\.(md|yaml)$/.test(rel)) continue;
     if (type === "md") {
-      const { title, meta } = await readMarkdown(abs, rel);
+      const { title, meta } = await readMarkdown(abs, rel, codeIndex);
       out.push({ path: rel, title, type, ...(meta ? { meta } : {}) });
     } else {
       out.push({ path: rel, title: humanize(rel), type });
@@ -129,7 +146,8 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
  */
 export async function loadKbManifest(kbDir: string): Promise<KbFile[]> {
   const out: KbFile[] = [];
-  await walk(kbDir, kbDir, out);
+  const codeIndex = await loadCodeIndex(kbDir);
+  await walk(kbDir, kbDir, out, codeIndex);
   out.sort((a, b) => a.path.localeCompare(b.path));
   return out;
 }
