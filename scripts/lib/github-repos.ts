@@ -41,6 +41,21 @@ function cleanParagraph(p: string): string {
   return p.replace(BADGE_RE, "").replace(HTML_TAG_RE, "").replace(/\s+/g, " ").trim();
 }
 
+const BOILERPLATE_RES = [
+  /create-next-app/i,
+  /^this is a \[?next\.js/i,
+];
+
+function isListParagraph(p: string): boolean {
+  const lines = p.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return false;
+  return lines.every((l) => /^([-*+]|\d+\.)\s/.test(l));
+}
+
+function isBoilerplate(p: string): boolean {
+  return BOILERPLATE_RES.some((re) => re.test(p));
+}
+
 export function extractReadmeParagraph(md: string): string | null {
   if (!md.trim()) return null;
   const paragraphs = md.split(/\n\s*\n/);
@@ -48,8 +63,10 @@ export function extractReadmeParagraph(md: string): string | null {
     const trimmed = raw.trim();
     if (!trimmed) continue;
     if (/^#{1,6}\s/.test(trimmed)) continue;
+    if (isListParagraph(trimmed)) continue;
     const cleaned = cleanParagraph(trimmed);
     if (!cleaned) continue;
+    if (isBoilerplate(cleaned)) continue;
     return cleaned;
   }
   return null;

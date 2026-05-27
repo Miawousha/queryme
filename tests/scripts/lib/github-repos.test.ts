@@ -40,6 +40,18 @@ describe("extractReadmeParagraph", () => {
     const md = "<p align=\"center\">Centered intro</p>";
     expect(extractReadmeParagraph(md)).toBe("Centered intro");
   });
+  it("skips bullet-list paragraphs (every line starts with - or *)", () => {
+    const md = "# Requirements\n\n- Node.js >= 18\n- npm >= 9\n- Stripe CLI\n\nReal intro paragraph here.";
+    expect(extractReadmeParagraph(md)).toBe("Real intro paragraph here.");
+  });
+  it("skips numbered-list paragraphs", () => {
+    const md = "# Steps\n\n1. Clone the repo\n2. Run npm install\n3. Start the server\n\nReal intro.";
+    expect(extractReadmeParagraph(md)).toBe("Real intro.");
+  });
+  it("skips create-next-app boilerplate", () => {
+    const md = "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](x).\n\nReal intro.";
+    expect(extractReadmeParagraph(md)).toBe("Real intro.");
+  });
 });
 
 const baseRepo: GhRepo = {

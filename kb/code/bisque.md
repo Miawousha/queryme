@@ -1,11 +1,11 @@
 ---
 name: "bisque"
 url: https://github.com/Miawousha/bisque
+year: 2026
 role: author
 visibility: public
-year: 2026
 language: "TypeScript"
 stars: 0
 archived: false
 ---
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+A small Next.js 16 + Tailwind 4 app built on shadcn/ui, radix-ui and lucide-react, with next-themes-driven light/dark toggling. A sandbox for experimenting with the latest React 19 and Next.js 16 surface and component primitives.
