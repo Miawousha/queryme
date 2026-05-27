@@ -48,7 +48,7 @@ async function listContributedRepos(): Promise<string[]> {
   const stdout = await gh([
     "search", "prs",
     "--author", GH_USER,
-    "--state", "merged",
+    "--merged",
     "--limit", "500",
     "--json", "repository",
   ]);

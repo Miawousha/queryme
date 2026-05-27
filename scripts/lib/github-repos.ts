@@ -7,7 +7,7 @@ export type GhRepo = {
   isFork: boolean;
   primaryLanguage: { name: string } | null;
   stargazerCount: number;
-  repositoryTopics: { name: string }[];
+  repositoryTopics: { name: string }[] | null;
   createdAt: string;
   pushedAt: string;
 };
@@ -71,7 +71,7 @@ export function buildPublicFrontmatter(repo: GhRepo, role: RepoRole): RepoFm {
   };
   if (repo.description) fm.description = repo.description;
   if (repo.primaryLanguage?.name) fm.language = repo.primaryLanguage.name;
-  const tags = repo.repositoryTopics.map((t) => t.name).filter(Boolean);
+  const tags = (repo.repositoryTopics ?? []).map((t) => t.name).filter(Boolean);
   if (tags.length) fm.tags = tags;
   return fm;
 }
@@ -86,7 +86,7 @@ export function buildPrivateFrontmatter(repo: GhRepo): RepoFm {
   };
   if (repo.description) fm.description = repo.description;
   if (repo.primaryLanguage?.name) fm.language = repo.primaryLanguage.name;
-  const tags = repo.repositoryTopics.map((t) => t.name).filter(Boolean);
+  const tags = (repo.repositoryTopics ?? []).map((t) => t.name).filter(Boolean);
   if (tags.length) fm.tags = tags;
   return fm;
 }

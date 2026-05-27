@@ -92,3 +92,16 @@ describe("buildPrivateFrontmatter", () => {
     expect(fm.role).toBe("author");
   });
 });
+
+describe("frontmatter builders — null repositoryTopics", () => {
+  it("buildPublicFrontmatter handles null topics from gh", () => {
+    const repo = { ...baseRepo, repositoryTopics: null as unknown as { name: string }[] };
+    const fm = buildPublicFrontmatter(repo, "author");
+    expect(fm.tags).toBeUndefined();
+  });
+  it("buildPrivateFrontmatter handles null topics from gh", () => {
+    const repo = { ...baseRepo, isPrivate: true, repositoryTopics: null as unknown as { name: string }[] };
+    const fm = buildPrivateFrontmatter(repo);
+    expect(fm.tags).toBeUndefined();
+  });
+});
