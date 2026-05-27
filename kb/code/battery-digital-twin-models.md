@@ -3,10 +3,14 @@ name: "battery-digital-twin-models"
 url: https://github.com/Miawousha/battery-digital-twin-models
 role: author
 visibility: public
-description: "Battery Digital Twin Models - Clean 2-layer architecture for battery models on Altergo platform"
+description: "Two-layer framework for deploying battery models as digital twins on the Altergo platform."
 year: 2025
+last_active: "2025-09"
 language: "Python"
 stars: 0
+code_bytes: 37001
 archived: false
+tags: [battery, energy, python, library]
 ---
-A clean 2-layer architecture for battery digital twin models on the Altergo platform, with clear separation between platform integration and battery science implementations.
+
+battery-digital-twin-models is a two-layer Python framework for shipping battery digital-twin models on the Altergo platform. One layer (`altergo_interface/`) handles platform integration; the other (`models/`) contains pure battery-science implementations, so authors can write algorithms without touching plumbing. Open-source reference architecture extracted from internal work.

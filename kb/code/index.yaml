@@ -32,6 +32,13 @@ tags:
   postgres:     PostgreSQL
   shell:        Shell / bash scripting
 
+  # ----- Domain (cont.) -----
+  education:    Learning / pedagogical product
+  docs:         Documentation / strategy / non-code workspace
+
+  # ----- Tech (cont.) -----
+  desktop:      Native desktop app (Tauri / Electron)
+
   # ----- Role / shape -----
   infra:        Infra / DevOps / deployment
   tooling:      Developer tooling / CLI
