@@ -8,7 +8,7 @@ Live: _coming soon_
 
 1. The KB lives in `/kb` as YAML files (structured facts) and Markdown files (narrative stories). One file per role and per project.
 2. The system prompt lives in `/prompts/system.md`. It's plain Markdown — read it.
-3. The Next.js app loads the KB at runtime, assembles it into a single text blob, and injects it into the system prompt with Anthropic prompt caching so every request after the first is cheap.
+3. The Next.js app loads the KB at runtime, assembles it into a single text blob, and injects it into the system prompt with Anthropic prompt caching so every request after the first is cheap. The `# Code` section is split: a curated featured set is pre-loaded, and the long tail is reachable on demand via a `lookup_code_entries` tool — see [docs/agent-context.md](docs/agent-context.md) for the full walkthrough.
 4. The web chat at `/` calls `/api/chat`, which calls a shared `answer()` function. The MCP server at `/api/mcp` calls the same `answer()` — see [MCP server](#mcp-server) below.
 
 The agent can also recognize who it is talking to: when a visitor introduces
