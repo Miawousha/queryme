@@ -15,6 +15,7 @@ describe("loadKbManifest", () => {
     const paths = manifest.map((f) => f.path).sort();
     expect(paths).toEqual([
       "code/queryme.md",
+      "code/sample-indexed.md",
       "education.yaml",
       "experience/2020-older-co.md",
       "experience/2024-fixture-co.md",

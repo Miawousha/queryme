@@ -20,6 +20,13 @@ const SectionFilterSchema = z
   .union([z.object({ all: z.literal(true) }), z.object({ include: z.array(z.string().min(1)).min(1) })])
   .optional();
 
+const ChatBlockSchema = z
+  .object({
+    featured_code: z.array(z.string().min(1)).optional(),
+  })
+  .strict()
+  .optional();
+
 const CvConfigSchema = z
   .object({
     experience: SectionFilterSchema,
@@ -28,6 +35,7 @@ const CvConfigSchema = z
     projects: SectionFilterSchema,
     talks: SectionFilterSchema,
     code: SectionFilterSchema,
+    chat: ChatBlockSchema,
   })
   .strict();
 
@@ -100,4 +108,15 @@ export function filterKbForCv(kb: Kb, config: CvConfig | null): Kb {
       entries: whitelist(config.education, kb.education.entries, (e) => e.institution, "education"),
     },
   };
+}
+
+/**
+ * Returns the curated list of code slugs to inline in the chat agent's system
+ * prompt, or `null` when no curation is configured (the assembler then ships
+ * every code entry — today's default behaviour).
+ */
+export function getFeaturedCodeSlugs(config: CvConfig | null): string[] | null {
+  const slugs = config?.chat?.featured_code;
+  if (!slugs || slugs.length === 0) return null;
+  return slugs;
 }

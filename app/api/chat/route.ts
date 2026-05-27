@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getCachedPublicKbText } from "@/lib/kb/cache";
+import { getCachedKb, getCachedPublicKbText } from "@/lib/kb/cache";
+import { buildKbLookupTools } from "@/lib/kb/tools";
 import { answer } from "@/lib/answerer";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { getDb } from "@/lib/db/client";
@@ -89,7 +90,10 @@ export async function POST(req: NextRequest) {
     language: parsed.data.language,
   });
   const lang = (conv.language ?? parsed.data.language ?? "en") as "en" | "fr";
-  const publicKbText = await getCachedPublicKbText(lang);
+  const [publicKbText, parsedKb] = await Promise.all([
+    getCachedPublicKbText(lang),
+    getCachedKb(lang),
+  ]);
 
   // Append the last user turn to the transcript before streaming.
   const lastMessage = parsed.data.messages[parsed.data.messages.length - 1];
@@ -105,7 +109,10 @@ export async function POST(req: NextRequest) {
   const result = await answer({
     messages: convertToModelMessages(parsed.data.messages as UIMessage[]),
     kbText: publicKbText,
-    tools: buildIdentifyTools((identity) => setInterviewer(db, conversationId, identity)),
+    tools: {
+      ...buildIdentifyTools((identity) => setInterviewer(db, conversationId, identity)),
+      ...buildKbLookupTools(parsedKb),
+    },
   });
 
   return result.toUIMessageStreamResponse({
