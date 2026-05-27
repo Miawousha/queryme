@@ -35,6 +35,8 @@ tags:
   # ----- Domain (cont.) -----
   education:    Learning / pedagogical product
   docs:         Documentation / strategy / non-code workspace
+  simulation:   Physics / numerical simulation
+  optimization: Mathematical optimization / scheduling
 
   # ----- Tech (cont.) -----
   desktop:      Native desktop app (Tauri / Electron)
