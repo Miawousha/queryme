@@ -36,3 +36,27 @@ talks:
 
 code:
   all: true
+
+# Chat agent curation. `featured_code` is the curated set the chat agent
+# pre-loads in its system prompt under `# Code (featured)`; remaining repos
+# render as one-line stubs under `# Code (index)` and are fetched on demand
+# via the `lookup_code_entries` tool. Omit or leave empty to inline every
+# repo (back-compat).
+chat:
+  featured_code:
+    # Meta: the agent answering you is this codebase.
+    - queryme
+    # Battery / energy domain — Alexandre's anchor.
+    - aging-battery-lifetime-simulator
+    - battery-capacity-sizer
+    - arbitrage
+    - battery-usage-analyzer
+    - rtbm-dataset-generator
+    # AI agents and Next.js full-stack range.
+    - learn-anything
+    - polypress
+    - ontoloom
+    - feedsnap
+    # Desktop and marketing-stack range.
+    - sirene
+    - matrice-website
