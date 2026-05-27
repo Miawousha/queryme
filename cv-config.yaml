@@ -49,9 +49,14 @@ chat:
     # Battery / energy domain — Alexandre's anchor.
     - aging-battery-lifetime-simulator
     - battery-capacity-sizer
-    - arbitrage
     - battery-usage-analyzer
+    - bess-control-sim
+    - hydrogen
+    - rtbm
     - rtbm-dataset-generator
+    - soc
+    - sop
+    - arbitrage
     # AI agents and Next.js full-stack range.
     - learn-anything
     - polypress
