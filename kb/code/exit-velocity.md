@@ -2,7 +2,7 @@
 name: "exit_velocity"
 role: author
 visibility: private
-description: "Pseudonymous one-shot intake form for founders quietly exploring exit options."
+description: "Pseudonymous intake funnel for founders quietly exploring exit options."
 year: 2026
 last_active: "2026-01"
 language: "TypeScript"
@@ -11,4 +11,4 @@ archived: false
 tags: [nextjs, react, typescript, fintech]
 ---
 
-exit_velocity is a privacy-first Next.js 15 web app that lets founders explore exit options through a pseudonymous, one-shot intake form. No tracking, no saved drafts, no cookies — every submission is reviewed manually by a human. Built with TypeScript, Tailwind, shadcn/ui, Vercel Postgres, and Resend for email; deployed at exitvelocity.me as a private intake channel.
+exit_velocity is a Next.js 15 intake funnel that lets founders confidentially evaluate an exit. The flow is strict: enter an email, get assigned a celestial pseudonym (e.g. "Crimson Vega") backed by a globally-unique reservation in Postgres, click the verification link within 48 hours, then answer six questions in a 15-minute timed session — no drafts, no re-submissions. Built with shadcn/ui, Vercel Postgres, Resend for verification + admin notifications, and Zustand for the timer; every verified submission triggers a manual review by the owner.

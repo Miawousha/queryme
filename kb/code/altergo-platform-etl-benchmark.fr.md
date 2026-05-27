@@ -3,7 +3,7 @@ name: "altergo_platform_etl_benchmark"
 url: https://github.com/ION-Altergo/altergo_platform_etl_benchmark
 role: contributor
 visibility: private
-description: "Scripts de benchmark pour le pipeline ETL de la plateforme Altergo."
+description: "Benchmark d'ingestion de données capteurs sur la plateforme Altergo — balaye nombre de jumeaux, de pas et fréquence d'échantillonnage."
 year: 2024
 last_active: "2024-11"
 language: "Python"
@@ -12,4 +12,4 @@ archived: false
 tags: [infra, python, data-only]
 ---
 
-altergo_platform_etl_benchmark contient les scripts Python qui sollicitent le pipeline ETL de la plateforme Altergo en charge et en mesurent le débit. Outillage interne pragmatique — pas de README, les scripts eux-mêmes tiennent lieu de documentation. Utilisé pendant les travaux de capacité ETL.
+altergo_platform_etl_benchmark mesure l'ingestion bout-en-bout des données capteurs sur la plateforme Altergo : le débit en écriture, pas la lecture. `benchmark/main.py` balaye une grille de nombres de jumeaux numériques (10 → 100), de nombres de pas (1k → 1M) et d'intervalles d'échantillonnage (1 s → 30 min), génère des séries temporelles aléatoires et les pousse via `altergoClient.sendSensorDataToAssets`. Chaque exécution journalise les temps backend rapportés (download / processing / ingestion) à côté des temps client (processing / zipping / uploading) dans `benchmark_results.csv`, ce qui permet de régresser la latence en fonction du volume × cardinalité. Pas de README — le script et son CSV de sortie tiennent lieu de spécification.

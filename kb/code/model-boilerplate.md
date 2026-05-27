@@ -12,4 +12,4 @@ archived: false
 tags: [battery, python, library]
 ---
 
-model_boilerplate is the canonical Python scaffold for building battery digital-twin models against the Altergo Platform. Provides the project layout, SDK wiring, dev-parameters template, and worked examples so new models (SoC, SoH, impedance, cell-imbalance, etc.) start from a known-good baseline rather than recreating platform plumbing each time. Internal foundation for the model fleet.
+model_boilerplate is the canonical Python scaffold for building battery digital-twin models on the Altergo platform. Wraps the Altergo SDK's `AltergoModelBoilerplate` lifecycle (prepare data, execute, debug dashboards, upload output) into a `entrypoint_simple.py` / `entrypoint_advanced.py` pair, with a `models/` registry pattern (decorator-registered classes plus per-model `model.json` manifest) and four worked examples — `eq_cycles`, `adv_eq_cycles`, `soc_eq_cycles`, `rainflow_cycles`. Internal foundation that new models (SoC, SoH, impedance, cell imbalance, etc.) fork instead of recreating SDK plumbing.

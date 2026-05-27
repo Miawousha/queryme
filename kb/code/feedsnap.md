@@ -2,7 +2,7 @@
 name: "feedsnap"
 role: author
 visibility: private
-description: "Feedback and tasking infrastructure: humans and agents submit signal, clusters become prioritized tickets."
+description: "Self-hostable feedback pipeline — widget, CLI, and API feed a Postgres + pgvector clusterer that emits prioritized tickets."
 year: 2026
 last_active: "2026-05"
 language: "TypeScript"
@@ -11,4 +11,4 @@ archived: false
 tags: [productivity, ai, nextjs, typescript, postgres]
 ---
 
-feedsnap is a feedback and tasking data infrastructure: humans and agents submit signal through a widget, CLI, or JSON API, and the system clusters, scores, and emits prioritized tickets. Built on Next.js with Postgres + pgvector for storage and clustering, plus a dashboard and outbound webhooks for downstream consumers. Source-available under BSL 1.1 (converts to Apache-2.0 in 2029); pre-1.0 with a stable `/api/v1`.
+feedsnap is a self-hostable feedback pipeline: an embeddable widget (with screenshot + annotations), a typed CLI, and a versioned `/api/v1` ingest API feed user and agent signal into Supabase, where an embedding + clustering worker groups items into tickets that a Next.js dashboard and outbound webhooks consume. The worker runs in two stages — OpenAI-compatible embeddings, then IVFFlat similarity search over `vector(1536)` to assign cluster IDs and elect a representative. Built on Next.js 16, Supabase (auth, RLS, storage for screenshots, security-definer RPCs), Anthropic SDK for ticket refinement, and esbuild for the standalone widget bundle; licensed BSL 1.1 with an Apache-2.0 change date in 2029.

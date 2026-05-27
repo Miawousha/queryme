@@ -3,13 +3,13 @@ name: "battery_capacity_sizer"
 url: https://github.com/ION-Altergo/battery_capacity_sizer
 role: contributor
 visibility: private
-description: "Sizes battery capacity for a given load profile, assembled from PCU, container, transformer, and switchgear components."
+description: "BESS sizing engine: assemblies-over-components model with year-by-year augmentation strategy simulation."
 year: 2025
 last_active: "2025-09"
 language: "Python"
 code_bytes: 598726
 archived: false
-tags: [battery, energy, python, optimization]
+tags: [battery, energy, python, simulation]
 ---
 
-battery_capacity_sizer determines the capacity required for a battery system given a load profile, assembling the answer from component-level models — battery containers, PCU units, transformers, switchgear, and a mini-SoH model. Organized as `assemblies/` over `components/` over `requirements/`, so the load profile drives sizing through a layered model rather than a single closed-form formula. Internal tool used to spec BESS installations.
+battery_capacity_sizer sizes and forward-projects a BESS site from a build instruction and a load requirement. The codebase layers `assemblies/` (BESS → EnergyBlock tree → PowerConversionUnit) over `components/` (BatteryContainer, PCSUnit, Transformer, SwitchGear, MiniSoH, auxiliary consumption) over `requirements/` (load profile). `main.py` dispatches three modes: `bess_summary_generation` builds the site once and emits a nameplate / weighted-efficiency / power-stack summary checked against a `DesignRuleChecker`; `bess_augmentation_strategy` runs `BESS.simulate_time()` year-by-year under a `MaintenanceStrategy` to model SoH decay, container additions, and yearly effective-capacity targets; `bess_single_degradation` simulates a single degradation trajectory. Sizing is therefore iterative (year-stepped simulation with maintenance triggers), not a closed-form formula, and outputs include the Plotly HTML capacity, power-rating and PCU-bandwidth heatmaps used in customer-facing deliverables.

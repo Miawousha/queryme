@@ -2,7 +2,7 @@
 name: "polypress"
 role: author
 visibility: private
-description: "Pipeline de contenu piloté par cron : ingestion, tagging, génération de briefs et rédaction d'articles via Claude + Tavily."
+description: "Plateforme d'actu pilotée par Polymarket : ingestion cron, scoring de marchés, génération de briefs et rédaction d'articles via Claude + Tavily."
 year: 2026
 last_active: "2026-03"
 language: "TypeScript"
@@ -11,4 +11,4 @@ archived: false
 tags: [ai, agent, nextjs, typescript, postgres]
 ---
 
-polypress est une application Next.js 16 + Drizzle/Postgres qui orchestre ingestion de contenu, tagging, génération de briefs et rédaction d'articles dans un pipeline déclenché par cron. Elle combine Anthropic Claude (via l'AI SDK), la recherche Tavily et Supabase pour le stockage et l'auth dans une seule boucle agentique. Construit comme outil personnel de veille média et d'écriture.
+polypress est une application Next.js 16 qui transforme l'activité des marchés prédictifs Polymarket en articles d'actualité. Un pipeline piloté par cron Vercel (ingestion toutes les 15 min, tagging, briefs toutes les 2 h, articles deux fois par heure) récupère événements et prix depuis les API Gamma + CLOB de Polymarket dans Drizzle/Postgres, score les marchés, fait générer des briefs par un agent « desk editor », puis un agent « journaliste » rédige des articles adossés à la recherche Tavily — tous les appels passent par Anthropic Claude via le Vercel AI SDK et sont journalisés pour inspection. La console admin expose ingestion, tagging, pipelines, briefs, alertes, logs LLM et un inspecteur de flow construit sur `@xyflow/react`. Projet personnel de journalisme automatisé adossé aux marchés.

@@ -3,7 +3,7 @@ name: "battery_usage_analyzer"
 url: https://github.com/ION-Altergo/battery_usage_analyzer
 role: contributor
 visibility: public
-description: "Public reference architecture: two-layer split between Altergo platform integration and battery-science code."
+description: "Multi-layer segmentation model that labels battery operating modes, change points, and CC/CV phases from time series."
 year: 2025
 last_active: "2025-09"
 language: "Python"
@@ -13,4 +13,4 @@ archived: false
 tags: [battery, energy, python, library]
 ---
 
-battery_usage_analyzer is the public reference architecture for battery digital-twin models on the Altergo platform — the open counterpart to internal work, with the same two-layer split: `altergo_interface/` handles platform plumbing, `models/` holds pure battery-science implementations. Shares lineage with the personal `battery-digital-twin-models` repo (same architecture, same examples), but maintained under the ION-Altergo org. Used as the starting point for SOC-estimation and twin-model authoring.
+battery_usage_analyzer is the canonical home of a multi-layer segmentation model for battery time series, packaged on top of the Altergo SDK's `boiler_plate.Model` framework. Given current, SoC, and min/max cell voltage and temperature, `BatteryUsageAnalyzer.process` emits Layer 0 operating modes (charge / discharge / idle), Layer 1 data-driven change points from a composed multi-signal change score with robust z-scoring and a minimum-gap constraint, and Layer 2 domain phases (rest, CC charge, CV charge, discharge) using majority-labelled segments. The repo follows the same two-layer template as the personal `battery-digital-twin-models` repo (shared README, shared `entrypoint.py`, shared `models/` package layout) but houses a different model set — analyzer and `eq_cycles` here, vs. `eq_cycles` and `adv_eq_cycles` on the personal side — so the framework is shared, the science is not duplicated. This ION-Altergo copy is the canonical location for the usage analyzer.

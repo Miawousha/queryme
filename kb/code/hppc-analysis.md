@@ -3,7 +3,7 @@ name: "hppc_analysis"
 url: https://github.com/ION-Altergo/hppc_analysis
 role: contributor
 visibility: private
-description: "HPPC battery characterization with proper coulomb counting; outputs an OCV table and physics-based ECM parameters."
+description: "HPPC pipeline: coulomb-counted SOC, OCV table from rest periods, physics-based ECM resistances at fixed time constants."
 year: 2025
 last_active: "2025-09"
 language: "Python"
@@ -12,4 +12,4 @@ archived: false
 tags: [battery, python, data-only]
 ---
 
-hppc_analysis processes HPPC (Hybrid Pulse Power Characterization) test data into a complete OCV table and physics-based equivalent-circuit-model parameters. Coulomb counting drives a 19-point OCV curve from 5–95% SOC, with realistic resistance ranges (1–100 mΩ) and fixed time constants (τ₁=5 min, τ₂=25 min) across 64 cycles. Output is a ready-to-use JSON battery configuration consumed downstream by simulation and modeling code; repo size is mostly bundled HTML reports.
+hppc_analysis is a single-file (~2 kLOC) HPPC pipeline that fits NMC cells from raw Altergo SDK pulls into a ready-to-use battery configuration. `hppc_analysis_full.py` segments each cycle around the discharge→charge current reversal, integrates current with `scipy.signal.savgol_filter`-smoothed coulomb counting to get SOC, extracts OCV from ≥25-minute rest periods, and computes R0/R1/R2 directly from voltage deltas at V_before / V_2s / V_5min / V_end with τ₁=5 min and τ₂=25 min fixed (no curve fit). Outputs an OCV CSV, ECM-parameter CSV, cycle summary, interactive HTML report, and `battery_config_from_analysis.json` consumed downstream by simulation code; the 48 MB repo size is almost entirely those bundled Plotly HTML reports.

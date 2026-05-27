@@ -3,7 +3,7 @@ name: "bisque"
 url: https://github.com/Miawousha/bisque
 role: author
 visibility: public
-description: "Bac à sable personnel pour expérimenter React 19, Next.js 16 et les primitives shadcn/ui."
+description: "Landing-page bac à sable sur Next.js 16 / React 19 / Tailwind 4 — un seul bouton qui ne fait rien."
 year: 2026
 last_active: "2026-02"
 language: "TypeScript"
@@ -13,4 +13,4 @@ archived: false
 tags: [nextjs, react, typescript, ui-only, sandbox]
 ---
 
-Bisque est un bac à sable pour explorer la dernière surface de React 19, Next.js 16 et de shadcn/ui. Construit avec Tailwind 4 et next-themes pour le basculement clair/sombre. Terrain de jeu personnel, non déployé.
+Bisque est une landing teaser d'une seule page sur Next.js 16 et React 19. Toute l'appli tient sur une page : un bouton « this button does nothing » qui incrémente un compteur de clics et révèle une suite de messages sur le thème du homard (« told you. », « 🦞 », « nothing, but with intention. »), un toggle clair/sombre via next-themes et une lueur orangée. Construit avec les primitives shadcn/ui sur Tailwind 4, en placeholder pour `bisque.life` ; « v0.0.1 — the primordial soup ».

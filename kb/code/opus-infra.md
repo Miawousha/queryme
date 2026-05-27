@@ -2,7 +2,7 @@
 name: "opus-infra"
 role: author
 visibility: private
-description: "Backing infra for OPUS — papers as structured, typed, citable objects rather than PDFs."
+description: "Backing infra for OPUS — manuscripts as typed, claim-level objects with AI + human peer review."
 year: 2026
 last_active: "2026-05"
 language: "TypeScript"
@@ -11,4 +11,4 @@ archived: false
 tags: [ai, nextjs, typescript, postgres]
 ---
 
-opus-infra is the Next.js 16 + Supabase application backing OPUS, a scientific publication platform that treats every paper as a structured, typed, citable object rather than a flat PDF. Integrates Anthropic Claude for assisted review and editing, and ships markdown + KaTeX rendering, diff views, and seed scripts. Early-stage infrastructure for the journal.
+opus-infra is the Next.js 16 + Supabase application backing OPUS, a scientific journal that treats manuscripts as typed objects rather than PDFs — versioned content, claim extraction (contribution / result / method / limitation with evidence and citation refs), and a status workflow that moves a submission from draft through AI rubric review, reviewer matching, human review and consensus, to greenlit or declined. AI review and claim extraction both call Claude (`claude-opus-4-7`) via the Anthropic SDK with tool-use; the editor renders markdown + KaTeX and version diffs. Vitest integration tests cover the article, review, AI-review, claims, and admin oversight surfaces. Private, early but substantively wired beyond a stub.

@@ -3,7 +3,7 @@ name: "effective-capacity-benchmark-model"
 url: https://github.com/ION-Altergo/effective-capacity-benchmark-model
 role: contributor
 visibility: private
-description: "Fonction de benchmark de capacité effective batterie, sur le scaffold function-template d'Altergo."
+description: "Scaffold function-template Altergo câblé pour un capteur de cycles équivalents — l'entrypoint ne calcule rien."
 year: 2024
 last_active: "2024-10"
 language: "Python"
@@ -12,4 +12,4 @@ archived: false
 tags: [battery, python, demo]
 ---
 
-effective-capacity-benchmark-model est une petite fonction de benchmark de capacité effective batterie, bâtie sur le scaffold function-template d'Altergo. Le template fournit la forme `entrypoint.py` / `model-configuration.json` / `model-validation.json` attendue par la plateforme ; ce dépôt la remplit avec le benchmark de capacité. Exemple de référence plutôt qu'un modèle de production.
+effective-capacity-benchmark-model est un scaffold function-template Altergo : `entrypoint.py` extrait les arguments de la plateforme, initialise le client SDK et récupère l'asset par ID — puis s'arrête. L'`altergo-settings.json` le déclare comme modèle « Performance » lisant un capteur `Current` + un paramètre `Capacity` et écrivant une sortie `Equivalent Cycles`, mais la logique du benchmark elle-même est absente. Placeholder / scaffold inachevé malgré le nom.

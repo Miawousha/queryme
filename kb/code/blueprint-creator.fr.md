@@ -3,7 +3,7 @@ name: "blueprint-creator"
 url: https://github.com/ION-Altergo/blueprint-creator
 role: contributor
 visibility: private
-description: "Boîte à outils CLI pour gérer, étendre et convertir les blueprints de la plateforme IoT Altergo."
+description: "CLI interactive basée sur Rich pour parcourir, étendre et convertir les blueprints Altergo via le SDK."
 year: 2026
 last_active: "2026-01"
 language: "Python"
@@ -12,4 +12,4 @@ archived: false
 tags: [python, tooling]
 ---
 
-blueprint-creator est une boîte à outils CLI Python pour gérer, étendre et convertir les blueprints sur la plateforme IoT Altergo. Recherche et navigation par nom ou catégorie, rendu de la hiérarchie d'héritage, gestion des paramètres avec préfixes Min/Max/Nom et indicateurs d'héritage, construction de hiérarchies enfants depuis des fichiers simspec, export JSON. Outillage interne pour piloter la rédaction de blueprints à grande échelle.
+blueprint-creator est une CLI Python interactive (« BP Extender ») qui pilote le SDK Altergo pour gérer des blueprints sur plusieurs environnements. Le menu guide l'opérateur dans la sélection d'environnement, la recherche et la vue arborescente des blueprints, l'inspection des paramètres et schémas, la création de hiérarchies enfants depuis du JSON simspec, la conversion entre formats et la suppression en masse — avec tables, bannières et rapports de diff rendus en Rich et écrits dans `data/`. Outillage développeur interne pour l'écriture de blueprints à l'échelle.

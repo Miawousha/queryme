@@ -3,7 +3,7 @@ name: "cellsos"
 url: https://github.com/ION-Altergo/cellsos
 role: contributor
 visibility: private
-description: "Custom battery digital-twin model built on the Altergo model-boilerplate scaffold."
+description: "Cell-level safety and stress-scoring model with 2D current derating, deployable on the Altergo SDK."
 year: 2025
 last_active: "2025-11"
 language: "Python"
@@ -12,4 +12,4 @@ archived: false
 tags: [battery, python]
 ---
 
-cellsos is a custom battery digital-twin model built on the Altergo model-boilerplate scaffold. Implements a cell-level state-of-X estimator wired into the Altergo SDK so it can be deployed against live digital-twin assets. Internal model repo with platform credentials, asset IDs, and the SDK integration baked in.
+cellsos is a Python `CellLimitsModel` built on the Altergo `AltergoModelBoilerplate`, monitoring lithium cell voltage, temperature, and current against their safe operating limits. Dynamic charge and discharge current limits are interpolated from a 2D temperature × SOC derating lookup (`current_limits_table.json`) via `scipy.RegularGridInterpolator`; outputs include per-parameter safety margins, a combined minimum margin, an instantaneous 0–100 % stress score, time-integrated cumulative stress, and an overall OK/Warning/Critical safety status. Internal model repo wired through the SDK to deploy against live digital-twin assets.

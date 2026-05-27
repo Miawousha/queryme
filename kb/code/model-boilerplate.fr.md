@@ -12,4 +12,4 @@ archived: false
 tags: [battery, python, library]
 ---
 
-model_boilerplate est le scaffold Python canonique pour bâtir des modèles batterie jumeau numérique sur la plateforme Altergo. Fournit l'arborescence projet, le câblage SDK, le template de dev-parameters et des exemples travaillés afin que les nouveaux modèles (SoC, SoH, impédance, déséquilibre cellules, etc.) partent d'une base saine au lieu de recréer la plomberie plateforme. Fondation interne du parc de modèles.
+model_boilerplate est le scaffold Python canonique pour construire des modèles batterie jumeau numérique sur la plateforme Altergo. Encapsule le cycle de vie `AltergoModelBoilerplate` du SDK (préparation des données, exécution, dashboards de debug, upload des sorties) dans une paire `entrypoint_simple.py` / `entrypoint_advanced.py`, avec un pattern de registre `models/` (classes enregistrées par décorateur plus manifest `model.json` par modèle) et quatre exemples travaillés — `eq_cycles`, `adv_eq_cycles`, `soc_eq_cycles`, `rainflow_cycles`. Fondation interne que les nouveaux modèles (SoC, SoH, impédance, déséquilibre cellules, etc.) forkent au lieu de recréer la plomberie SDK.

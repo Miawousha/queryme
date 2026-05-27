@@ -2,7 +2,7 @@
 name: "cell-model-visualizer"
 role: author
 visibility: private
-description: "In-browser visualizer for battery cell-model data, used to compare simulated and measured curves."
+description: "Vite/React tool to inspect a battery cell-model JSON across OCV, impedance, thermal, aging, and safety tabs."
 year: 2025
 last_active: "2025-09"
 language: "TypeScript"
@@ -11,4 +11,4 @@ archived: false
 tags: [battery, react, typescript, tooling]
 ---
 
-cell-model-visualizer is an internal browser tool for inspecting battery cell-model data. Built with React, Vite, MUI, and Plotly so engineers can overlay simulated and measured curves side by side. Companion to internal cell-modelling work; not public.
+cell-model-visualizer is an internal Vite + React 19 app for inspecting a battery cell-model JSON file. Users load a cell into a localStorage-backed library, then flip between Overview / OCV Curves / Impedance / Thermal / Aging / Safety tabs — each rendering Plotly views over the same dataset (manufacturer, model, version, last-updated, characterisation curves). Drag-and-drop import via `FileHandler`; MUI for chrome. Companion tool for cell-modelling work at Altergo; not public.
