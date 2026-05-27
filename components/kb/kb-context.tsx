@@ -12,10 +12,17 @@ import {
 import type { KbFile } from "@/lib/kb/manifest";
 import { UI_STRINGS, type KbStrings, type UiLang } from "@/lib/language";
 
+/** Reserved manifest path for the synthesized printable CV document. The
+ * panel viewer special-cases this path and renders the CV component instead
+ * of fetching `/api/kb/file`. */
+export const CV_VIRTUAL_PATH = "_virtual/cv";
+
 type KbContextValue = {
+  /** Active UI language — used by the CV viewer to fetch the right locale. */
+  lang: UiLang;
   /** Localized KB UI strings for the active language. */
   strings: KbStrings;
-  /** Every public KB file. Empty until the manifest fetch resolves. */
+  /** Every public KB file plus the synthesized CV entry pinned at the top. */
   manifest: KbFile[];
   /** Ordered KB paths the agent has cited so far this conversation. */
   citedPaths: string[];
@@ -58,9 +65,29 @@ export function KbProvider({ lang, children }: { lang: UiLang; children: ReactNo
   const openFile = useCallback((path: string) => setOpenFilePath(path), []);
   const closeFile = useCallback(() => setOpenFilePath(null), []);
 
+  // Synthetic CV entry, pinned to the top of the file list. Title flips with
+  // language so the entry reads naturally in either locale.
+  const manifestWithCv = useMemo<KbFile[]>(() => {
+    const cvEntry: KbFile = {
+      path: CV_VIRTUAL_PATH,
+      title: strings.cv,
+      type: "cv",
+    };
+    return [cvEntry, ...manifest];
+  }, [manifest, strings.cv]);
+
   const value = useMemo(
-    () => ({ strings, manifest, citedPaths, setCitedPaths, openFilePath, openFile, closeFile }),
-    [strings, manifest, citedPaths, openFilePath, openFile, closeFile],
+    () => ({
+      lang,
+      strings,
+      manifest: manifestWithCv,
+      citedPaths,
+      setCitedPaths,
+      openFilePath,
+      openFile,
+      closeFile,
+    }),
+    [lang, strings, manifestWithCv, citedPaths, openFilePath, openFile, closeFile],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

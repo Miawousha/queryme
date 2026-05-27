@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { KbFile } from "@/lib/kb/manifest";
 import { KbMetaCard } from "@/components/kb/kb-meta-card";
 import { useKb } from "@/components/kb/kb-context";
+import {
+  CopyIcon,
+  DownloadIcon,
+  GithubIcon,
+  InfoIcon,
+  KbDocToolbar,
+  PrintIcon,
+  type KbDocAction,
+} from "@/components/kb/kb-doc-toolbar";
 import { useDialog } from "@/lib/use-dialog";
 import { REPO_URL, REPO_BRANCH } from "@/lib/repo";
 import { cn } from "@/lib/utils";
@@ -58,6 +67,69 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
   // dialog (focus trap + restore + Escape). Inert when focus is false.
   const focusRef = useDialog<HTMLDivElement>(focus, () => setFocus(false));
 
+  const actions = useMemo<KbDocAction[]>(() => {
+    const list: KbDocAction[] = [];
+    if (needsText) {
+      list.push({
+        key: "copy",
+        label: strings.copy,
+        ariaLabel: strings.copyAria,
+        icon: <CopyIcon />,
+        onClick: async () => {
+          if (!text) return;
+          await navigator.clipboard.writeText(text);
+          return strings.copied;
+        },
+      });
+    }
+    list.push({
+      key: "download",
+      label: strings.download,
+      ariaLabel: strings.downloadAria,
+      icon: <DownloadIcon />,
+      onClick: () => {
+        const a = document.createElement("a");
+        a.href = fileUrl(file.path);
+        a.download = file.path.split("/").pop() ?? "document";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      },
+    });
+    list.push({
+      key: "print",
+      label: strings.print,
+      ariaLabel: strings.printAria,
+      icon: <PrintIcon />,
+      onClick: () => window.print(),
+    });
+    if (file.meta) {
+      list.push({
+        key: "details",
+        label: strings.details,
+        ariaLabel: showMeta ? strings.hideDetails : strings.showDetails,
+        icon: <InfoIcon />,
+        onClick: () => {
+          setShowMeta((v) => !v);
+        },
+      });
+    }
+    list.push({
+      key: "github",
+      label: strings.github,
+      ariaLabel: strings.github,
+      icon: <GithubIcon />,
+      onClick: () => {
+        window.open(
+          `${REPO_URL.replace(/\/$/, "")}/blob/${REPO_BRANCH}/kb/${file.path}`,
+          "_blank",
+          "noopener",
+        );
+      },
+    });
+    return list;
+  }, [needsText, text, file, strings, showMeta]);
+
   return (
     <div
       ref={focusRef}
@@ -72,66 +144,17 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
           : "h-full",
       )}
     >
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label={strings.backToList}
-          className="shrink-0 whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-          style={{ letterSpacing: "0.2em" }}
-        >
-          ‹ {strings.back}
-        </button>
-        <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-primary)]">
-          {file.title}
-        </span>
-        <span
-          className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-text-secondary)]"
-          style={{ letterSpacing: "0.16em" }}
-        >
-          {file.type}
-        </span>
-        <div className="flex shrink-0 items-center gap-3">
-          {file.meta && (
-            <button
-              type="button"
-              onClick={() => setShowMeta((v) => !v)}
-              aria-label={showMeta ? strings.hideDetails : strings.showDetails}
-              aria-pressed={showMeta}
-              title={strings.details}
-              className={cn(
-                "inline-flex h-6 w-6 items-center justify-center rounded-full border transition-colors",
-                showMeta
-                  ? "border-[var(--color-accent)] text-[var(--color-accent)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]",
-              )}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4M12 8h.01" />
-              </svg>
-            </button>
-          )}
-          <a
-            href={`${REPO_URL.replace(/\/$/, "")}/blob/${REPO_BRANCH}/kb/${file.path}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-            style={{ letterSpacing: "0.2em" }}
-          >
-            {strings.github}
-          </a>
-          <button
-            type="button"
-            onClick={() => setFocus((v) => !v)}
-            aria-label={focus ? strings.exitFocus : strings.expandFocus}
-            className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-            style={{ letterSpacing: "0.2em" }}
-          >
-            {focus ? strings.minimize : strings.expand}
-          </button>
-        </div>
-      </div>
+      <KbDocToolbar
+        title={file.title}
+        typeBadge={file.type}
+        backLabel={strings.back}
+        onBack={onBack}
+        actions={actions}
+        focused={focus}
+        onToggleFocus={() => setFocus((v) => !v)}
+        expandLabel={strings.expandFocus}
+        minimizeLabel={strings.exitFocus}
+      />
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {showMeta && file.meta && <KbMetaCard meta={file.meta} />}

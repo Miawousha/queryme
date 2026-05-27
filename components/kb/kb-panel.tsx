@@ -1,14 +1,26 @@
 "use client";
 
-import { useKb } from "@/components/kb/kb-context";
+import { CV_VIRTUAL_PATH, useKb } from "@/components/kb/kb-context";
+import { CvPanelView } from "@/components/cv/cv-panel-view";
 import { KbFileList } from "@/components/kb/kb-file-list";
 import { KbViewer } from "@/components/kb/kb-viewer";
+import type { UiLang } from "@/lib/language";
 
 /** Shared top-band style — matches the chat pane's status header height. */
 const BAND = "flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4";
 
-export function KbPanel() {
+export function KbPanel({ onLangChange }: { onLangChange: (next: UiLang) => void }) {
   const { strings, manifest, citedPaths, openFilePath, openFile, closeFile } = useKb();
+
+  // The synthesized CV doc isn't a real file — render the dedicated view.
+  if (openFilePath === CV_VIRTUAL_PATH) {
+    return (
+      <aside className="flex h-full flex-col overflow-hidden">
+        <CvPanelView onLangChange={onLangChange} />
+      </aside>
+    );
+  }
+
   const openFileEntry = openFilePath
     ? manifest.find((f) => f.path === openFilePath) ?? null
     : null;

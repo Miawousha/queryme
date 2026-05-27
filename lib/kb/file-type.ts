@@ -1,5 +1,6 @@
-/** The artifact formats the KB viewer can render. */
-export type KbFileType = "md" | "yaml" | "html" | "pdf";
+/** The artifact formats the KB viewer can render. `cv` is reserved for the
+ * synthesized printable CV document — not a real file on disk. */
+export type KbFileType = "md" | "yaml" | "html" | "pdf" | "cv";
 
 /**
  * Maps a file path to its `KbFileType`, or `null` if the extension is not a

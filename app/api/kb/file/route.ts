@@ -8,7 +8,10 @@ export const runtime = "nodejs";
 
 const KB_DIR = path.resolve(process.cwd(), "kb");
 
-const CONTENT_TYPE: Record<KbFileType, string> = {
+/** `cv` is a synthesized type that never appears in the on-disk manifest, so
+ * its absence from this map is safe — the panel renders the CV from
+ * `<CvPanelView>` without ever hitting this route. */
+const CONTENT_TYPE: Record<Exclude<KbFileType, "cv">, string> = {
   md: "text/plain; charset=utf-8",
   yaml: "text/plain; charset=utf-8",
   html: "text/html; charset=utf-8",
@@ -49,6 +52,10 @@ export async function GET(req: NextRequest): Promise<Response> {
       }
     }
     return path.join(KB_DIR, entry!.path);
+  }
+
+  if (entry.type === "cv") {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   try {
