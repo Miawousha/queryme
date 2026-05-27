@@ -67,6 +67,10 @@ export default async function CvPage({ searchParams }: Props) {
 
   const fmt = (start: string, end: string) => formatPeriod(start, end, t.monthFormat, t.present);
 
+  const publicRepos = kb.code.filter(
+    (o) => o.frontmatter.visibility === "public" && o.frontmatter.url,
+  );
+
   return (
     <main className="cv-page mx-auto max-w-3xl px-6 py-10">
       <div className="no-print mb-8 flex items-center justify-between gap-3">
@@ -278,13 +282,13 @@ export default async function CvPage({ searchParams }: Props) {
         </section>
       )}
 
-      {kb.code.filter((o) => o.frontmatter.visibility === "public").length > 0 && (
+      {publicRepos.length > 0 && (
         <section className="cv-section mb-3">
           <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
             {t.sections.openSource}
           </h2>
           <ul className="flex flex-col gap-1.5 text-[14px] leading-snug">
-            {kb.code.filter((o) => o.frontmatter.visibility === "public").map((o) => (
+            {publicRepos.map((o) => (
               <li key={o.slug} className="cv-entry">
                 <a
                   href={o.frontmatter.url}
