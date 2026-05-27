@@ -134,7 +134,7 @@ describe("assemblePublicKbText — code featured/indexed split", () => {
     expect(text).not.toContain("# Code (index)");
   });
 
-  it("when featured list is empty, all entries land in the index (no featured section)", () => {
+  it("when featured list is empty, falls back to single `# Code` section (back-compat)", () => {
     const text = assemblePublicKbText(kb, { featuredCodeSlugs: [] });
     // Empty array means "no featured" — assembler should fall back to today's
     // behaviour (single `# Code` section with full bodies). This matches
