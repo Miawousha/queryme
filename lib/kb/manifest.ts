@@ -18,6 +18,10 @@ export type KbFileMeta = {
   url?: string;
   stack?: string[];
   tags?: string[];
+  /** Repo-specific fields surfaced for the code section of the KB panel. */
+  visibility?: "public" | "private";
+  language?: string;
+  stars?: number;
 };
 
 export type KbFile = {
@@ -54,6 +58,10 @@ function asStringArray(v: unknown): string[] | undefined {
 }
 
 /** Picks the known, UI-relevant frontmatter keys; returns null if none are present. */
+function asVisibility(v: unknown): "public" | "private" | undefined {
+  return v === "public" || v === "private" ? v : undefined;
+}
+
 function pickMeta(data: Record<string, unknown>): KbFileMeta | null {
   const meta: KbFileMeta = {
     company: asString(data.company),
@@ -65,6 +73,9 @@ function pickMeta(data: Record<string, unknown>): KbFileMeta | null {
     url: asString(data.url),
     stack: asStringArray(data.stack),
     tags: asStringArray(data.tags),
+    visibility: asVisibility(data.visibility),
+    language: asString(data.language),
+    stars: asNumber(data.stars),
   };
   const hasAny = Object.values(meta).some((v) => v !== undefined);
   return hasAny ? meta : null;
