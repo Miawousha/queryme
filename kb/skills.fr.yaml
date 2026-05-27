@@ -1,0 +1,42 @@
+skills:
+  - name: Gestion de batterie
+    level: 5
+    years: 15
+    tags: [battery, hardware, expert]
+    # Conception SOX (SOC, SOH, SOP), intégration BMS, technologies d'équilibrage,
+    # vieillissement, comportement thermique, mise en parallèle, model-based design, émulation.
+  - name: Électronique de puissance
+    level: 4
+    years: 15
+    tags: [hardware]
+    # Onduleur, dual active bridge, équilibrage actif, relais statiques, PSIM.
+  - name: Électronique
+    level: 4
+    years: 15
+    tags: [hardware]
+    # Conception de schémas et de PCB, signaux mixtes, microcontrôleurs, contrôle d'électronique de puissance.
+  - name: Génie électrique
+    level: 4
+    years: 15
+    tags: [hardware]
+    # Architectures réseau, distribution, PDU électromécaniques, chaînes de traction LEV / VE.
+  - name: Logiciel embarqué
+    level: 4
+    years: 15
+    tags: [software, firmware]
+    # Architectures 16 et 32 bits, RTOS, conception modulaire, gestion de versions.
+  - name: Génie logiciel
+    level: 4
+    years: 15
+    tags: [software]
+    # Plus de 10 ans en C, C++, C#, Python, TypeScript embarqué et un peu de PHP
+    # (Symfony) ; également Java, SQL, Android.
+  - name: TypeScript / Next.js
+    level: 3
+    years: 10
+    tags: [software, frontend]
+  - name: Développement d'applications IA / LLM
+    level: 3
+    years: 2
+    tags: [software, ai]
+    # A construit Queryme — un CV piloté par agent — sur le Vercel AI SDK.

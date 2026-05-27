@@ -50,6 +50,30 @@ describe("/api/chat POST validation", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects an unsupported language code", async () => {
+    const res = await POST(makeReq({
+      language: "de",
+      messages: [{ id: "1", role: "user" as const, parts: [{ type: "text" as const, text: "hi" }] }],
+    }));
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts a request carrying a supported language (en, fr)", async () => {
+    // Reaches the infra-dependent path after validation, same pattern as the
+    // multi-turn test below — a thrown error here means validation passed.
+    const req = makeReq({
+      language: "fr",
+      messages: [{ id: "1", role: "user", parts: [{ type: "text", text: "bonjour" }] }],
+    });
+    let status: number | undefined;
+    try {
+      status = (await POST(req)).status;
+    } catch {
+      return;
+    }
+    expect(status).not.toBe(400);
+  });
+
   it("accepts multi-turn history containing non-text assistant parts", async () => {
     // From the 2nd turn onward the client echoes back assistant messages, whose
     // parts include non-text entries (e.g. `step-start`). Validation must accept

@@ -41,7 +41,7 @@ export default function Home() {
         <KbLayout
           collapsed={kbCollapsed}
           onCollapsedChange={setKbCollapsed}
-          chat={<Chat t={t} />}
+          chat={<Chat t={t} lang={lang} />}
           panel={<KbPanel />}
         />
       </div>

@@ -35,6 +35,10 @@ const UIMessageSchema = z.object({
 const RequestBodySchema = z.object({
   messages: z.array(UIMessageSchema).min(1).max(MAX_TURNS),
   conversationId: z.string().uuid().optional(),
+  // The UI's active language at request time. Sticky per conversation: it is
+  // only persisted on the conversation's first turn; later toggles are ignored
+  // server-side so the cached KB lineage stays stable.
+  language: z.enum(["en", "fr"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -76,9 +80,15 @@ export async function POST(req: NextRequest) {
   const db = getDb();
 
   // Determine the conversation's preferred language; default to English for
-  // fresh conversations until something sets it.
-  const conv = await getOrCreateConversation(db, { id: conversationId, channel: "chat" });
-  const lang = (conv.language ?? "en") as "en" | "fr";
+  // fresh conversations until something sets it. The `language` field on the
+  // request body is the UI's active language; it is only honoured when the
+  // conversation row is being inserted (sticky-per-conversation).
+  const conv = await getOrCreateConversation(db, {
+    id: conversationId,
+    channel: "chat",
+    language: parsed.data.language,
+  });
+  const lang = (conv.language ?? parsed.data.language ?? "en") as "en" | "fr";
   const publicKbText = await getCachedPublicKbText(lang);
 
   // Append the last user turn to the transcript before streaming.

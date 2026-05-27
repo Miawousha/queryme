@@ -9,12 +9,14 @@ import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
 import { useKb } from "@/components/kb/kb-context";
 import { extractCitedPaths } from "@/lib/kb/cited-paths";
-import type { UiStrings } from "@/lib/language";
+import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
 export type ChatProps = {
   /** The full string table for the active language. */
   t: UiStrings;
+  /** The active UI language; posted to /api/chat to ground the answerer. */
+  lang: UiLang;
 };
 
 function loadOrCreateConversationId(): string {
@@ -54,7 +56,7 @@ function latestIdentity(
   return found;
 }
 
-export function Chat({ t }: ChatProps) {
+export function Chat({ t, lang }: ChatProps) {
   const { setCitedPaths, openFile } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
@@ -63,6 +65,14 @@ export function Chat({ t }: ChatProps) {
     conversationIdRef.current = id;
     setConversationId(id);
   }, []);
+  // The transport body is a stable closure; read `lang` through a ref so a
+  // mid-session toggle is observed by the next request without recreating the
+  // transport. Sticky-per-conversation semantics live server-side — the
+  // language is only persisted on the conversation's first turn.
+  const langRef = useRef<UiLang>(lang);
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
   const [forwardToast, setForwardToast] = useState<string | null>(null);
 
   // The transport is created ONCE. `useChat` does not adopt a new transport
@@ -76,7 +86,8 @@ export function Chat({ t }: ChatProps) {
         api: "/api/chat",
         body: () => {
           const id = conversationIdRef.current;
-          return id ? { conversationId: id } : {};
+          const language = langRef.current;
+          return id ? { conversationId: id, language } : { language };
         },
       }),
     [],
