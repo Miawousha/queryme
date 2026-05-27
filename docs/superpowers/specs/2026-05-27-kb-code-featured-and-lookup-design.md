@@ -66,8 +66,10 @@ Expose `getFeaturedCodeSlugs(): string[] | null` where `null` means "no featured
 ```
 - <name> — <description>
   tags: [<tag>, <tag>], language: <lang>, year: <year>
-  [ref: kb/code/<slug>.md]
+  [ref: code/<slug>.md]
 ```
+
+(The `[ref: ...]` prefix is `code/`, not `kb/code/`, to match the existing assembler convention — citations elsewhere in the prompt look the same.)
 
 Fields included in the stub (per the answered design questions):
 - `name`, `description` (always)
@@ -120,7 +122,7 @@ export function buildKbLookupTools(kb: Kb): ToolSet {
 **Behaviour:**
 
 - **Cap enforcement:** Zod `.max(5)` rejects oversize inputs at the SDK boundary; the model sees a tool error and retries.
-- **Path validation:** Must match `^kb/code/[a-zA-Z0-9_-]+\.md$`. Reject otherwise (in `notFound`).
+- **Path validation:** Must match `^code/[a-zA-Z0-9_-]+\.md$`. Reject otherwise (in `notFound`).
 - **Source:** In-process cache of the parsed `Kb` object (the same data already loaded by `getCachedPublicKbText`). Build a `Map<path, codeEntry>` once per (process, language) and reuse. Zero disk I/O on hot path.
 - **Unknown paths:** Returned in `notFound[]`, not thrown. The model decides whether to retry or apologize.
 - **Sync return:** Pure memory lookup. No DB, no network.
@@ -166,7 +168,7 @@ const result = await answer({
 
 Add a short paragraph under the existing "Grounding policy" section:
 
-> The `# Code (index)` section lists additional repos not pre-loaded into context. When a question would benefit from one of them, call `lookup_code_entries` with up to 5 `[ref: ...]` paths to fetch their full bodies before answering. Prefer the featured entries when the question is general; use lookup when the question names a specific project, language, or tag that isn't covered by the featured set.
+> The `# Code (index)` section lists additional repos not pre-loaded into context. When a question would benefit from one of them, call `lookup_code_entries` with up to 5 paths (the `[ref: code/<slug>.md]` markers in the index) to fetch their full bodies before answering. Prefer the featured entries when the question is general; use lookup when the question names a specific project, language, or tag that isn't covered by the featured set.
 
 Estimated cost: ~80 tokens added to the uncached header.
 
@@ -193,7 +195,7 @@ No path through `lookup_code_entries.execute` throws.
 
 **`lib/kb/tools.test.ts`:**
 - Happy path: 3 valid paths return 3 entries with body + frontmatter.
-- Path validation: traversal (`kb/code/../sensitive/foo.md`), wrong prefix, missing `.md` → `notFound[]`.
+- Path validation: traversal (`code/../sensitive/foo.md`), wrong prefix, missing `.md` → `notFound[]`.
 - Cap: 6 paths → Zod rejects; 5 paths → OK.
 - Mixed valid + unknown → `entries[]` has the valid ones, `notFound[]` has the rest.
 
