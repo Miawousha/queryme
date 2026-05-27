@@ -16,6 +16,10 @@ export const UI_STRINGS = {
     agentLabel: "agent",
     statusThinking: "thinking",
     statusReady: "ready",
+    thinking: {
+      generic: "Thinking…",
+      searchingKb: "Searching the knowledge base…",
+    },
     forwardAction: "Send this question to Alexandre",
     forward: {
       prompt: "Want a reply? Leave a contact (optional).",
@@ -144,6 +148,10 @@ export const UI_STRINGS = {
     agentLabel: "agent",
     statusThinking: "réflexion",
     statusReady: "prêt",
+    thinking: {
+      generic: "Réflexion…",
+      searchingKb: "Consultation de la base de connaissances…",
+    },
     forwardAction: "Envoyer cette question à Alexandre",
     forward: {
       prompt: "Souhaitez-vous une réponse ? Laissez un contact (facultatif).",

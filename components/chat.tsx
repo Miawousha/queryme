@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
+import { ThinkingIndicator } from "@/components/thinking-indicator";
 import { useKb } from "@/components/kb/kb-context";
 import { extractCitedPaths } from "@/lib/kb/cited-paths";
 import type { UiLang, UiStrings } from "@/lib/language";
@@ -117,7 +118,7 @@ export function Chat({ t, lang }: ChatProps) {
     const el = scrollRef.current;
     if (!el || !atBottomRef.current) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, status]);
 
   function handleScroll() {
     const el = scrollRef.current;
@@ -163,6 +164,31 @@ export function Chat({ t, lang }: ChatProps) {
       .map((p) => p.text)
       .join("");
   }
+
+  // The most recent tool the agent is invoking on the active turn, if any.
+  // Tool parts arrive as `tool-<name>` before any text — we scan in reverse so
+  // the indicator reflects the latest tool when several fire in one turn.
+  function activeToolName(m: (typeof messages)[number]): string | null {
+    for (let i = m.parts.length - 1; i >= 0; i--) {
+      const type = m.parts[i].type;
+      if (typeof type === "string" && type.startsWith("tool-")) {
+        return type.slice("tool-".length);
+      }
+    }
+    return null;
+  }
+
+  // Show a placeholder bubble whenever the agent is working but the user has
+  // no visible text yet: either the request was just submitted, or the
+  // assistant message exists but only carries tool-call parts so far.
+  const lastMessage = messages[messages.length - 1];
+  const lastIsAssistant = lastMessage?.role === "assistant";
+  const lastHasText = lastIsAssistant && messageText(lastMessage) !== "";
+  const showThinking = isBusy && (!lastIsAssistant || !lastHasText);
+  const thinkingLabel =
+    lastIsAssistant && activeToolName(lastMessage) === "lookup_code_entries"
+      ? t.thinking.searchingKb
+      : t.thinking.generic;
 
   useEffect(() => {
     const assistantTexts = messages
@@ -240,12 +266,18 @@ export function Chat({ t, lang }: ChatProps) {
           {messages.map((m, i) => {
             const isLastMessage = i === messages.length - 1;
             const isStreaming = status === "streaming" && isLastMessage && m.role !== "user";
+            // Hide an empty assistant bubble while the indicator is showing,
+            // so the agent label doesn't appear over an empty body. The
+            // component stays mounted; only the JSX output is suppressed.
+            const hideUntilText =
+              isLastMessage && showThinking && m.role !== "user";
             return (
               <StreamingMessage
                 key={m.id}
                 role={m.role === "user" ? "user" : "assistant"}
                 text={messageText(m)}
                 isStreaming={isStreaming}
+                hideUntilText={hideUntilText}
                 agentLabel={t.agentLabel}
                 forwardLabel={t.forwardAction}
                 forwardStrings={t.forward}
@@ -254,6 +286,10 @@ export function Chat({ t, lang }: ChatProps) {
               />
             );
           })}
+
+          {showThinking && (
+            <ThinkingIndicator agentLabel={t.agentLabel} label={thinkingLabel} />
+          )}
 
           {messages.length === 0 && (
             <div className="mt-3 flex flex-col gap-3">

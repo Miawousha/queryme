@@ -79,10 +79,20 @@ function useSmoothStream(target: string, isStreaming: boolean): string {
 export type StreamingMessageProps = Omit<ChatMessageProps, "text"> & {
   text: string;
   isStreaming: boolean;
+  /** When true, suppress the bubble until there's text to show, so a parent
+   *  placeholder (e.g. ThinkingIndicator) can stand in. Hooks keep running so
+   *  the smooth-stream state survives the gap. */
+  hideUntilText?: boolean;
 };
 
 /** Wraps `ChatMessage` with smooth, buffered streaming of the message text. */
-export function StreamingMessage({ text, isStreaming, ...rest }: StreamingMessageProps) {
+export function StreamingMessage({
+  text,
+  isStreaming,
+  hideUntilText,
+  ...rest
+}: StreamingMessageProps) {
   const displayed = useSmoothStream(text, isStreaming);
+  if (hideUntilText && displayed === "") return null;
   return <ChatMessage text={displayed} {...rest} />;
 }
