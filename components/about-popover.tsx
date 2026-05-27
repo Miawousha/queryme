@@ -10,6 +10,7 @@ export type AboutPopoverStrings = {
   kb: string;
   repo: string;
   mcpDocs: string;
+  printableCv: string;
 };
 
 export type AboutPopoverProps = {
@@ -18,6 +19,7 @@ export type AboutPopoverProps = {
   strings: AboutPopoverStrings;
   repoUrl: string;
   branch: string;
+  cvHref: string;
 };
 
 /**
@@ -31,16 +33,18 @@ export function AboutPopover({
   strings,
   repoUrl,
   branch,
+  cvHref,
 }: AboutPopoverProps) {
   const dialogRef = useDialog<HTMLDivElement>(open, onClose);
 
   if (!open) return null;
 
-  const links: { href: string; label: string }[] = [
-    { href: `${repoUrl}/blob/${branch}/docs/MCP.md`, label: strings.mcpDocs },
-    { href: `${repoUrl}/blob/${branch}/prompts/system.md`, label: strings.systemPrompt },
-    { href: `${repoUrl}/tree/${branch}/kb`, label: strings.kb },
-    { href: repoUrl, label: strings.repo },
+  const links: { href: string; label: string; external?: boolean }[] = [
+    { href: cvHref, label: strings.printableCv },
+    { href: `${repoUrl}/blob/${branch}/docs/MCP.md`, label: strings.mcpDocs, external: true },
+    { href: `${repoUrl}/blob/${branch}/prompts/system.md`, label: strings.systemPrompt, external: true },
+    { href: `${repoUrl}/tree/${branch}/kb`, label: strings.kb, external: true },
+    { href: repoUrl, label: strings.repo, external: true },
   ];
 
   return (
@@ -93,8 +97,7 @@ export function AboutPopover({
             <a
               key={link.href}
               href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className="group inline-flex items-center gap-2 text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-accent)]"
             >
               <span

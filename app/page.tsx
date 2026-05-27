@@ -58,9 +58,11 @@ export default function Home() {
           kb: t.footer.kb,
           repo: t.footer.repo,
           mcpDocs: t.footer.mcpDocs,
+          printableCv: t.about.printableCv,
         }}
         repoUrl={REPO_URL}
         branch={REPO_BRANCH}
+        cvHref={`/cv?lang=${lang}`}
       />
     </KbProvider>
   );

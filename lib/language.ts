@@ -67,6 +67,7 @@ export const UI_STRINGS = {
       buttonLabel: "About this project",
       title: "About this project",
       close: "Close",
+      printableCv: "Printable CV",
     },
     kbPanel: {
       show: "Show the knowledge base panel",
@@ -173,6 +174,7 @@ export const UI_STRINGS = {
       buttonLabel: "À propos de ce projet",
       title: "À propos de ce projet",
       close: "Fermer",
+      printableCv: "CV imprimable",
     },
     kbPanel: {
       show: "Afficher la base de connaissances",

@@ -63,6 +63,11 @@ export const ExperienceFrontmatterSchema = z.object({
   start: DateOrPresent,
   end: DateOrPresent,
   location: z.string().optional(),
+  // One-line summary shown on the printable CV under the role title.
+  summary: z.string().optional(),
+  // Curated CV bullets for the printable resume. When empty, the CV renderer
+  // falls back to the first bullet list in the markdown body.
+  highlights: z.array(z.string().min(1).max(280)).max(8).optional(),
   stack: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
 });

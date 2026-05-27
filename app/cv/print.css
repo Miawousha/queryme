@@ -1,0 +1,39 @@
+/* Readable prose for the printable CV — body sized to ~10.5pt on print and
+   ~14px on screen so the two render at comparable physical sizes. */
+.cv-prose ul {
+  margin: 0.25rem 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cv-prose li {
+  margin: 0 0 0.2rem 0;
+}
+.cv-prose strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+.cv-prose a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cv-prose p {
+  margin: 0.25rem 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media print {
+  @page { size: A4; margin: 14mm 16mm; }
+  body { background: #fff !important; color: #000 !important; font-size: 10.5pt; }
+  a { color: #000 !important; text-decoration: none !important; }
+  nav, footer, .no-print { display: none !important; }
+  .cv-page { padding: 0 !important; max-width: none !important; }
+  .cv-section { break-inside: avoid; }
+  .cv-entry { break-inside: avoid; }
+  h1, h2, h3 { break-after: avoid; }
+  .cv-prose p, .cv-prose ul, .cv-prose li { font-size: 10.5pt; line-height: 1.4; }
+  .cv-prose strong { color: #000; }
+}
