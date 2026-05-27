@@ -278,13 +278,13 @@ export default async function CvPage({ searchParams }: Props) {
         </section>
       )}
 
-      {kb.openSource.length > 0 && (
+      {kb.code.filter((o) => o.frontmatter.visibility === "public").length > 0 && (
         <section className="cv-section mb-3">
           <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
             {t.sections.openSource}
           </h2>
           <ul className="flex flex-col gap-1.5 text-[14px] leading-snug">
-            {kb.openSource.map((o) => (
+            {kb.code.filter((o) => o.frontmatter.visibility === "public").map((o) => (
               <li key={o.slug} className="cv-entry">
                 <a
                   href={o.frontmatter.url}
