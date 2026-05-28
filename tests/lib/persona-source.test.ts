@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot } from "@/lib/persona-source";
+import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot, ensurePersonaCacheReady } from "@/lib/persona-source";
 import { getDb } from "@/lib/db/client";
 import { personaSource } from "@/lib/db/schema";
 import { http, HttpResponse } from "msw";
@@ -277,5 +277,80 @@ describe("syncFromGitHub — error paths", () => {
     // The in-flight mutex returns the same promise — only one DB row written.
     const rows = await getDb().select().from(personaSource);
     expect(rows).toHaveLength(1);
+  });
+});
+
+describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
+  let cacheRoot: string;
+
+  beforeAll(async () => {
+    const rows = await getDb().select().from(personaSource).limit(1);
+    if (rows.length > 0) {
+      throw new Error(
+        "persona_source has existing rows. Integration tests refuse to run against a DB with live data. " +
+        "Point POSTGRES_URL at a test branch or truncate the table first.",
+      );
+    }
+  });
+
+  beforeEach(async () => {
+    cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-ensure-"));
+    process.env.PERSONA_CACHE_ROOT = cacheRoot;
+    await getDb().delete(personaSource);
+  });
+
+  afterEach(() => {
+    rmSync(cacheRoot, { recursive: true, force: true });
+    delete process.env.PERSONA_CACHE_ROOT;
+  });
+
+  afterAll(async () => {
+    await getDb().delete(personaSource);
+  });
+
+  it("is a no-op when no persona is configured", async () => {
+    await ensurePersonaCacheReady();
+    expect(getActivePersonaRoot()).toBeNull();
+  });
+
+  it("re-fetches the recorded SHA when the symlink is missing", async () => {
+    // Simulate a successful prior sync, then wipe the cache (cold start).
+    const tarball = await makeTarball(MIN_REQUIRED_FILES);
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+    await syncFromGitHub("https://github.com/alex/queryme-content");
+    rmSync(cacheRoot, { recursive: true, force: true });
+    // Re-create the cacheRoot so ensurePersonaCacheReady can put files back.
+    mkdirSync(cacheRoot, { recursive: true });
+
+    // Re-register handlers so the lazy refetch can hit the mocked tarball
+    // endpoint again. (mswServer.resetHandlers fired in afterEach? No — it
+    // fires AFTER each test, not within. But the previous handlers expire
+    // when the test body returned in the prior sync. We need fresh handlers
+    // for the re-fetch.)
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+
+    await ensurePersonaCacheReady();
+    expect(existsSync(`${cacheRoot}/current`)).toBe(true);
+    expect(readFileSync(`${cacheRoot}/current/persona.yaml`, "utf8")).toContain("test-persona");
+  });
+
+  it("is a no-op when the symlink already points at the recorded SHA", async () => {
+    const tarball = await makeTarball(MIN_REQUIRED_FILES);
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+    await syncFromGitHub("https://github.com/alex/queryme-content");
+
+    // Reset handlers and install ones that throw if called — ensurePersonaCacheReady
+    // must NOT re-fetch when the cache is already populated.
+    mswServer.resetHandlers();
+    mswServer.use(
+      http.get(/api\.github\.com/, () => {
+        throw new Error("api.github.com should not be called");
+      }),
+      http.get(/codeload\.github\.com/, () => {
+        throw new Error("codeload.github.com should not be called");
+      }),
+    );
+
+    await expect(ensurePersonaCacheReady()).resolves.toBeUndefined();
   });
 });

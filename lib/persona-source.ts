@@ -204,3 +204,37 @@ export async function listSyncHistory(limit = 10): Promise<PersonaSource[]> {
     .orderBy(desc(personaSource.syncedAt))
     .limit(limit);
 }
+
+export async function ensurePersonaCacheReady(): Promise<void> {
+  if (process.env.PERSONA_LOCAL_OVERRIDE) return;
+  const linkPath = `${cacheRoot()}/current`;
+  if (fs.existsSync(linkPath)) return;
+
+  const active = await getActivePersonaSourceRow();
+  if (!active) return; // no persona configured at all → caller renders setup screen.
+
+  // Re-fetch the recorded SHA's tarball into the cache. Uses the same
+  // extract/validate/flip path as a sync, but does NOT resolve "latest" —
+  // we want byte-identity with the row's recorded SHA.
+  await refetchFromRecorded(active.repoUrl, active.branch, active.commitSha);
+}
+
+async function refetchFromRecorded(repoUrl: string, branch: string, sha: string): Promise<void> {
+  const { owner, repo } = parseGitHubRepoUrl(repoUrl);
+  const targetDir = `${cacheRoot()}/${sha}`;
+  const res = await fetch(`https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`);
+  if (!res.ok) throw new Error(`cold-start refetch failed: ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  await rm(targetDir, { recursive: true, force: true });
+  await mkdir(targetDir, { recursive: true });
+  await extractTarball(buf, targetDir);
+
+  const missing = validatePersonaTree(targetDir);
+  if (missing) throw new Error(`cold-start refetch validation failed: ${missing}`);
+
+  const linkPath = `${cacheRoot()}/current`;
+  const tmpLink = `${cacheRoot()}/current.new`;
+  await rm(tmpLink, { recursive: true, force: true });
+  await symlink(targetDir, tmpLink);
+  await rename(tmpLink, linkPath);
+}
