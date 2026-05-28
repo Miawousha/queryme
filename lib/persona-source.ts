@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import * as tar from "tar";
 import { Readable } from "node:stream";
-import { rm, mkdir, rename, symlink } from "node:fs/promises";
+import { rm, mkdir, rename, symlink, readdir } from "node:fs/promises";
 import { getDb } from "@/lib/db/client";
 import { personaSource, type PersonaSource } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
@@ -158,6 +158,9 @@ async function doSync(repoUrl: string, branch: string): Promise<SyncResult> {
   // Persist DB row.
   const row = await recordRow(repoUrl, branch, sha, "ok", null);
 
+  // Keep current + previous SHA dirs; delete older ones.
+  await cleanupOldShas(sha);
+
   return { kind: "ok", commitSha: sha, syncedAt: row.syncedAt };
 }
 
@@ -237,4 +240,30 @@ async function refetchFromRecorded(repoUrl: string, branch: string, sha: string)
   await rm(tmpLink, { recursive: true, force: true });
   await symlink(targetDir, tmpLink);
   await rename(tmpLink, linkPath);
+}
+
+async function cleanupOldShas(currentSha: string): Promise<void> {
+  const root = cacheRoot();
+  let entries: string[];
+  try {
+    entries = await readdir(root);
+  } catch {
+    return;
+  }
+
+  // Recent SHAs by DB synced_at — keep the current + the one before.
+  const recent = await getDb()
+    .select()
+    .from(personaSource)
+    .where(eq(personaSource.status, "ok"))
+    .orderBy(desc(personaSource.syncedAt))
+    .limit(2);
+  const keep = new Set(recent.map((r) => r.commitSha));
+  keep.add(currentSha);
+
+  for (const name of entries) {
+    if (name === "current" || name === "current.new") continue;
+    if (keep.has(name)) continue;
+    await rm(`${root}/${name}`, { recursive: true, force: true });
+  }
 }

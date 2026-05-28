@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync, existsSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot, ensurePersonaCacheReady } from "@/lib/persona-source";
@@ -352,5 +352,59 @@ describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
     );
 
     await expect(ensurePersonaCacheReady()).resolves.toBeUndefined();
+  });
+});
+
+describe("syncFromGitHub — cache cleanup", () => {
+  let cacheRoot: string;
+
+  beforeAll(async () => {
+    const rows = await getDb().select().from(personaSource).limit(1);
+    if (rows.length > 0) {
+      throw new Error(
+        "persona_source has existing rows. Integration tests refuse to run against a DB with live data. " +
+        "Point POSTGRES_URL at a test branch or truncate the table first.",
+      );
+    }
+  });
+
+  beforeEach(async () => {
+    cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-cleanup-"));
+    process.env.PERSONA_CACHE_ROOT = cacheRoot;
+    await getDb().delete(personaSource);
+  });
+
+  afterEach(() => {
+    rmSync(cacheRoot, { recursive: true, force: true });
+    delete process.env.PERSONA_CACHE_ROOT;
+  });
+
+  afterAll(async () => {
+    await getDb().delete(personaSource);
+  });
+
+  it("keeps the current + previous SHA dirs and deletes older ones", async () => {
+    const shas = ["aaaa", "bbbb", "cccc", "dddd"];
+    for (const sha of shas) {
+      const fullSha = sha.padEnd(40, "0");
+      const tarball = await makeTarball(MIN_REQUIRED_FILES, `queryme-content-${fullSha}`);
+      mswServer.resetHandlers();
+      mswServer.use(
+        ...happyPathHandlers({
+          owner: "alex",
+          repo: "queryme-content",
+          sha: fullSha,
+          tarball,
+        }),
+      );
+      const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+      expect(result.kind).toBe("ok");
+    }
+
+    const dirs = readdirSync(cacheRoot).filter((d) => d !== "current");
+    expect(dirs.sort()).toEqual([
+      "cccc".padEnd(40, "0"),
+      "dddd".padEnd(40, "0"),
+    ]);
   });
 });
