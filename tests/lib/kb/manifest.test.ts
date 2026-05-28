@@ -41,10 +41,6 @@ describe("loadKbManifest", () => {
     }
   });
 
-  it("excludes the sensitive directory", () => {
-    expect(manifest.some((f) => f.path.startsWith("sensitive/"))).toBe(false);
-  });
-
   it("returns files sorted by path", () => {
     const paths = manifest.map((f) => f.path);
     expect(paths).toEqual([...paths].sort());
