@@ -9,10 +9,19 @@ import "./print.css";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Alexandre Collet — CV",
-  description: "Printable CV for Alexandre Collet.",
-};
+import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { loadPersona } from "@/lib/persona";
+
+export async function generateMetadata(): Promise<Metadata> {
+  await ensurePersonaCacheReady();
+  const root = getActivePersonaRoot();
+  if (!root) return { title: "CV" };
+  const persona = loadPersona(root);
+  return {
+    title: `${persona.fullName} — CV`,
+    description: `Printable CV for ${persona.fullName}.`,
+  };
+}
 
 function parseLang(value: string | string[] | undefined): KbLang {
   const raw = Array.isArray(value) ? value[0] : value;
