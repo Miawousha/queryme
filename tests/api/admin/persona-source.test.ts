@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterEach, afterAll, vi } from "vitest";
 import { getDb } from "@/lib/db/client";
 import { personaSource } from "@/lib/db/schema";
 
