@@ -1,8 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { mkdtempSync, writeFileSync, mkdirSync } from "node:fs";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync, readFileSync, readlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { parseGitHubRepoUrl, validatePersonaTree } from "@/lib/persona-source";
+import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot } from "@/lib/persona-source";
+import { getDb } from "@/lib/db/client";
+import { personaSource } from "@/lib/db/schema";
+import { mswServer } from "../../vitest.setup";
+import { FAKE_SHA, happyPathHandlers, makeTarball } from "./__mocks__/github-handlers";
 
 describe("parseGitHubRepoUrl", () => {
   it("parses https://github.com/owner/repo", () => {
@@ -86,5 +90,60 @@ describe("validatePersonaTree", () => {
     const result = validatePersonaTree(dir);
     expect(result).toContain("persona.yaml");
     expect(result).toContain("prompts/system.md");
+  });
+});
+
+const MIN_REQUIRED_FILES: Record<string, string> = {
+  "persona.yaml":
+    'id: test-persona\nfullName: Test\ngivenName: Test\ndefaultLocale: en\ni18n:\n  en:\n    possessive: their\n    objectPronoun: them\n    subjectPronoun: they\n  fr:\n    possessive: leur\n    objectPronoun: les\n    subjectPronoun: ils\n',
+  "prompts/system.md": "system prompt body",
+  "kb/profile.yaml":
+    "name: Test Person\nheadline: Test\nlocation: Earth\nlanguages: [en]\n",
+  "kb/profile.fr.yaml":
+    "name: Personne Test\nheadline: Test\nlocation: Terre\nlanguages: [fr]\n",
+  "kb/public-contact.yaml": "email: test@example.com\n",
+  "kb/public-contact.fr.yaml": "email: test@example.com\n",
+  "kb/skills.yaml": "skills: []\n",
+  "kb/skills.fr.yaml": "skills: []\n",
+  "kb/education.yaml": "education: []\n",
+  "kb/education.fr.yaml": "education: []\n",
+};
+
+describe("syncFromGitHub — happy path", () => {
+  const cacheRoot = "/tmp/queryme-test-persona-cache";
+
+  beforeEach(async () => {
+    process.env.PERSONA_CACHE_ROOT = cacheRoot;
+    if (existsSync(cacheRoot)) rmSync(cacheRoot, { recursive: true, force: true });
+    await getDb().delete(personaSource);
+  });
+
+  afterEach(() => {
+    delete process.env.PERSONA_CACHE_ROOT;
+  });
+
+  it("downloads, extracts, validates, flips the symlink, and writes a DB row", async () => {
+    const tarball = await makeTarball(MIN_REQUIRED_FILES);
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+
+    const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+
+    expect(result.kind).toBe("ok");
+    if (result.kind !== "ok") throw new Error("unreachable");
+    expect(result.commitSha).toBe(FAKE_SHA);
+
+    // Symlink points at the extracted SHA dir.
+    const target = readlinkSync(`${cacheRoot}/current`);
+    expect(target).toContain(FAKE_SHA);
+    expect(getActivePersonaRoot()).toBe(target);
+
+    // Required files reachable through the symlink.
+    expect(readFileSync(`${cacheRoot}/current/persona.yaml`, "utf8")).toContain("test-persona");
+
+    // DB row recorded.
+    const rows = await getDb().select().from(personaSource);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].commitSha).toBe(FAKE_SHA);
+    expect(rows[0].status).toBe("ok");
   });
 });
