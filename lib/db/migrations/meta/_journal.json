@@ -43,6 +43,13 @@
       "when": 1779959576827,
       "tag": "0005_short_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779959830861,
+      "tag": "0006_unknown_morlocks",
+      "breakpoints": true
     }
   ]
 }

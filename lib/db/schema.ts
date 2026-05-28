@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const conversations = pgTable("conversations", {
@@ -48,15 +48,21 @@ export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
 export type QuestionForAlex = typeof questionsForAlex.$inferSelect;
 
-export const personaSource = pgTable("persona_source", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  repoUrl: text("repo_url").notNull(),
-  branch: text("branch").notNull().default("main"),
-  commitSha: text("commit_sha").notNull(),
-  syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
-  status: text("status", { enum: ["ok", "error"] }).notNull(),
-  error: text("error"),
-});
+export const personaSource = pgTable(
+  "persona_source",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    repoUrl: text("repo_url").notNull(),
+    branch: text("branch").notNull().default("main"),
+    commitSha: text("commit_sha").notNull(),
+    syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+    status: text("status", { enum: ["ok", "error"] }).notNull(),
+    error: text("error"),
+  },
+  (table) => ({
+    syncedAtIdx: index("persona_source_synced_at_idx").on(sql`${table.syncedAt} DESC`),
+  }),
+);
 
 export type PersonaSource = typeof personaSource.$inferSelect;
 export type NewPersonaSource = typeof personaSource.$inferInsert;
