@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getActivePersonaRoot } from "@/lib/persona-source";
 
 export type SystemPromptPart =
   | { kind: "header"; text: string }
@@ -9,7 +10,9 @@ let cachedHeader: string | null = null;
 
 function readHeader(): string {
   if (cachedHeader !== null) return cachedHeader;
-  const file = path.resolve(process.cwd(), "prompts/system.md");
+  const root = getActivePersonaRoot();
+  if (!root) throw new Error("Persona not configured — no active root");
+  const file = path.join(root, "prompts/system.md");
   cachedHeader = fs.readFileSync(file, "utf8").trim();
   return cachedHeader;
 }
@@ -29,4 +32,8 @@ export function buildSystemPromptParts(input: {
     { kind: "header", text: readHeader() },
     { kind: "kb", text: input.kbText },
   ];
+}
+
+export function _resetPromptCache(): void {
+  cachedHeader = null;
 }

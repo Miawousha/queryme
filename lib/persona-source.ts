@@ -13,6 +13,9 @@ import { rm, mkdir, rename, symlink, readdir } from "node:fs/promises";
 import { getDb } from "@/lib/db/client";
 import { personaSource, type PersonaSource } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { resetKbCache } from "@/lib/kb/cache";
+import { _resetPromptCache } from "@/lib/prompts";
+import { _resetPersonaCache } from "@/lib/persona";
 
 export type ParsedRepo = { owner: string; repo: string };
 
@@ -157,6 +160,11 @@ async function doSync(repoUrl: string, branch: string): Promise<SyncResult> {
 
   // Persist DB row.
   const row = await recordRow(repoUrl, branch, sha, "ok", null);
+
+  // Invalidate in-process caches so the next read picks up the new SHA.
+  resetKbCache();
+  _resetPromptCache();
+  _resetPersonaCache();
 
   // Keep current + previous SHA dirs; delete older ones.
   await cleanupOldShas(sha);

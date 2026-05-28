@@ -112,6 +112,7 @@ const MIN_REQUIRED_FILES: Record<string, string> = {
 
 describe("syncFromGitHub — happy path", () => {
   let cacheRoot: string;
+  let savedLocalOverride: string | undefined;
 
   beforeAll(async () => {
     const rows = await getDb().select().from(personaSource).limit(1);
@@ -126,12 +127,21 @@ describe("syncFromGitHub — happy path", () => {
   beforeEach(async () => {
     cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-test-"));
     process.env.PERSONA_CACHE_ROOT = cacheRoot;
+    // Clear PERSONA_LOCAL_OVERRIDE so getActivePersonaRoot() uses the symlink path.
+    savedLocalOverride = process.env.PERSONA_LOCAL_OVERRIDE;
+    delete process.env.PERSONA_LOCAL_OVERRIDE;
     await getDb().delete(personaSource);
   });
 
   afterEach(() => {
     rmSync(cacheRoot, { recursive: true, force: true });
     delete process.env.PERSONA_CACHE_ROOT;
+    // Restore PERSONA_LOCAL_OVERRIDE to the value set by vitest.setup.ts.
+    if (savedLocalOverride !== undefined) {
+      process.env.PERSONA_LOCAL_OVERRIDE = savedLocalOverride;
+    } else {
+      delete process.env.PERSONA_LOCAL_OVERRIDE;
+    }
   });
 
   // The happy-path test inserts a real row; clean it up so re-running the
@@ -282,6 +292,7 @@ describe("syncFromGitHub — error paths", () => {
 
 describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
   let cacheRoot: string;
+  let savedLocalOverride: string | undefined;
 
   beforeAll(async () => {
     const rows = await getDb().select().from(personaSource).limit(1);
@@ -296,12 +307,21 @@ describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
   beforeEach(async () => {
     cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-ensure-"));
     process.env.PERSONA_CACHE_ROOT = cacheRoot;
+    // Clear PERSONA_LOCAL_OVERRIDE so getActivePersonaRoot() uses the symlink path.
+    savedLocalOverride = process.env.PERSONA_LOCAL_OVERRIDE;
+    delete process.env.PERSONA_LOCAL_OVERRIDE;
     await getDb().delete(personaSource);
   });
 
   afterEach(() => {
     rmSync(cacheRoot, { recursive: true, force: true });
     delete process.env.PERSONA_CACHE_ROOT;
+    // Restore PERSONA_LOCAL_OVERRIDE to the value set by vitest.setup.ts.
+    if (savedLocalOverride !== undefined) {
+      process.env.PERSONA_LOCAL_OVERRIDE = savedLocalOverride;
+    } else {
+      delete process.env.PERSONA_LOCAL_OVERRIDE;
+    }
   });
 
   afterAll(async () => {
