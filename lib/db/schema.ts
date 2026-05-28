@@ -11,7 +11,7 @@ export const conversations = pgTable("conversations", {
   lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const questionsForAlex = pgTable("questions_for_alex", {
+export const forwardedQuestions = pgTable("forwarded_questions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   conversationId: uuid("conversation_id").references(() => conversations.id),
   question: text("question").notNull(),
@@ -46,7 +46,7 @@ export type InterviewerIdentity = {
 
 export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
-export type QuestionForAlex = typeof questionsForAlex.$inferSelect;
+export type ForwardedQuestion = typeof forwardedQuestions.$inferSelect;
 
 export const personaSource = pgTable(
   "persona_source",

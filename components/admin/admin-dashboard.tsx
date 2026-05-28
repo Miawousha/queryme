@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { AdminData, AdminStats } from "@/lib/admin/data";
 import { CONVERSATION_LIMIT } from "@/lib/admin/data";
-import type { Conversation, QuestionForAlex, InterviewerIdentity } from "@/lib/db/schema";
+import type { Conversation, ForwardedQuestion, InterviewerIdentity } from "@/lib/db/schema";
 import { GridBackground } from "@/components/grid-background";
 import { MatriceLogo } from "@/components/matrice-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -408,7 +408,7 @@ function ConversationRow({ conversation }: { conversation: Conversation }) {
   );
 }
 
-function QuestionRow({ question }: { question: QuestionForAlex }) {
+function QuestionRow({ question }: { question: ForwardedQuestion }) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-[13px] text-[var(--color-text-primary)]">{question.question}</p>
@@ -545,7 +545,7 @@ function QuestionDetail({
   question,
   onOpenConversation,
 }: {
-  question: QuestionForAlex;
+  question: ForwardedQuestion;
   onOpenConversation: (conversationId: string) => void;
 }) {
   const [draft, setDraft] = useState(question.reply ?? "");
