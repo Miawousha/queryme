@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -131,6 +131,12 @@ describe("syncFromGitHub — happy path", () => {
   afterEach(() => {
     rmSync(cacheRoot, { recursive: true, force: true });
     delete process.env.PERSONA_CACHE_ROOT;
+  });
+
+  // The happy-path test inserts a real row; clean it up so re-running the
+  // suite doesn't trip the production-data guard in beforeAll.
+  afterAll(async () => {
+    await getDb().delete(personaSource);
   });
 
   it("downloads, extracts, validates, flips the symlink, and writes a DB row", async () => {
