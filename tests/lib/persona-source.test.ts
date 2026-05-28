@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync, readFileSync, readlinkSync } from "node:fs";
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot } from "@/lib/persona-source";
@@ -110,15 +110,26 @@ const MIN_REQUIRED_FILES: Record<string, string> = {
 };
 
 describe("syncFromGitHub — happy path", () => {
-  const cacheRoot = "/tmp/queryme-test-persona-cache";
+  let cacheRoot: string;
+
+  beforeAll(async () => {
+    const rows = await getDb().select().from(personaSource).limit(1);
+    if (rows.length > 0) {
+      throw new Error(
+        "persona_source has existing rows. Integration tests refuse to run against a DB with live data. " +
+        "Point POSTGRES_URL at a test branch or truncate the table first.",
+      );
+    }
+  });
 
   beforeEach(async () => {
+    cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-test-"));
     process.env.PERSONA_CACHE_ROOT = cacheRoot;
-    if (existsSync(cacheRoot)) rmSync(cacheRoot, { recursive: true, force: true });
     await getDb().delete(personaSource);
   });
 
   afterEach(() => {
+    rmSync(cacheRoot, { recursive: true, force: true });
     delete process.env.PERSONA_CACHE_ROOT;
   });
 

@@ -17,7 +17,7 @@ if (existsSync(envLocalPath)) {
     const eqIdx = line.indexOf("=");
     if (eqIdx === -1) continue;
     const key = line.slice(0, eqIdx).trim();
-    const value = line.slice(eqIdx + 1).trim();
+    const value = line.slice(eqIdx + 1).trim().replace(/^(['"])(.*)\1$/, "$2");
     // Only set if not already present — real env vars take priority.
     if (key && !(key in process.env)) {
       process.env[key] = value;

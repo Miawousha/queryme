@@ -135,6 +135,7 @@ async function doSync(repoUrl: string, branch: string): Promise<SyncResult> {
     await extractTarball(buf, targetDir);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    await rm(targetDir, { recursive: true, force: true });
     await recordRow(repoUrl, branch, sha, "error", message);
     return { kind: "error", message };
   }
@@ -150,7 +151,7 @@ async function doSync(repoUrl: string, branch: string): Promise<SyncResult> {
   // Atomically flip the symlink.
   const linkPath = `${cacheRoot()}/current`;
   const tmpLink = `${cacheRoot()}/current.new`;
-  await rm(tmpLink, { force: true });
+  await rm(tmpLink, { recursive: true, force: true });
   await symlink(targetDir, tmpLink);
   await rename(tmpLink, linkPath);
 
@@ -180,9 +181,7 @@ export function getActivePersonaRoot(): string | null {
   }
   const link = `${cacheRoot()}/current`;
   try {
-    // Sync readlink — symlinks are tiny, no benefit from async here.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require("node:fs").readlinkSync(link);
+    return fs.readlinkSync(link);
   } catch {
     return null;
   }
