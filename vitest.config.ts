@@ -12,5 +12,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
+    // DB-integration tests share the same personaSource table; running files
+    // sequentially avoids race conditions between concurrent writers.
+    fileParallelism: false,
   },
 });
