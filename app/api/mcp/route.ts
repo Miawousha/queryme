@@ -6,6 +6,7 @@ import { buildMcpServer } from "@/lib/mcp/server";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
 import { requestIp } from "@/lib/request-ip";
+import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
 
 export const runtime = "nodejs";
 
@@ -136,10 +137,32 @@ async function handle(req: NextRequest): Promise<Response> {
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
+  await ensurePersonaCacheReady();
+  if (!getActivePersonaRoot()) {
+    return NextResponse.json(
+      {
+        jsonrpc: "2.0",
+        error: { code: -32000, message: "persona_not_configured" },
+        id: null,
+      },
+      { status: 503 },
+    );
+  }
   return handle(req);
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
+  await ensurePersonaCacheReady();
+  if (!getActivePersonaRoot()) {
+    return NextResponse.json(
+      {
+        jsonrpc: "2.0",
+        error: { code: -32000, message: "persona_not_configured" },
+        id: null,
+      },
+      { status: 503 },
+    );
+  }
   return handle(req);
 }
 

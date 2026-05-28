@@ -12,6 +12,7 @@ import { buildIdentifyTools } from "@/lib/interviewer/tool";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
 import { requestIp } from "@/lib/request-ip";
+import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,11 @@ const RequestBodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  await ensurePersonaCacheReady();
+  if (!getActivePersonaRoot()) {
+    return NextResponse.json({ error: "persona_not_configured" }, { status: 503 });
+  }
+
   let rawBody: unknown;
   try {
     rawBody = await req.json();
