@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot } from "@/lib/persona-source";
 import { getDb } from "@/lib/db/client";
 import { personaSource } from "@/lib/db/schema";
+import { http, HttpResponse } from "msw";
 import { mswServer } from "../../vitest.setup";
 import { FAKE_SHA, happyPathHandlers, makeTarball } from "./__mocks__/github-handlers";
 
@@ -162,5 +163,119 @@ describe("syncFromGitHub — happy path", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].commitSha).toBe(FAKE_SHA);
     expect(rows[0].status).toBe("ok");
+  });
+});
+
+describe("syncFromGitHub — error paths", () => {
+  let cacheRoot: string;
+
+  beforeAll(async () => {
+    const rows = await getDb().select().from(personaSource).limit(1);
+    if (rows.length > 0) {
+      throw new Error(
+        "persona_source has existing rows. Integration tests refuse to run against a DB with live data. " +
+        "Point POSTGRES_URL at a test branch or truncate the table first.",
+      );
+    }
+  });
+
+  beforeEach(async () => {
+    cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-err-"));
+    process.env.PERSONA_CACHE_ROOT = cacheRoot;
+    await getDb().delete(personaSource);
+  });
+
+  afterEach(() => {
+    rmSync(cacheRoot, { recursive: true, force: true });
+    delete process.env.PERSONA_CACHE_ROOT;
+  });
+
+  afterAll(async () => {
+    await getDb().delete(personaSource);
+  });
+
+  it("returns an error and writes an error row when a required file is missing", async () => {
+    const incomplete = { ...MIN_REQUIRED_FILES };
+    delete incomplete["kb/skills.yaml"];
+    const tarball = await makeTarball(incomplete);
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+
+    const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain("kb/skills.yaml");
+    }
+
+    // No symlink because validation failed.
+    expect(existsSync(`${cacheRoot}/current`)).toBe(false);
+
+    // Error row recorded.
+    const rows = await getDb().select().from(personaSource);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].status).toBe("error");
+    expect(rows[0].error).toContain("kb/skills.yaml");
+  });
+
+  it("returns an error when the commits API returns 404", async () => {
+    mswServer.use(
+      http.get("https://api.github.com/repos/alex/queryme-content/commits/main", () =>
+        HttpResponse.json({ message: "Not Found" }, { status: 404 }),
+      ),
+    );
+
+    const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/404/);
+    }
+  });
+
+  it("preserves the previous active SHA when a subsequent sync fails", async () => {
+    // First sync: success.
+    const goodTarball = await makeTarball(MIN_REQUIRED_FILES);
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball: goodTarball }));
+    const first = await syncFromGitHub("https://github.com/alex/queryme-content");
+    expect(first.kind).toBe("ok");
+    const linkAfterFirst = readlinkSync(`${cacheRoot}/current`);
+    expect(linkAfterFirst).toContain(FAKE_SHA);
+
+    // Second sync: missing file. Reset handlers and use a different SHA to
+    // make the assertion meaningful.
+    const incomplete = { ...MIN_REQUIRED_FILES };
+    delete incomplete["persona.yaml"];
+    const altSha = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+    const badTarball = await makeTarball(incomplete, `queryme-content-${altSha}`);
+    mswServer.resetHandlers();
+    mswServer.use(
+      ...happyPathHandlers({
+        owner: "alex",
+        repo: "queryme-content",
+        sha: altSha,
+        tarball: badTarball,
+      }),
+    );
+    const second = await syncFromGitHub("https://github.com/alex/queryme-content");
+    expect(second.kind).toBe("error");
+
+    // Symlink still points at the first (good) SHA.
+    expect(readlinkSync(`${cacheRoot}/current`)).toBe(linkAfterFirst);
+  });
+
+  it("serializes concurrent sync calls", async () => {
+    const tarball = await makeTarball(MIN_REQUIRED_FILES);
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+
+    const [a, b] = await Promise.all([
+      syncFromGitHub("https://github.com/alex/queryme-content"),
+      syncFromGitHub("https://github.com/alex/queryme-content"),
+    ]);
+
+    expect(a.kind).toBe("ok");
+    expect(b.kind).toBe("ok");
+    // The in-flight mutex returns the same promise — only one DB row written.
+    const rows = await getDb().select().from(personaSource);
+    expect(rows).toHaveLength(1);
   });
 });
