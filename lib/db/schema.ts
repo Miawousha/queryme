@@ -47,3 +47,16 @@ export type InterviewerIdentity = {
 export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
 export type QuestionForAlex = typeof questionsForAlex.$inferSelect;
+
+export const personaSource = pgTable("persona_source", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  repoUrl: text("repo_url").notNull(),
+  branch: text("branch").notNull().default("main"),
+  commitSha: text("commit_sha").notNull(),
+  syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+  status: text("status", { enum: ["ok", "error"] }).notNull(),
+  error: text("error"),
+});
+
+export type PersonaSource = typeof personaSource.$inferSelect;
+export type NewPersonaSource = typeof personaSource.$inferInsert;
