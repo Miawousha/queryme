@@ -277,22 +277,4 @@ export function buildUiStrings(persona: Persona) {
 
 export type UiStrings = ReturnType<typeof buildUiStrings>["en"];
 export type KbStrings = UiStrings["kb"];
-
-// TEMPORARY shim — removed by Tasks 15/16/17 as importers migrate to props.
-// Components still importing `UI_STRINGS` use Alex's tokens until the refactor finishes.
-import { loadPersona } from "@/lib/persona";
-import { getActivePersonaRoot } from "@/lib/persona-source";
-let _legacyCache: ReturnType<typeof buildUiStrings> | null = null;
-function legacyAlexStrings() {
-  if (_legacyCache) return _legacyCache;
-  const root = getActivePersonaRoot();
-  if (!root) throw new Error("UI_STRINGS shim: no active persona");
-  _legacyCache = buildUiStrings(loadPersona(root));
-  return _legacyCache;
-}
-/** @deprecated use buildUiStrings(persona) directly; this shim is removed in P15-P17. */
-export const UI_STRINGS = new Proxy({} as any, {
-  get(_, key: string) {
-    return (legacyAlexStrings() as any)[key];
-  },
-});
+export type AllLocaleStrings = ReturnType<typeof buildUiStrings>;
