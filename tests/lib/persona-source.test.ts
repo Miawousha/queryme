@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync, existsSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot, ensurePersonaCacheReady } from "@/lib/persona-source";
+import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot, ensurePersonaCacheReady, resolveLatestSha } from "@/lib/persona-source";
 import { getDb } from "@/lib/db/client";
 import { personaSource } from "@/lib/db/schema";
 import { http, HttpResponse } from "msw";
@@ -426,5 +426,30 @@ describe("syncFromGitHub — cache cleanup", () => {
       "cccc".padEnd(40, "0"),
       "dddd".padEnd(40, "0"),
     ]);
+  });
+});
+
+describe("resolveLatestSha", () => {
+  it("returns the sha reported by the GitHub commits API", async () => {
+    mswServer.use(
+      http.get(
+        "https://api.github.com/repos/acme/persona/commits/main",
+        () => HttpResponse.json({ sha: "deadbeef" }),
+      ),
+    );
+    const sha = await resolveLatestSha("https://github.com/acme/persona", "main");
+    expect(sha).toBe("deadbeef");
+  });
+
+  it("throws when the commits API errors", async () => {
+    mswServer.use(
+      http.get(
+        "https://api.github.com/repos/acme/persona/commits/main",
+        () => new HttpResponse(null, { status: 404 }),
+      ),
+    );
+    await expect(
+      resolveLatestSha("https://github.com/acme/persona", "main"),
+    ).rejects.toThrow(/404/);
   });
 });

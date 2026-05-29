@@ -67,6 +67,23 @@ export function validatePersonaTree(root: string): string | null {
   return `missing required file(s): ${missing.join(", ")}`;
 }
 
+/**
+ * Resolves the latest commit SHA on `branch` for the given repo. Extracted so
+ * the CLI's dry-run can preview the would-sync SHA without downloading the
+ * tarball; `doSync` reuses it too.
+ */
+export async function resolveLatestSha(repoUrl: string, branch: string): Promise<string> {
+  const { owner, repo } = parseGitHubRepoUrl(repoUrl);
+  const res = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/commits/${branch}`,
+    { headers: { Accept: "application/vnd.github+json" } },
+  );
+  if (!res.ok) throw new Error(`GitHub commits API returned ${res.status}`);
+  const body = (await res.json()) as { sha?: string };
+  if (typeof body.sha !== "string") throw new Error("commits API response missing sha");
+  return body.sha;
+}
+
 // ---------------------------------------------------------------------------
 // Sync orchestrator
 // ---------------------------------------------------------------------------
@@ -115,14 +132,7 @@ async function doSync(repoUrl: string, branch: string): Promise<SyncResult> {
   // Resolve latest commit SHA on the requested branch.
   let sha: string;
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/commits/${branch}`,
-      { headers: { Accept: "application/vnd.github+json" } },
-    );
-    if (!res.ok) throw new Error(`GitHub commits API returned ${res.status}`);
-    const body = (await res.json()) as { sha?: string };
-    if (typeof body.sha !== "string") throw new Error("commits API response missing sha");
-    sha = body.sha;
+    sha = await resolveLatestSha(repoUrl, branch);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await recordRow(repoUrl, branch, "unknown", "error", message);
