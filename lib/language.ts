@@ -75,6 +75,7 @@ export function buildUiStrings(persona: Persona) {
         close: "Close",
       },
       themeToggle: "Switch between light and dark theme",
+      sourceRepoLabel: "View CV source on GitHub",
       about: {
         buttonLabel: "About this project",
         title: "About this project",
@@ -206,6 +207,7 @@ export function buildUiStrings(persona: Persona) {
         close: "Fermer",
       },
       themeToggle: "Basculer entre thème clair et sombre",
+      sourceRepoLabel: "Voir la source du CV sur GitHub",
       about: {
         buttonLabel: "À propos de ce projet",
         title: "À propos de ce projet",

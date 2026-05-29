@@ -1,4 +1,4 @@
-import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { ensurePersonaCacheReady, getActivePersonaRoot, getActivePersonaSourceRow } from "@/lib/persona-source";
 import { loadPersona } from "@/lib/persona";
 import { buildUiStrings } from "@/lib/language";
 import { HomePageClient } from "@/components/home-page-client";
@@ -10,5 +10,6 @@ export default async function Home() {
   if (!root) return <NotConfiguredScreen />;
   const persona = loadPersona(root);
   const strings = buildUiStrings(persona);
-  return <HomePageClient strings={strings} />;
+  const sourceRow = await getActivePersonaSourceRow();
+  return <HomePageClient strings={strings} contentRepoUrl={sourceRow?.repoUrl ?? null} />;
 }

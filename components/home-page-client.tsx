@@ -9,9 +9,11 @@ import type { AllLocaleStrings, UiLang, UiStrings } from "@/lib/language";
 type Props = {
   /** Pre-built strings for both locales, computed server-side from persona. */
   strings: AllLocaleStrings;
+  /** GitHub URL of the active persona content repo, or null if none configured. */
+  contentRepoUrl: string | null;
 };
 
-export function HomePageClient({ strings }: Props) {
+export function HomePageClient({ strings, contentRepoUrl }: Props) {
   const [lang, setLang] = useState<UiLang>("en");
   const [mcpOpen, setMcpOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -31,6 +33,7 @@ export function HomePageClient({ strings }: Props) {
         onAboutOpenChange={setAboutOpen}
         kbCollapsed={kbCollapsed}
         onKbCollapsedChange={setKbCollapsed}
+        contentRepoUrl={contentRepoUrl}
       />
     </KbProvider>
   );

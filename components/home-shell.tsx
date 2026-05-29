@@ -20,6 +20,8 @@ type Props = {
   onAboutOpenChange: (open: boolean) => void;
   kbCollapsed: boolean;
   onKbCollapsedChange: (next: boolean | ((prev: boolean) => boolean)) => void;
+  /** GitHub URL of the active persona content repo, or null if none configured. */
+  contentRepoUrl: string | null;
 };
 
 /**
@@ -37,6 +39,7 @@ export function HomeShell({
   onAboutOpenChange,
   kbCollapsed,
   onKbCollapsedChange,
+  contentRepoUrl,
 }: Props) {
   const { openFile } = useKb();
 
@@ -56,6 +59,7 @@ export function HomeShell({
           onOpenMcp={() => onMcpOpenChange(true)}
           aboutButtonLabel={t.about.buttonLabel}
           onOpenAbout={() => onAboutOpenChange(true)}
+          sourceRepo={contentRepoUrl ? { url: contentRepoUrl, label: t.sourceRepoLabel } : null}
           cvButtonLabel={t.kb.openCv}
           onOpenCv={openCv}
           kbCollapsed={kbCollapsed}
