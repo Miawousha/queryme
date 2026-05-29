@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import path from "node:path";
 import { loadKb, type KbLang } from "@/lib/kb/loader";
 import { filterKbForCv, loadCvConfig } from "@/lib/kb/cv-config";
+import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,11 @@ function parseLang(value: string | null): KbLang {
 
 export async function GET(req: NextRequest) {
   const lang = parseLang(req.nextUrl.searchParams.get("lang"));
-  const root = process.cwd();
+  await ensurePersonaCacheReady();
+  const root = getActivePersonaRoot();
+  if (!root) {
+    return NextResponse.json({ error: "persona_not_configured" }, { status: 503 });
+  }
   const [kb, config] = await Promise.all([
     loadKb(path.join(root, "kb"), lang),
     loadCvConfig(root),

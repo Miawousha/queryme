@@ -38,9 +38,6 @@ export type KbFile = {
   meta?: KbFileMeta;
 };
 
-/** Directory name under kb/ that is never exposed by the manifest. */
-const EXCLUDED_DIR = "sensitive";
-
 /** Humanizes a path's basename into a fallback title. */
 function humanize(relPath: string): string {
   const base = relPath.split("/").pop() ?? relPath;
@@ -118,7 +115,6 @@ async function walk(dir: string, baseDir: string, out: KbFile[], codeIndex: Code
     if (entry.name.startsWith(".")) continue;
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (path.relative(baseDir, abs) === EXCLUDED_DIR) continue;
       await walk(abs, baseDir, out, codeIndex);
       continue;
     }
@@ -142,7 +138,7 @@ async function walk(dir: string, baseDir: string, out: KbFile[], codeIndex: Code
 
 /**
  * Walks `kbDir` and returns every public artifact file (yaml/md/html/pdf),
- * excluding the `sensitive/` directory and dotfiles. Sorted by path.
+ * excluding dotfiles. Sorted by path.
  */
 export async function loadKbManifest(kbDir: string): Promise<KbFile[]> {
   const out: KbFile[] = [];

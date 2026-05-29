@@ -33,10 +33,19 @@ const dmSans = DM_Sans({
   weight: ["300", "400", "500"],
 });
 
-export const metadata: Metadata = {
-  title: "Alexandre Collet — queryable CV",
-  description: "Ask the agent about Alexandre's background, experience, and projects.",
-};
+import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { loadPersona } from "@/lib/persona";
+
+export async function generateMetadata(): Promise<Metadata> {
+  await ensurePersonaCacheReady();
+  const root = getActivePersonaRoot();
+  if (!root) return { title: "queryme", description: "Not configured yet." };
+  const persona = loadPersona(root);
+  return {
+    title: `${persona.fullName} — queryable CV`,
+    description: `Ask the agent about ${persona.givenName}'s background, experience, and projects.`,
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // The CSP nonce set by middleware — required for the inline theme script.

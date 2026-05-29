@@ -4,9 +4,9 @@ import { desc } from "drizzle-orm";
 import type { getDb } from "@/lib/db/client";
 import {
   conversations,
-  questionsForAlex,
+  forwardedQuestions,
   type Conversation,
-  type QuestionForAlex,
+  type ForwardedQuestion,
 } from "@/lib/db/schema";
 
 type Db = ReturnType<typeof getDb>;
@@ -26,7 +26,7 @@ export type AdminStats = {
 export type AdminData = {
   stats: AdminStats;
   conversations: Conversation[];
-  questions: QuestionForAlex[];
+  questions: ForwardedQuestion[];
   /** Conversations whose visitor the agent has identified. */
   interviewers: Conversation[];
 };
@@ -34,7 +34,7 @@ export type AdminData = {
 /** Pure shaping of the two raw tables into the dashboard read model. */
 export function buildAdminData(
   convs: Conversation[],
-  questionRows: QuestionForAlex[],
+  questionRows: ForwardedQuestion[],
 ): AdminData {
   const interviewers = convs.filter((c) => c.interviewer != null);
   return {
@@ -59,7 +59,7 @@ export async function loadAdminData(db: Db): Promise<AdminData> {
       .from(conversations)
       .orderBy(desc(conversations.lastMessageAt))
       .limit(CONVERSATION_LIMIT),
-    db.select().from(questionsForAlex).orderBy(desc(questionsForAlex.createdAt)),
+    db.select().from(forwardedQuestions).orderBy(desc(forwardedQuestions.createdAt)),
   ]);
 
   return buildAdminData(convs, questionRows);

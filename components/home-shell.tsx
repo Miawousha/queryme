@@ -7,10 +7,11 @@ import { CV_VIRTUAL_PATH, useKb } from "@/components/kb/kb-context";
 import { KbPanel } from "@/components/kb/kb-panel";
 import { KbLayout } from "@/components/kb/kb-layout";
 import { McpModal } from "@/components/mcp-modal";
-import { UI_STRINGS, type UiLang } from "@/lib/language";
+import type { UiLang, UiStrings } from "@/lib/language";
 import { REPO_URL, REPO_BRANCH } from "@/lib/repo";
 
 type Props = {
+  t: UiStrings;
   lang: UiLang;
   onLangChange: (next: UiLang) => void;
   mcpOpen: boolean;
@@ -27,6 +28,7 @@ type Props = {
  * component declaration that confuses Next's prerender.
  */
 export function HomeShell({
+  t,
   lang,
   onLangChange,
   mcpOpen,
@@ -36,7 +38,6 @@ export function HomeShell({
   kbCollapsed,
   onKbCollapsedChange,
 }: Props) {
-  const t = UI_STRINGS[lang];
   const { openFile } = useKb();
 
   const openCv = () => {

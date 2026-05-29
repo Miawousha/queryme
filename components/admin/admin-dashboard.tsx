@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { AdminData, AdminStats } from "@/lib/admin/data";
 import { CONVERSATION_LIMIT } from "@/lib/admin/data";
-import type { Conversation, QuestionForAlex, InterviewerIdentity } from "@/lib/db/schema";
+import type { Conversation, ForwardedQuestion, InterviewerIdentity } from "@/lib/db/schema";
 import { GridBackground } from "@/components/grid-background";
 import { MatriceLogo } from "@/components/matrice-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { RecordList } from "@/components/admin/record-list";
 import { DetailSidebar } from "@/components/admin/detail-sidebar";
+import { ContentTab } from "@/components/admin/content-tab";
 import { cn } from "@/lib/utils";
 
 function fmt(value: Date | string | null): string {
@@ -27,7 +28,7 @@ function fmt(value: Date | string | null): string {
 
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
 
-type TabId = "interviewers" | "conversations" | "questions" | "analytics";
+type TabId = "interviewers" | "conversations" | "questions" | "content" | "analytics";
 
 export function AdminDashboard({ data }: { data: AdminData }) {
   const { stats, conversations, questions, interviewers } = data;
@@ -37,6 +38,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
     interviewers: null,
     conversations: null,
     questions: null,
+    content: null,
     analytics: null,
   });
 
@@ -83,6 +85,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
     { id: "interviewers", label: "Interviewers", count: interviewers.length },
     { id: "conversations", label: "Conversations", count: conversations.length },
     { id: "questions", label: "Questions", count: questions.length },
+    { id: "content", label: "Content", count: 0 },
     { id: "analytics", label: "Analytics", count: 0 },
   ];
 
@@ -190,12 +193,13 @@ export function AdminDashboard({ data }: { data: AdminData }) {
               renderRow={(q) => <QuestionRow question={q} />}
             />
           )}
+          {tab === "content" && <ContentTab />}
           {tab === "analytics" && <AnalyticsPanel />}
         </div>
       </div>
 
       <DetailSidebar
-        open={selectedId !== null}
+        open={tab !== "content" && tab !== "analytics" && selectedId !== null}
         onClose={() => select(null)}
         eyebrow={
           tab === "interviewers"
@@ -256,7 +260,7 @@ function TabMeta({
   if (tab === "questions") {
     return <>{stats.unanswered > 0 ? `${stats.unanswered} unanswered` : "all answered"}</>;
   }
-  if (tab === "analytics") return null;
+  if (tab === "analytics" || tab === "content") return null;
   const stated = interviewers.filter((c) => c.interviewer?.basis === "stated").length;
   return <>{`${stated} stated · ${interviewers.length - stated} inferred`}</>;
 }
@@ -404,7 +408,7 @@ function ConversationRow({ conversation }: { conversation: Conversation }) {
   );
 }
 
-function QuestionRow({ question }: { question: QuestionForAlex }) {
+function QuestionRow({ question }: { question: ForwardedQuestion }) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-[13px] text-[var(--color-text-primary)]">{question.question}</p>
@@ -541,7 +545,7 @@ function QuestionDetail({
   question,
   onOpenConversation,
 }: {
-  question: QuestionForAlex;
+  question: ForwardedQuestion;
   onOpenConversation: (conversationId: string) => void;
 }) {
   const [draft, setDraft] = useState(question.reply ?? "");

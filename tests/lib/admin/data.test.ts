@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildAdminData } from "@/lib/admin/data";
-import type { Conversation, QuestionForAlex } from "@/lib/db/schema";
+import type { Conversation, ForwardedQuestion } from "@/lib/db/schema";
 
 function conv(overrides: Partial<Conversation>): Conversation {
   return {
@@ -26,7 +26,7 @@ describe("buildAdminData", () => {
       }),
       conv({ id: "c", channel: "chat" }),
     ];
-    const questions: QuestionForAlex[] = [];
+    const questions: ForwardedQuestion[] = [];
 
     const data = buildAdminData(convs, questions);
 

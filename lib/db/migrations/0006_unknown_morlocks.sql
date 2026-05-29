@@ -1,0 +1,1 @@
+CREATE INDEX "persona_source_synced_at_idx" ON "persona_source" USING btree ("synced_at" DESC);

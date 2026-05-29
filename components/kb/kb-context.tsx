@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
-import { UI_STRINGS, type KbStrings, type UiLang } from "@/lib/language";
+import type { KbStrings, UiLang } from "@/lib/language";
 
 /** Reserved manifest path for the synthesized printable CV document. The
  * panel viewer special-cases this path and renders the CV component instead
@@ -41,8 +41,16 @@ export function useKb(): KbContextValue {
   return ctx;
 }
 
-export function KbProvider({ lang, children }: { lang: UiLang; children: ReactNode }) {
-  const strings = UI_STRINGS[lang].kb;
+export function KbProvider({
+  lang,
+  kbStrings,
+  children,
+}: {
+  lang: UiLang;
+  kbStrings: KbStrings;
+  children: ReactNode;
+}) {
+  const strings = kbStrings;
   const [manifest, setManifest] = useState<KbFile[]>([]);
   const [citedPaths, setCitedPaths] = useState<string[]>([]);
   const [openFilePath, setOpenFilePath] = useState<string | null>(null);

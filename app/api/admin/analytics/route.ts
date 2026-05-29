@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getDb } from "@/lib/db/client";
-import { conversations, questionsForAlex } from "@/lib/db/schema";
+import { conversations, forwardedQuestions } from "@/lib/db/schema";
 import {
   conversationsPerDay,
   topQuestionTopics,
@@ -16,7 +16,7 @@ export async function GET() {
   }
   const db = getDb();
   const convs = await db.select().from(conversations);
-  const qs = await db.select().from(questionsForAlex);
+  const qs = await db.select().from(forwardedQuestions);
   return NextResponse.json({
     perDay: conversationsPerDay(convs, 30, new Date()),
     topics: topQuestionTopics(qs),

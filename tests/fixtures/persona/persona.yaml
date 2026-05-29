@@ -1,0 +1,14 @@
+id: alex-collet
+fullName: "Alexandre Collet"
+givenName: "Alexandre"
+defaultLocale: en
+i18n:
+  en:
+    possessive: "his"
+    objectPronoun: "him"
+    subjectPronoun: "he"
+  fr:
+    possessive: "son"
+    objectPronoun: "le"
+    subjectPronoun: "il"
+    givenWithApostrophe: "d'Alexandre"

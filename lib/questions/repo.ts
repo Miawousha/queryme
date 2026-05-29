@@ -1,5 +1,5 @@
 import { desc, eq, isNull } from "drizzle-orm";
-import { questionsForAlex, type QuestionForAlex } from "@/lib/db/schema";
+import { forwardedQuestions, type ForwardedQuestion } from "@/lib/db/schema";
 import type { getDb } from "@/lib/db/client";
 
 type Db = ReturnType<typeof getDb>;
@@ -7,9 +7,9 @@ type Db = ReturnType<typeof getDb>;
 export async function forwardQuestion(
   db: Db,
   input: { question: string; conversationId?: string; contact?: string | null },
-): Promise<QuestionForAlex> {
+): Promise<ForwardedQuestion> {
   const [inserted] = await db
-    .insert(questionsForAlex)
+    .insert(forwardedQuestions)
     .values({
       question: input.question,
       conversationId: input.conversationId,
@@ -19,33 +19,33 @@ export async function forwardQuestion(
   return inserted;
 }
 
-export async function listOpenQuestions(db: Db): Promise<QuestionForAlex[]> {
+export async function listOpenQuestions(db: Db): Promise<ForwardedQuestion[]> {
   return await db
     .select()
-    .from(questionsForAlex)
-    .where(isNull(questionsForAlex.answeredAt))
-    .orderBy(desc(questionsForAlex.createdAt));
+    .from(forwardedQuestions)
+    .where(isNull(forwardedQuestions.answeredAt))
+    .orderBy(desc(forwardedQuestions.createdAt));
 }
 
 export async function recordReply(
   db: Db,
   id: string,
   reply: string,
-): Promise<QuestionForAlex> {
+): Promise<ForwardedQuestion> {
   const [updated] = await db
-    .update(questionsForAlex)
+    .update(forwardedQuestions)
     .set({ reply, answeredAt: new Date() })
-    .where(eq(questionsForAlex.id, id))
+    .where(eq(forwardedQuestions.id, id))
     .returning();
   if (!updated) throw new Error(`recordReply: no row with id ${id}`);
   return updated;
 }
 
-export async function getQuestion(db: Db, id: string): Promise<QuestionForAlex | null> {
+export async function getQuestion(db: Db, id: string): Promise<ForwardedQuestion | null> {
   const rows = await db
     .select()
-    .from(questionsForAlex)
-    .where(eq(questionsForAlex.id, id))
+    .from(forwardedQuestions)
+    .where(eq(forwardedQuestions.id, id))
     .limit(1);
   return rows[0] ?? null;
 }
