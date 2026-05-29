@@ -29,6 +29,15 @@ describe("parseAdminArgs", () => {
     expect(p).toMatchObject({ command: "sync", repoUrl: undefined, dryRun: false });
   });
 
+  it("parses interactive and verbose on sync (default false)", () => {
+    expect(ok(["sync"])).toMatchObject({ command: "sync", interactive: false, verbose: false });
+    expect(ok(["sync", "--interactive", "--verbose"])).toMatchObject({
+      command: "sync",
+      interactive: true,
+      verbose: true,
+    });
+  });
+
   it("parses status and migrate", () => {
     expect(ok(["status", "--remote", "https://x"])).toMatchObject({ command: "status", remote: "https://x" });
     expect(ok(["migrate", "--dry-run"])).toMatchObject({ command: "migrate", dryRun: true });
