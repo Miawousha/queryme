@@ -25,10 +25,11 @@ if (existsSync(envLocalPath)) {
   }
 }
 
-// Until Task 28 deletes the in-repo content, the active persona root
-// defaults to the queryme project root for tests + dev — where kb/,
-// prompts/system.md, and cv-config.yaml still live alongside the app.
-process.env.PERSONA_LOCAL_OVERRIDE ??= process.cwd();
+// Persona content lives in an external repo at runtime. For tests, point the
+// active persona root at the self-contained fixture under tests/fixtures/persona
+// (persona.yaml + prompts/system.md + minimal kb/). Tests that need a different
+// root override this env var locally and restore it.
+process.env.PERSONA_LOCAL_OVERRIDE ??= resolve(process.cwd(), "tests/fixtures/persona");
 
 // Note: `msw` is kept as a devDependency because it's a runtime requirement
 // of `@ai-sdk/provider-utils/test` (imported via `ai/test`). Removing it

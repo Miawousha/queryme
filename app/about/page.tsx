@@ -11,6 +11,7 @@ export const revalidate = 3600;
 
 import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
 import { loadPersona } from "@/lib/persona";
+import { NotConfiguredScreen } from "@/components/not-configured-screen";
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensurePersonaCacheReady();
@@ -30,7 +31,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function About() {
-  const kb = await loadKb(path.join(process.cwd(), "kb"));
+  await ensurePersonaCacheReady();
+  const root = getActivePersonaRoot();
+  if (!root) return <NotConfiguredScreen />;
+  const kb = await loadKb(path.join(root, "kb"));
   const text = assemblePublicKbText(kb);
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">

@@ -1,11 +1,11 @@
 {
   "name": "queryme",
   "version": "1.0.0",
-  "description": "Alexandre Collet's queryable CV — an AI agent that answers questions about his background, with an open knowledge base and an MCP endpoint.",
+  "description": "Queryme — a queryable CV agent. Persona content (kb + system prompt + persona.yaml) lives in an external GitHub repo and is synced from the admin Content tab; the app is a content-free shell.",
   "private": true,
   "scripts": {
     "dev": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_BASE_URL next dev",
-    "build": "pnpm validate:kb && next build",
+    "build": "next build",
     "start": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_BASE_URL next start",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",

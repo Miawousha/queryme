@@ -11,6 +11,7 @@ export const revalidate = 3600;
 
 import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
 import { loadPersona } from "@/lib/persona";
+import { NotConfiguredScreen } from "@/components/not-configured-screen";
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensurePersonaCacheReady();
@@ -34,7 +35,9 @@ export default async function CvPage({ searchParams }: Props) {
   const params = await searchParams;
   const lang = parseLang(params.lang);
   const t = CV_STRINGS[lang];
-  const root = process.cwd();
+  await ensurePersonaCacheReady();
+  const root = getActivePersonaRoot();
+  if (!root) return <NotConfiguredScreen />;
   const [kb, config] = await Promise.all([
     loadKb(path.join(root, "kb"), lang),
     loadCvConfig(root),

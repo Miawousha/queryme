@@ -27,7 +27,18 @@ async function main() {
     console.error("ANTHROPIC_API_KEY is not set");
     process.exit(2);
   }
-  const kb = await loadKb(path.join(root, "kb"));
+  // KB content lives in the external persona repo — point at a local checkout
+  // via PERSONA_LOCAL_OVERRIDE (e.g. ../queryme-content-alex). Eval questions
+  // stay in this repo under evals/questions.
+  const contentRoot = process.env.PERSONA_LOCAL_OVERRIDE;
+  if (!contentRoot) {
+    console.error(
+      "PERSONA_LOCAL_OVERRIDE is not set. Point it at a local persona repo " +
+        "checkout, e.g. PERSONA_LOCAL_OVERRIDE=../queryme-content-alex pnpm evals",
+    );
+    process.exit(2);
+  }
+  const kb = await loadKb(path.join(contentRoot, "kb"));
   const kbText = assemblePublicKbText(kb);
   const questions = await loadEvals(path.join(root, "evals/questions"));
 

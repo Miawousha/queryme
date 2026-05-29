@@ -27,7 +27,7 @@ import { assemblePublicKbText } from "@/lib/kb/assembler";
 import { loadKb, type Kb } from "@/lib/kb/loader";
 import type { InterviewerIdentity } from "@/lib/db/schema";
 
-const PROMPT_PATH = path.resolve(process.cwd(), "prompts/system.md");
+const PROMPT_PATH = path.resolve(process.cwd(), "tests/fixtures/persona/prompts/system.md");
 const PROMPT = readFileSync(PROMPT_PATH, "utf8");
 const FIXTURE_DIR = path.resolve(__dirname, "../fixtures/kb");
 
