@@ -160,7 +160,9 @@ async function handleSync(
   }
   const changed = res.commitSha !== previousSha;
   return {
-    result: { mode, dryRun: false, changed, commitSha: res.commitSha, previousSha, syncedAt: res.syncedAt, repoUrl, branch },
+    // Normalize to ISO so the envelope's `syncedAt` is a string in both local
+    // and remote modes (syncFromGitHub returns a Date; postSync a string).
+    result: { mode, dryRun: false, changed, commitSha: res.commitSha, previousSha, syncedAt: res.syncedAt.toISOString(), repoUrl, branch },
     pretty: prettySync(changed, res.commitSha, previousSha, false),
   };
 }
