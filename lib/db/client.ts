@@ -12,7 +12,7 @@ import postgres from "postgres";
  * Drizzle schema, same migrations, same query API; only the transport
  * differs.
  *
- * NOTE: This helper is duplicated in `scripts/migrate.ts`. Keep them in sync.
+ * NOTE: An exported copy of this helper lives in `lib/db/migrate.ts`. Keep them in sync.
  */
 function isNeonHttpUrl(url: string): boolean {
   // Match `*.neon.tech` (paid), `*.neon.dev` (free), and the Vercel Postgres
