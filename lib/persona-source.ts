@@ -35,6 +35,10 @@ export function parseGitHubRepoUrl(input: string): ParsedRepo {
   if (!owner || !repo) {
     throw new Error(`Repo URL is missing owner or repo`);
   }
+  const VALID_SEGMENT = /^[A-Za-z0-9._-]+$/;
+  if (!VALID_SEGMENT.test(owner) || !VALID_SEGMENT.test(repo)) {
+    throw new Error(`Repo URL has an invalid owner or repo name`);
+  }
   return { owner, repo };
 }
 

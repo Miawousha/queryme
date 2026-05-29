@@ -6,8 +6,10 @@ import { loadKb } from "@/lib/kb/loader";
 import { assemblePublicKbText } from "@/lib/kb/assembler";
 import "./print.css";
 
-export const dynamic = "force-static";
-export const revalidate = 3600;
+// Persona content is resolved at request time from the active sync, so this
+// page must render dynamically — a static prerender at build would bake in the
+// "not configured" screen (no persona symlink exists during `next build`).
+export const dynamic = "force-dynamic";
 
 import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
 import { loadPersona } from "@/lib/persona";
