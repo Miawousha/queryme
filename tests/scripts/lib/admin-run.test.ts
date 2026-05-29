@@ -132,3 +132,38 @@ describe("run: remote sync", () => {
     expect(json(stdout).result).toMatchObject({ dryRun: true, changed: true, commitSha: "fresh", previousSha: "old" });
   });
 });
+
+describe("run: --verbose on unexpected errors", () => {
+  function handlersWithFailingGitHub() {
+    return [
+      http.post(`${BASE}/api/admin/login`, () =>
+        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queryme_admin=tok; Path=/" } }),
+      ),
+      http.get(`${BASE}/api/admin/persona-source`, () =>
+        HttpResponse.json({ active: { commitSha: "old", repoUrl: "https://github.com/a/b", branch: "main" }, history: [] }),
+      ),
+      http.get("https://api.github.com/repos/a/b/commits/main", () => new HttpResponse(null, { status: 500 })),
+    ];
+  }
+
+  it("omits the stack without --verbose (just the message)", async () => {
+    mswServer.use(...handlersWithFailingGitHub());
+    const { exitCode, stdout } = await run(["sync", "--remote", BASE, "--dry-run"], {
+      env: { ADMIN_PASSWORD: "pw" },
+      ...PIPED,
+    });
+    expect(exitCode).toBe(1);
+    expect(json(stdout).error).toBe("GitHub commits API returned 500");
+  });
+
+  it("includes the stack with --verbose", async () => {
+    mswServer.use(...handlersWithFailingGitHub());
+    const { exitCode, stdout } = await run(["sync", "--remote", BASE, "--dry-run", "--verbose"], {
+      env: { ADMIN_PASSWORD: "pw" },
+      ...PIPED,
+    });
+    expect(exitCode).toBe(1);
+    expect(json(stdout).error).toMatch(/GitHub commits API returned 500/);
+    expect(json(stdout).error).toMatch(/\n\s+at /);
+  });
+});

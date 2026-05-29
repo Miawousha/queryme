@@ -215,9 +215,13 @@ async function dispatch(cmd: ParsedCommand, ctx: RunContext): Promise<HandlerOut
   }
 }
 
-function errInfo(err: unknown): { message: string; hint?: string } {
+function errInfo(err: unknown, verbose: boolean): { message: string; hint?: string } {
+  // Expected failures (CliError) carry their own actionable message + hint.
+  // For unexpected errors, --verbose surfaces the full stack for diagnosis.
   if (err instanceof CliError) return { message: err.message, hint: err.hint };
-  if (err instanceof Error) return { message: err.message };
+  if (err instanceof Error) {
+    return { message: verbose && err.stack ? err.stack : err.message };
+  }
   return { message: String(err) };
 }
 
@@ -240,7 +244,8 @@ export async function run(
     const out = await dispatch(cmd, ctx);
     return { exitCode: 0, stdout: renderSuccess(cmd.command, out.result, out.pretty, mode) };
   } catch (err) {
-    const { message, hint } = errInfo(err);
+    const verbose = cmd.command === "sync" ? cmd.verbose : false;
+    const { message, hint } = errInfo(err, verbose);
     return { exitCode: 1, stdout: renderError(cmd.command, message, hint, mode) };
   }
 }
