@@ -14,7 +14,8 @@
     "import:github": "tsx scripts/import-github-repos.ts",
     "evals": "tsx scripts/eval.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "admin": "tsx scripts/admin-cli.ts"
   },
   "keywords": [
     "cv",
