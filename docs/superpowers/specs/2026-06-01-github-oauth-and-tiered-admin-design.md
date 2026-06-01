@@ -30,7 +30,7 @@ Per-account email / custom-domain configuration remains deferred to Plan 3.
 | Auth mechanism | **GitHub OAuth only.** Scope `read:user` (login + id; no email — that's Plan 3). The OAuth access token is **discarded** after identifying the user. |
 | Session | Extend the existing HMAC-signed-cookie pattern in `lib/admin/auth.ts`. Payload `${accountId}.${expiresAt}`, signed with a new **`SESSION_SECRET`** (replaces `ADMIN_PASSWORD` as the signing key). New `getSessionAccountId()` reader. |
 | Cookie | **Renamed** `queryme_admin` → `queryme_session` (no longer admin-only). Existing sessions are invalidated (acceptable — password auth is being removed). |
-| Password auth | **Hard-cut.** `verifyPassword`, the password `/api/admin/login` route, and the `AdminLogin` password form are deleted. `isAdminAuthenticated()` is removed in favor of session/role guards. |
+| Password auth | **CLI-only.** `verifyPassword` and `/api/admin/login` are **retained** but repurposed as a non-interactive **machine login** for the admin CLI's `--remote` ops: a correct `ADMIN_PASSWORD` mints a **root-account** `queryme_session` (signed with `SESSION_SECRET`). The browser `AdminLogin` password form is **deleted** (browser admin is OAuth-only). `isAdminAuthenticated()` is removed in favor of session/role guards. |
 | Signup | **Signup == login** (one button). First login auto-provisions the account; subsequent logins resolve it. |
 | Account adoption | On callback, resolve by `github_id`; else by `username`. An existing **`github_id`-null** account whose username equals the GitHub login is **claimed** (its `github_id` is set). This adopts the live CLI-created house account on first real login. |
 | Super-admin identity | **DB role flag** `accounts.role ('user' \| 'admin')`. Grantable via CLI. Bootstrap: the backfill/migration seeds `ROOT_ACCOUNT_USERNAME`'s account as `'admin'`. |
@@ -105,17 +105,21 @@ Refactor the file from "admin password session" to "account session":
 - `getSessionAccountId(): Promise<string | null>` — reads the `queryme_session`
   cookie, verifies with `SESSION_SECRET`, returns the account id or null. Returns
   null when `SESSION_SECRET` is unset.
-- **Removed:** `verifyPassword`, the `ADMIN_COOKIE` password semantics,
-  `isAdminAuthenticated()`. Export `SESSION_COOKIE = "queryme_session"` and keep
-  `SESSION_TTL_MS`.
+- **Removed:** `isAdminAuthenticated()` and the `ADMIN_COOKIE` constant. Export
+  `SESSION_COOKIE = "queryme_session"`, keep `SESSION_TTL_MS`. **Kept:**
+  `verifyPassword` (CLI machine login). `auth.ts` stays pure (crypto + cookie
+  read only — no DB imports), so it remains trivially unit-testable.
 
-New higher-level guards (new `lib/admin/guard.ts` or extend `lib/accounts/`):
+New higher-level guards (new `lib/accounts/guard.ts`):
 
 - `requireSessionAccount(): Promise<Account | null>` — session id → account row.
 - `canAdminister(session: Account | null, target: Account): boolean` —
-  `session?.id === target.id || session?.role === 'admin'`.
-- `requireSuperAdmin(): Promise<Account | null>` — account with `role==='admin'`,
-  else null.
+  `!!session && (session.id === target.id || session.role === 'admin')`.
+- `requireSuperAdmin(): Promise<Account | null>` — session account with
+  `role==='admin'`, else null.
+- `requireRootAdmin(): Promise<Account | null>` — session account that
+  `canAdminister` the **root** account (i.e. the root owner or a super-admin),
+  else null. Used by the CLI machine endpoints (`/api/admin/*`).
 
 (`account_id` UUIDs in the cookie are opaque; the signature prevents forgery, so
 no extra per-request DB validation of the id is needed beyond the lookup the
@@ -143,8 +147,8 @@ admin page already performs.)
 `redirect_uri` is `${origin}/api/auth/github/callback`, where `origin` is the
 request origin (`req.nextUrl.origin`) — works for localhost and prod as long as
 both callback URLs are registered on the GitHub OAuth app.
-- **`logout/route.ts`** — clears `queryme_session`; 302 to `/`. (Replaces
-  `app/api/admin/logout`.)
+- **`logout/route.ts`** — clears `queryme_session`; 302 to `/`. Replaces
+  `app/api/admin/logout` (the logout button repoints here).
 
 GitHub calls live behind a tiny seam (`lib/auth/github.ts`:
 `exchangeCodeForToken`, `fetchGitHubUser`) so tests mock them (MSW or injected
@@ -187,24 +191,35 @@ Mirrors today's `app/admin` dashboard, scoped to the resolved account:
 - Render the account list (`listAllAccounts`) with per-account links to
   `/{username}/admin`.
 
-### Per-account admin APIs
-The existing `/api/admin/*` routes are **namespaced per account** under
+### Per-account admin APIs (browser)
+The browser per-account admin calls **per-account namespaced** routes under
 `/api/a/[username]/admin/*` (matching `/api/a/{username}/chat` from Plan 1), so
 the target account comes from the path:
 
-- `/api/admin/persona-source` → `/api/a/[username]/admin/persona-source`
-- `/api/admin/analytics` → `/api/a/[username]/admin/analytics`
-- `/api/admin/questions/[id]/reply` → `/api/a/[username]/admin/questions/[id]/reply`
+- `/api/a/[username]/admin/persona-source` (GET/POST)
+- `/api/a/[username]/admin/analytics` (GET)
+- `/api/a/[username]/admin/questions/[id]/reply` (POST)
 
-Each handler: resolve the account by slug (`resolveAccountSlug`; unknown →
-404), `requireSessionAccount()`, then `canAdminister(session, account)` (owner or
-super-admin) else 404/401. Replace every `isAdminAuthenticated()` call with this
-guard and pass the resolved `accountId` into
+Each handler: resolve the account by slug (`resolveAccountSlug`; unknown → 404),
+`requireSessionAccount()`, then `canAdminister(session, account)` (owner or
+super-admin) else 404. Pass the resolved `accountId` into
 `getActivePersonaSourceRowForAccount`, `syncFromGitHubForAccount`,
 `loadAdminData`, the analytics query, and the questions-reply handler (which also
-checks the reply's conversation belongs to the authorized account). The old
-`/api/admin/*` paths and `/api/admin/login` are removed; `/api/admin/logout` is
-superseded by `/api/auth/logout`.
+checks the reply's conversation belongs to the authorized account). The shared
+request logic is factored into handler functions (`lib/admin/handlers/*`) that
+take an `accountId`, so the per-account routes and the CLI alias below stay DRY.
+
+### Root admin API (CLI machine path)
+`/api/admin/persona-source` (GET/POST) is **kept** as a thin **root-scoped**
+alias used by the CLI's `--remote` sync/status (`admin-remote.ts` posts to it with
+the password-minted session). It resolves the root account
+(`resolveRootAccountId()`) and authorizes with `requireRootAdmin()`, then calls
+the same shared handlers. `/api/admin/login` (password → root session) is kept;
+`/api/admin/logout` is replaced by `/api/auth/logout`. `/api/admin/analytics` and
+`/api/admin/questions/[id]/reply` (browser-only, unused by the CLI) **move** to
+the namespaced routes above. Every `isAdminAuthenticated()` call site is replaced
+by a guard (`requireRootAdmin` for the root alias, `canAdminister` for
+per-account routes).
 
 ## Super-admin console scope (v1)
 
@@ -247,27 +262,33 @@ GITHUB_OAUTH_CLIENT_ID=
 GITHUB_OAUTH_CLIENT_SECRET=
 # Callback URL configured on the GitHub app: {SITE_URL}/api/auth/github/callback
 
-# Signs the session + OAuth-state cookies (replaces ADMIN_PASSWORD).
-# Rotating it logs everyone out. Generate: openssl rand -base64 32
+# Signs the session + OAuth-state cookies. Rotating it logs everyone out
+# (browser and CLI). Generate: openssl rand -base64 32
 SESSION_SECRET=
 ```
 
-`ADMIN_PASSWORD` is **removed**. The README gains a "Sign in / accounts" section:
-create a GitHub OAuth app, set the three env vars, and on first login the house
-account owner's existing account is adopted (super-admin via backfill seed).
+`ADMIN_PASSWORD` is **retained** (now documented as the CLI-only machine login for
+`admin sync/status --remote`; it no longer gates the browser admin). The README
+gains a "Sign in / accounts" section: create a GitHub OAuth app, set
+`GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` / `SESSION_SECRET`, and on
+first login the house account owner's existing account is adopted (super-admin via
+the backfill seed).
 
 ## Migration / cutover
 
 1. Generate + apply `0009` (role column + partial unique index).
 2. Seed: run the backfill (sets `ROOT_ACCOUNT_USERNAME` account `role='admin'`).
-3. Configure the GitHub OAuth app + the three env vars; remove `ADMIN_PASSWORD`.
+3. Configure the GitHub OAuth app + add `GITHUB_OAUTH_CLIENT_ID` /
+   `GITHUB_OAUTH_CLIENT_SECRET` / `SESSION_SECRET`. Keep `ADMIN_PASSWORD` (CLI).
 4. House owner logs in via GitHub → existing `Miawousha` account is **claimed**
    (its `github_id` populated), session minted, lands at `/Miawousha/admin`;
    `/admin` shows the super console.
 
-Cutover risk: between removing `ADMIN_PASSWORD` and configuring OAuth, admin is
-inaccessible. Mitigation: configure OAuth env **before** deploying the cut, and
-verify the claim flow on first login.
+Cutover risk: browser admin requires `SESSION_SECRET` + OAuth env to be present
+before deploy (the browser password form is gone). The CLI keeps working via
+`ADMIN_PASSWORD` (which now also requires `SESSION_SECRET` to sign the minted
+session). Mitigation: set all three new vars before deploying; verify the claim
+flow on first login.
 
 ## Edge cases
 
