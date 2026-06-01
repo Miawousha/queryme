@@ -6,7 +6,7 @@ if (fs.existsSync(".env.local")) {
 import { getDb } from "@/lib/db/client";
 import { conversations, personaSource } from "@/lib/db/schema";
 import { isNull } from "drizzle-orm";
-import { getAccountBySlug, createAccount } from "@/lib/accounts/repo";
+import { getAccountBySlug, createAccount, setAccountRole } from "@/lib/accounts/repo";
 
 /**
  * Associates pre-existing rows (created before multi-tenancy) with the root
@@ -19,6 +19,11 @@ async function main(): Promise<void> {
   const db = getDb();
   let root = await getAccountBySlug(db, username);
   if (!root) root = await createAccount(db, { username });
+
+  // The house account is the super-admin (operates the /admin console).
+  if (root.role !== "admin") {
+    root = await setAccountRole(db, root.username, "admin");
+  }
 
   const c = await db
     .update(conversations)

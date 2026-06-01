@@ -88,21 +88,13 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             />
             queryme
           </span>
-          <div className="flex items-center gap-2">
-            <span className={`hidden sm:inline ${MONO_LABEL}`} style={{ letterSpacing: "0.22em" }}>
-              coming soon
-            </span>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              title="Sign-in is coming soon"
-              className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/60 px-3.5 py-1.5 text-[13px] text-[var(--color-text-secondary)] opacity-70"
-            >
-              <GitHubMark />
-              Sign in with GitHub
-            </button>
-          </div>
+          <a
+            href="/api/auth/github/login"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/60 px-3.5 py-1.5 text-[13px] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
+          >
+            <GitHubMark />
+            Sign in with GitHub
+          </a>
         </header>
 
         {/* Hero */}

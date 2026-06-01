@@ -10,7 +10,7 @@ import {
 } from "@/lib/persona-source";
 import { runMigrations, listPendingMigrations } from "@/lib/db/migrate";
 import { getDb } from "@/lib/db/client";
-import { createAccount, getAccountBySlug, getRootAccountId } from "@/lib/accounts/repo";
+import { createAccount, getAccountBySlug, getRootAccountId, setAccountRole } from "@/lib/accounts/repo";
 
 export type RunContext = { env: Record<string, string | undefined>; isTTY: boolean };
 type HandlerOutput = { result: unknown; pretty: string };
@@ -26,8 +26,8 @@ export const MANIFEST = {
     },
     {
       name: "account",
-      summary: "Manage accounts: create one, or link its persona content repo.",
-      usage: "admin account create <username> | admin account link <username> <repoUrl> [--branch <name>] [--json|--pretty]",
+      summary: "Manage accounts: create, link a content repo, or set super-admin role.",
+      usage: "admin account <create|link|promote|demote> <username> [repoUrl] [--branch <name>] [--json|--pretty]",
       flags: ["--branch", "--json", "--pretty"],
     },
     {
@@ -217,6 +217,14 @@ async function handleAccount(
   cmd: Extract<ParsedCommand, { command: "account" }>,
 ): Promise<HandlerOutput> {
   const db = getDb();
+  if (cmd.sub === "promote" || cmd.sub === "demote") {
+    const role = cmd.sub === "promote" ? "admin" : "user";
+    const acct = await setAccountRole(db, cmd.username, role);
+    return {
+      result: { ok: true, account: acct.username, role: acct.role },
+      pretty: `${cmd.sub}d ${acct.username} -> ${acct.role}`,
+    };
+  }
   if (cmd.sub === "create") {
     const acct = await createAccount(db, { username: cmd.username });
     return {

@@ -16,11 +16,13 @@ vi.mock("@/lib/db/client", () => ({
 const mockCreateAccount = vi.fn();
 const mockGetAccountBySlug = vi.fn();
 const mockGetRootAccountId = vi.fn().mockResolvedValue("root-account-id");
+const mockSetAccountRole = vi.fn();
 
 vi.mock("@/lib/accounts/repo", () => ({
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   getAccountBySlug: (...args: unknown[]) => mockGetAccountBySlug(...args),
   getRootAccountId: (...args: unknown[]) => mockGetRootAccountId(...args),
+  setAccountRole: (...args: unknown[]) => mockSetAccountRole(...args),
 }));
 
 const mockGetActivePersonaSourceRowForAccount = vi.fn().mockResolvedValue(null);
@@ -189,6 +191,29 @@ describe("run: account create (happy path)", () => {
   it("returns usage-error (exit 2) when no username is given", async () => {
     const out = await run(["account", "create"], { env: { POSTGRES_URL: "x" }, isTTY: false });
     expect(out.exitCode).toBe(2);
+  });
+});
+
+describe("run: account promote", () => {
+  beforeEach(() => {
+    mockSetAccountRole.mockReset();
+  });
+
+  it("promotes an account to admin", async () => {
+    mockSetAccountRole.mockResolvedValue({
+      id: "acc-uuid-1",
+      username: "alex",
+      githubId: null,
+      role: "admin",
+      createdAt: new Date(),
+    });
+    const out = await run(["account", "promote", "alex", "--json"], { env: { POSTGRES_URL: "x" }, isTTY: false });
+    expect(out.exitCode).toBe(0);
+    expect(JSON.parse(out.stdout)).toMatchObject({
+      ok: true,
+      result: { ok: true, account: "alex", role: "admin" },
+    });
+    expect(mockSetAccountRole).toHaveBeenCalledWith(fakeDb, "alex", "admin");
   });
 });
 

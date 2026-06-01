@@ -90,4 +90,17 @@ describe("parseAdminArgs", () => {
   it("rejects `account create` with no username", () => {
     expect(parseAdminArgs(["account", "create"]).kind).toBe("usage-error");
   });
+
+  it("parses `account promote <username>`", () => {
+    const p = parseAdminArgs(["account", "promote", "alex"]);
+    expect(p.kind).toBe("ok");
+    if (p.kind !== "ok") return;
+    expect(p.parsed).toMatchObject({ command: "account", sub: "promote", username: "alex" });
+  });
+  it("parses `account demote <username>`", () => {
+    const p = parseAdminArgs(["account", "demote", "alex"]);
+    expect(p.kind).toBe("ok");
+    if (p.kind !== "ok") return;
+    expect(p.parsed).toMatchObject({ command: "account", sub: "demote", username: "alex" });
+  });
 });

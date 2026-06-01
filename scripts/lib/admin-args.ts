@@ -18,7 +18,7 @@ export type ParsedCommand =
   | { command: "help"; outputFlag?: OutputMode }
   | {
       command: "account";
-      sub: "create" | "link";
+      sub: "create" | "link" | "promote" | "demote";
       username: string;
       repoUrl?: string;
       branch?: string;
@@ -141,7 +141,13 @@ export function parseAdminArgs(argv: string[]): ParseResult {
           },
         };
       }
-      return usage("usage: admin account <create|link> ...");
+      if (sub === "promote" || sub === "demote") {
+        const username = rest[1];
+        if (!username) return usage(`usage: admin account ${sub} <username>`);
+        if (rest.length > 2) return usage(`unexpected argument: ${rest[2]}`);
+        return { kind: "ok", parsed: { command: "account", sub, username, outputFlag } };
+      }
+      return usage("usage: admin account <create|link|promote|demote> ...");
     }
 
     default:

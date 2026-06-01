@@ -76,11 +76,45 @@ The account goes live immediately at `/{username}`.
 
 ### Not yet implemented (future plans)
 
-- GitHub OAuth self-serve signup (accounts currently created by the admin CLI only)
-- Per-account admin scoping (all admins share the same `ADMIN_PASSWORD` today)
 - Per-account email / custom-domain config
 - Per-account MCP endpoints
 - `account_id` NOT NULL hardening — the MCP `ask` path creates conversations without an account, so a NOT NULL constraint would be a runtime landmine until that path is threaded through account resolution
+
+## Sign in / accounts
+
+Visitors sign in with GitHub. The first time someone authenticates, queryme
+auto-provisions an account for them (slug = their GitHub login) — or, if an
+account with that slug was pre-created by the CLI (e.g. `account create`),
+their GitHub identity **claims** it. Everyone signs in at
+`/api/auth/github/login` (the "Sign in with GitHub" link on the landing page).
+
+### Set up the GitHub OAuth app
+
+1. Go to https://github.com/settings/developers → **New OAuth App**.
+2. Set the **Authorization callback URL** to `{your site}/api/auth/github/callback`
+   (e.g. `http://localhost:3000/api/auth/github/callback` for local dev).
+3. Copy the **Client ID** and generate a **Client Secret**.
+
+Then set three environment variables:
+
+- `GITHUB_OAUTH_CLIENT_ID` — the OAuth app's client ID.
+- `GITHUB_OAUTH_CLIENT_SECRET` — the OAuth app's client secret.
+- `SESSION_SECRET` — signs the session + OAuth-state cookies (`openssl rand -base64 32`). Rotating it logs everyone out.
+
+### Roles and admin consoles
+
+- Each owner manages their own account at `/{username}/admin` (their conversations and forwarded questions).
+- A **super-admin** runs the cross-account console at `/admin`. Grant the super-admin role from the CLI:
+
+  ```bash
+  pnpm admin account promote <username>   # make <username> a super-admin
+  pnpm admin account demote <username>    # revoke it
+  ```
+
+  `pnpm backfill:root` also seeds the house account (`ROOT_ACCOUNT_USERNAME`) as a super-admin automatically.
+
+`ADMIN_PASSWORD` is no longer a browser login — it is the CLI-only machine
+login for `admin sync/status --remote`.
 
 ## Environment
 
@@ -172,10 +206,13 @@ Then open [http://localhost:3000](http://localhost:3000). The web container's
 compose `command` override runs `pnpm db:migrate` before `pnpm start` on every
 boot, so a fresh database is initialized automatically.
 
-`ADMIN_PASSWORD` doubles as the HMAC secret for admin session cookies. The
-compose file defaults it to `admin` for one-command bring-up — **change it
-in `.env` before exposing the container to any network you don't fully
-trust.** Rotating the value also invalidates every existing admin session.
+Browser sign-in uses GitHub OAuth: set `GITHUB_OAUTH_CLIENT_ID`,
+`GITHUB_OAUTH_CLIENT_SECRET`, and `SESSION_SECRET` (which signs session +
+OAuth-state cookies) in `.env`. The compose file defaults `SESSION_SECRET` to a
+placeholder for one-command bring-up — **change it before exposing the
+container.** `ADMIN_PASSWORD` is the CLI-only machine login for
+`admin sync/status --remote`; compose defaults it to `admin`, so **change it in
+`.env` before exposing the container to any network you don't fully trust.**
 
 The compose stack uses the TCP-Postgres driver path (added in
 `lib/db/client.ts`) and the generic Redis driver via `REDIS_URL`. Vercel-deployed

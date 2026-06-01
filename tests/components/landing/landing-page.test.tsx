@@ -3,11 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { LandingPage } from "@/components/landing/landing-page";
 
 describe("LandingPage", () => {
-  it("renders the concept hero and a disabled coming-soon sign-in", () => {
+  it("renders the concept hero and a live GitHub sign-in link", () => {
     render(<LandingPage seeItLiveUsername="Miawousha" />);
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-    const signIn = screen.getByRole("button", { name: /sign in with github/i });
-    expect(signIn).toBeDisabled();
+    const signIn = screen.getByRole("link", { name: /sign in with github/i });
+    expect(signIn).toHaveAttribute("href", "/api/auth/github/login");
   });
 
   it("links 'See it live' to the account, and omits it when no account is given", () => {
