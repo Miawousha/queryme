@@ -15,7 +15,15 @@ export type ParsedCommand =
     }
   | { command: "status"; remote?: string; remotePassword?: string; interactive: boolean; outputFlag?: OutputMode }
   | { command: "migrate"; dryRun: boolean; outputFlag?: OutputMode }
-  | { command: "help"; outputFlag?: OutputMode };
+  | { command: "help"; outputFlag?: OutputMode }
+  | {
+      command: "account";
+      sub: "create" | "link";
+      username: string;
+      repoUrl?: string;
+      branch?: string;
+      outputFlag?: OutputMode;
+    };
 
 export type ParseResult =
   | { kind: "ok"; parsed: ParsedCommand }
@@ -105,6 +113,36 @@ export function parseAdminArgs(argv: string[]): ParseResult {
           outputFlag,
         },
       };
+
+    case "account": {
+      const sub = rest[0];
+      if (sub === "create") {
+        const username = rest[1];
+        if (!username) return usage("usage: admin account create <username>");
+        if (rest.length > 2) return usage(`unexpected argument: ${rest[2]}`);
+        return { kind: "ok", parsed: { command: "account", sub: "create", username, outputFlag } };
+      }
+      if (sub === "link") {
+        const username = rest[1];
+        const repoUrl = rest[2];
+        if (!username || !repoUrl) {
+          return usage("usage: admin account link <username> <repoUrl> [--branch <name>]");
+        }
+        if (rest.length > 3) return usage(`unexpected argument: ${rest[3]}`);
+        return {
+          kind: "ok",
+          parsed: {
+            command: "account",
+            sub: "link",
+            username,
+            repoUrl,
+            branch: values.branch as string | undefined,
+            outputFlag,
+          },
+        };
+      }
+      return usage("usage: admin account <create|link> ...");
+    }
 
     default:
       return usage(`unknown command: ${command}`);

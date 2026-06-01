@@ -72,4 +72,22 @@ describe("parseAdminArgs", () => {
   it("rejects an unknown flag", () => {
     expect(usageError(["status", "--nope"])).toMatch(/.+/);
   });
+
+  it("parses `account create <username>`", () => {
+    const p = parseAdminArgs(["account", "create", "alexcollet"]);
+    expect(p.kind).toBe("ok");
+    if (p.kind !== "ok") return;
+    expect(p.parsed).toMatchObject({ command: "account", sub: "create", username: "alexcollet" });
+  });
+
+  it("parses `account link <username> <repoUrl> --branch`", () => {
+    const p = parseAdminArgs(["account", "link", "alexcollet", "https://github.com/o/r", "--branch", "dev"]);
+    expect(p.kind).toBe("ok");
+    if (p.kind !== "ok") return;
+    expect(p.parsed).toMatchObject({ command: "account", sub: "link", username: "alexcollet", repoUrl: "https://github.com/o/r", branch: "dev" });
+  });
+
+  it("rejects `account create` with no username", () => {
+    expect(parseAdminArgs(["account", "create"]).kind).toBe("usage-error");
+  });
 });

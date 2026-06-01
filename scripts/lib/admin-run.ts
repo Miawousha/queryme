@@ -7,8 +7,11 @@ import {
   listSyncHistory,
   syncFromGitHub,
   resolveLatestSha,
+  syncFromGitHubForAccount,
 } from "@/lib/persona-source";
 import { runMigrations, listPendingMigrations } from "@/lib/db/migrate";
+import { getDb } from "@/lib/db/client";
+import { createAccount, getAccountBySlug } from "@/lib/accounts/repo";
 
 export type RunContext = { env: Record<string, string | undefined>; isTTY: boolean };
 type HandlerOutput = { result: unknown; pretty: string };
@@ -21,6 +24,12 @@ export const MANIFEST = {
       summary: "Sync persona content from GitHub (local cache+DB, or --remote instance).",
       usage: "admin sync [repoUrl] [--branch <name>] [--remote <url>] [--dry-run] [--json|--pretty]",
       flags: ["--branch", "--remote", "--remote-password", "--dry-run", "--json", "--pretty", "--interactive", "--verbose"],
+    },
+    {
+      name: "account",
+      summary: "Manage accounts: create one, or link its persona content repo.",
+      usage: "admin account create <username> | admin account link <username> <repoUrl> [--branch <name>] [--json|--pretty]",
+      flags: ["--branch", "--json", "--pretty"],
     },
     {
       name: "status",
@@ -202,6 +211,43 @@ function handleHelp(): HandlerOutput {
   return { result: MANIFEST, pretty };
 }
 
+async function handleAccount(
+  cmd: Extract<ParsedCommand, { command: "account" }>,
+): Promise<HandlerOutput> {
+  const db = getDb();
+  if (cmd.sub === "create") {
+    const acct = await createAccount(db, { username: cmd.username });
+    return {
+      result: { ok: true, account: acct },
+      pretty: `created account ${acct.username} (${acct.id})`,
+    };
+  }
+  // link
+  const acct = await getAccountBySlug(db, cmd.username);
+  if (!acct) {
+    throw new CliError(
+      `no account '${cmd.username}'`,
+      "create it first: admin account create <username>",
+    );
+  }
+  const res = await syncFromGitHubForAccount(acct.id, cmd.repoUrl!, cmd.branch ?? "main");
+  if (res.kind === "error") {
+    throw new CliError(
+      res.message,
+      "check the repo URL, branch, and that required persona files exist",
+    );
+  }
+  return {
+    result: {
+      ok: true,
+      account: acct.username,
+      commitSha: res.commitSha,
+      syncedAt: res.syncedAt.toISOString(),
+    },
+    pretty: `linked ${cmd.username} -> ${cmd.repoUrl} @ ${res.commitSha.slice(0, 8)}`,
+  };
+}
+
 async function dispatch(cmd: ParsedCommand, ctx: RunContext): Promise<HandlerOutput> {
   switch (cmd.command) {
     case "help":
@@ -212,6 +258,8 @@ async function dispatch(cmd: ParsedCommand, ctx: RunContext): Promise<HandlerOut
       return handleSync(cmd, ctx);
     case "migrate":
       return handleMigrate(cmd, ctx);
+    case "account":
+      return handleAccount(cmd);
   }
 }
 

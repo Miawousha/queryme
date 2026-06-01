@@ -1,7 +1,25 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { http, HttpResponse } from "msw";
 import { mswServer } from "@/vitest.setup";
 import { run } from "@/scripts/lib/admin-run";
+
+// ---------------------------------------------------------------------------
+// Module mocks for account create (avoid real DB calls)
+// ---------------------------------------------------------------------------
+
+const fakeDb = {} as ReturnType<typeof import("@/lib/db/client").getDb>;
+
+vi.mock("@/lib/db/client", () => ({
+  getDb: vi.fn(() => fakeDb),
+}));
+
+const mockCreateAccount = vi.fn();
+const mockGetAccountBySlug = vi.fn();
+
+vi.mock("@/lib/accounts/repo", () => ({
+  createAccount: (...args: unknown[]) => mockCreateAccount(...args),
+  getAccountBySlug: (...args: unknown[]) => mockGetAccountBySlug(...args),
+}));
 
 const BASE = "https://deployed.example.com";
 const PIPED = { isTTY: false };
@@ -130,6 +148,28 @@ describe("run: remote sync", () => {
     expect(exitCode).toBe(0);
     expect(posted).toBe(false);
     expect(json(stdout).result).toMatchObject({ dryRun: true, changed: true, commitSha: "fresh", previousSha: "old" });
+  });
+});
+
+describe("run: account create (happy path)", () => {
+  beforeEach(() => {
+    mockCreateAccount.mockReset();
+    mockGetAccountBySlug.mockReset();
+  });
+
+  it("creates an account and returns ok (exit 0)", async () => {
+    const fakeAccount = { id: "acc-uuid-1", username: "alexcollet", githubId: null, createdAt: new Date() };
+    mockCreateAccount.mockResolvedValue(fakeAccount);
+
+    const out = await run(["account", "create", "alexcollet", "--json"], { env: { POSTGRES_URL: "x" }, isTTY: false });
+    expect(out.exitCode).toBe(0);
+    expect(JSON.parse(out.stdout)).toMatchObject({ ok: true });
+    expect(mockCreateAccount).toHaveBeenCalledWith(fakeDb, { username: "alexcollet" });
+  });
+
+  it("returns usage-error (exit 2) when no username is given", async () => {
+    const out = await run(["account", "create"], { env: { POSTGRES_URL: "x" }, isTTY: false });
+    expect(out.exitCode).toBe(2);
   });
 });
 
