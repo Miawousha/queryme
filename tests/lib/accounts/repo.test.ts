@@ -7,7 +7,12 @@ import {
   getAccountBySlug,
   getAccountById,
   getRootAccount,
+  getAccountByGithubId,
+  upsertAccountFromGitHub,
+  setAccountRole,
+  listAllAccounts,
 } from "@/lib/accounts/repo";
+import { ReservedLoginError, SlugConflictError } from "@/lib/accounts/errors";
 
 // Pure validation runs without a DB: createAccount throws before any DB call.
 describe("createAccount validation", () => {
@@ -15,6 +20,13 @@ describe("createAccount validation", () => {
     const fakeDb = {} as never;
     await expect(createAccount(fakeDb, { username: "admin" })).rejects.toThrow(/invalid/i);
     await expect(createAccount(fakeDb, { username: "has space" })).rejects.toThrow(/invalid/i);
+  });
+
+  it("rejects a reserved GitHub login in upsert before any DB call", async () => {
+    const fakeDb = {} as never;
+    await expect(
+      upsertAccountFromGitHub(fakeDb, { githubId: "1", login: "admin" }),
+    ).rejects.toBeInstanceOf(ReservedLoginError);
   });
 });
 
@@ -50,5 +62,61 @@ d("accounts/repo (integration)", () => {
     } finally {
       process.env.ROOT_ACCOUNT_USERNAME = prev;
     }
+  });
+
+  const extraIds: string[] = [];
+  afterAll(async () => {
+    for (const id of extraIds) await db.delete(accounts).where(eq(accounts.id, id));
+  });
+
+  it("upsert: creates, then claims a github_id-null account, then conflicts", async () => {
+    const login = `up-${Date.now()}`;
+    // create path
+    const created = await upsertAccountFromGitHub(db, { githubId: `gh-${login}`, login });
+    extraIds.push(created.id);
+    expect(created.username).toBe(login);
+    expect(created.githubId).toBe(`gh-${login}`);
+
+    // returning path: same github_id resolves the same row
+    const again = await upsertAccountFromGitHub(db, { githubId: `gh-${login}`, login });
+    expect(again.id).toBe(created.id);
+
+    // claim path: a CLI-created (github_id null) account is adopted
+    const cliLogin = `cli-${Date.now()}`;
+    const cli = await createAccount(db, { username: cliLogin });
+    extraIds.push(cli.id);
+    expect(cli.githubId).toBeNull();
+    const claimed = await upsertAccountFromGitHub(db, { githubId: `gh-${cliLogin}`, login: cliLogin });
+    expect(claimed.id).toBe(cli.id);
+    expect(claimed.githubId).toBe(`gh-${cliLogin}`);
+
+    // conflict path: same slug, different github_id
+    await expect(
+      upsertAccountFromGitHub(db, { githubId: "someone-else", login: cliLogin }),
+    ).rejects.toBeInstanceOf(SlugConflictError);
+  });
+
+  it("getAccountByGithubId resolves a created account", async () => {
+    const login = `byid-${Date.now()}`;
+    const a = await createAccount(db, { username: login, githubId: `g-${login}` });
+    extraIds.push(a.id);
+    const found = await getAccountByGithubId(db, `g-${login}`);
+    expect(found?.id).toBe(a.id);
+    expect(await getAccountByGithubId(db, "no-such-id")).toBeNull();
+  });
+
+  it("setAccountRole flips a role and listAllAccounts reports it", async () => {
+    const login = `role-${Date.now()}`;
+    const a = await createAccount(db, { username: login });
+    extraIds.push(a.id);
+    expect(a.role).toBe("user");
+    const promoted = await setAccountRole(db, login, "admin");
+    expect(promoted.role).toBe("admin");
+    const all = await listAllAccounts(db);
+    const summary = all.find((s) => s.username === login);
+    expect(summary).toBeDefined();
+    expect(summary?.role).toBe("admin");
+    expect(summary?.repoLinked).toBe(false);
+    expect(summary?.conversationCount).toBe(0);
   });
 });
