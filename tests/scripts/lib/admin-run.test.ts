@@ -15,11 +15,30 @@ vi.mock("@/lib/db/client", () => ({
 
 const mockCreateAccount = vi.fn();
 const mockGetAccountBySlug = vi.fn();
+const mockGetRootAccountId = vi.fn().mockResolvedValue("root-account-id");
 
 vi.mock("@/lib/accounts/repo", () => ({
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   getAccountBySlug: (...args: unknown[]) => mockGetAccountBySlug(...args),
+  getRootAccountId: (...args: unknown[]) => mockGetRootAccountId(...args),
 }));
+
+const mockGetActivePersonaSourceRowForAccount = vi.fn().mockResolvedValue(null);
+const mockListSyncHistoryForAccount = vi.fn().mockResolvedValue([]);
+const mockSyncFromGitHubForAccount = vi.fn();
+
+vi.mock("@/lib/persona-source", async (importActual) => {
+  const actual = await importActual<typeof import("@/lib/persona-source")>();
+  return {
+    ...actual,
+    getActivePersonaSourceRowForAccount: (...args: unknown[]) =>
+      mockGetActivePersonaSourceRowForAccount(...args),
+    listSyncHistoryForAccount: (...args: unknown[]) =>
+      mockListSyncHistoryForAccount(...args),
+    syncFromGitHubForAccount: (...args: unknown[]) =>
+      mockSyncFromGitHubForAccount(...args),
+  };
+});
 
 const BASE = "https://deployed.example.com";
 const PIPED = { isTTY: false };

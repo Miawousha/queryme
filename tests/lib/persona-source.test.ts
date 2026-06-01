@@ -2,7 +2,9 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync, existsSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHub, getActivePersonaRoot, ensurePersonaCacheReady, resolveLatestSha } from "@/lib/persona-source";
+import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHubForAccount, getPersonaRootForAccount, ensurePersonaCacheReadyForAccount, resolveLatestSha } from "@/lib/persona-source";
+
+const TEST_ACCOUNT_ID = "test-account-id";
 import { getDb } from "@/lib/db/client";
 import { personaSource } from "@/lib/db/schema";
 import { http, HttpResponse } from "msw";
@@ -127,7 +129,7 @@ describe("syncFromGitHub — happy path", () => {
   beforeEach(async () => {
     cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-test-"));
     process.env.PERSONA_CACHE_ROOT = cacheRoot;
-    // Clear PERSONA_LOCAL_OVERRIDE so getActivePersonaRoot() uses the symlink path.
+    // Clear PERSONA_LOCAL_OVERRIDE so getPersonaRootForAccount(TEST_ACCOUNT_ID) uses the symlink path.
     savedLocalOverride = process.env.PERSONA_LOCAL_OVERRIDE;
     delete process.env.PERSONA_LOCAL_OVERRIDE;
     await getDb().delete(personaSource);
@@ -154,19 +156,19 @@ describe("syncFromGitHub — happy path", () => {
     const tarball = await makeTarball(MIN_REQUIRED_FILES);
     mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
 
-    const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+    const result = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
 
     expect(result.kind).toBe("ok");
     if (result.kind !== "ok") throw new Error("unreachable");
     expect(result.commitSha).toBe(FAKE_SHA);
 
     // Symlink points at the extracted SHA dir.
-    const target = readlinkSync(`${cacheRoot}/current`);
+    const target = readlinkSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current`);
     expect(target).toContain(FAKE_SHA);
-    expect(getActivePersonaRoot()).toBe(target);
+    expect(getPersonaRootForAccount(TEST_ACCOUNT_ID)).toBe(target);
 
     // Required files reachable through the symlink.
-    expect(readFileSync(`${cacheRoot}/current/persona.yaml`, "utf8")).toContain("test-persona");
+    expect(readFileSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current/persona.yaml`, "utf8")).toContain("test-persona");
 
     // DB row recorded.
     const rows = await getDb().select().from(personaSource);
@@ -210,7 +212,7 @@ describe("syncFromGitHub — error paths", () => {
     const tarball = await makeTarball(incomplete);
     mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
 
-    const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+    const result = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
 
     expect(result.kind).toBe("error");
     if (result.kind === "error") {
@@ -218,7 +220,7 @@ describe("syncFromGitHub — error paths", () => {
     }
 
     // No symlink because validation failed.
-    expect(existsSync(`${cacheRoot}/current`)).toBe(false);
+    expect(existsSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current`)).toBe(false);
 
     // Error row recorded.
     const rows = await getDb().select().from(personaSource);
@@ -234,7 +236,7 @@ describe("syncFromGitHub — error paths", () => {
       ),
     );
 
-    const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+    const result = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
 
     expect(result.kind).toBe("error");
     if (result.kind === "error") {
@@ -246,9 +248,9 @@ describe("syncFromGitHub — error paths", () => {
     // First sync: success.
     const goodTarball = await makeTarball(MIN_REQUIRED_FILES);
     mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball: goodTarball }));
-    const first = await syncFromGitHub("https://github.com/alex/queryme-content");
+    const first = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
     expect(first.kind).toBe("ok");
-    const linkAfterFirst = readlinkSync(`${cacheRoot}/current`);
+    const linkAfterFirst = readlinkSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current`);
     expect(linkAfterFirst).toContain(FAKE_SHA);
 
     // Second sync: missing file. Reset handlers and use a different SHA to
@@ -266,11 +268,11 @@ describe("syncFromGitHub — error paths", () => {
         tarball: badTarball,
       }),
     );
-    const second = await syncFromGitHub("https://github.com/alex/queryme-content");
+    const second = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
     expect(second.kind).toBe("error");
 
     // Symlink still points at the first (good) SHA.
-    expect(readlinkSync(`${cacheRoot}/current`)).toBe(linkAfterFirst);
+    expect(readlinkSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current`)).toBe(linkAfterFirst);
   });
 
   it("serializes concurrent sync calls", async () => {
@@ -278,8 +280,8 @@ describe("syncFromGitHub — error paths", () => {
     mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
 
     const [a, b] = await Promise.all([
-      syncFromGitHub("https://github.com/alex/queryme-content"),
-      syncFromGitHub("https://github.com/alex/queryme-content"),
+      syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content"),
+      syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content"),
     ]);
 
     expect(a.kind).toBe("ok");
@@ -307,7 +309,7 @@ describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
   beforeEach(async () => {
     cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-persona-ensure-"));
     process.env.PERSONA_CACHE_ROOT = cacheRoot;
-    // Clear PERSONA_LOCAL_OVERRIDE so getActivePersonaRoot() uses the symlink path.
+    // Clear PERSONA_LOCAL_OVERRIDE so getPersonaRootForAccount(TEST_ACCOUNT_ID) uses the symlink path.
     savedLocalOverride = process.env.PERSONA_LOCAL_OVERRIDE;
     delete process.env.PERSONA_LOCAL_OVERRIDE;
     await getDb().delete(personaSource);
@@ -329,15 +331,15 @@ describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
   });
 
   it("is a no-op when no persona is configured", async () => {
-    await ensurePersonaCacheReady();
-    expect(getActivePersonaRoot()).toBeNull();
+    await ensurePersonaCacheReadyForAccount(TEST_ACCOUNT_ID);
+    expect(getPersonaRootForAccount(TEST_ACCOUNT_ID)).toBeNull();
   });
 
   it("re-fetches the recorded SHA when the symlink is missing", async () => {
     // Simulate a successful prior sync, then wipe the cache (cold start).
     const tarball = await makeTarball(MIN_REQUIRED_FILES);
     mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
-    await syncFromGitHub("https://github.com/alex/queryme-content");
+    await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
     rmSync(cacheRoot, { recursive: true, force: true });
     // Re-create the cacheRoot so ensurePersonaCacheReady can put files back.
     mkdirSync(cacheRoot, { recursive: true });
@@ -349,15 +351,15 @@ describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
     // for the re-fetch.)
     mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
 
-    await ensurePersonaCacheReady();
-    expect(existsSync(`${cacheRoot}/current`)).toBe(true);
-    expect(readFileSync(`${cacheRoot}/current/persona.yaml`, "utf8")).toContain("test-persona");
+    await ensurePersonaCacheReadyForAccount(TEST_ACCOUNT_ID);
+    expect(existsSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current`)).toBe(true);
+    expect(readFileSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current/persona.yaml`, "utf8")).toContain("test-persona");
   });
 
   it("is a no-op when the symlink already points at the recorded SHA", async () => {
     const tarball = await makeTarball(MIN_REQUIRED_FILES);
     mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
-    await syncFromGitHub("https://github.com/alex/queryme-content");
+    await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
 
     // Reset handlers and install ones that throw if called — ensurePersonaCacheReady
     // must NOT re-fetch when the cache is already populated.
@@ -371,7 +373,7 @@ describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
       }),
     );
 
-    await expect(ensurePersonaCacheReady()).resolves.toBeUndefined();
+    await expect(ensurePersonaCacheReadyForAccount(TEST_ACCOUNT_ID)).resolves.toBeUndefined();
   });
 });
 
@@ -417,11 +419,12 @@ describe("syncFromGitHub — cache cleanup", () => {
           tarball,
         }),
       );
-      const result = await syncFromGitHub("https://github.com/alex/queryme-content");
+      const result = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
       expect(result.kind).toBe("ok");
     }
 
-    const dirs = readdirSync(cacheRoot).filter((d) => d !== "current");
+    const accountCacheDir = path.join(cacheRoot, TEST_ACCOUNT_ID);
+    const dirs = readdirSync(accountCacheDir).filter((d) => d !== "current" && d !== "current.new");
     expect(dirs.sort()).toEqual([
       "cccc".padEnd(40, "0"),
       "dddd".padEnd(40, "0"),

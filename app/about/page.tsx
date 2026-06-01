@@ -11,13 +11,15 @@ import "./print.css";
 // "not configured" screen (no persona symlink exists during `next build`).
 export const dynamic = "force-dynamic";
 
-import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { getPersonaStore } from "@/lib/persona/store";
+import { resolveRootAccountId } from "@/lib/accounts/root";
 import { loadPersona } from "@/lib/persona";
 import { NotConfiguredScreen } from "@/components/not-configured-screen";
 
 export async function generateMetadata(): Promise<Metadata> {
-  await ensurePersonaCacheReady();
-  const root = getActivePersonaRoot();
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  const root = getPersonaStore().getRoot(accountId);
   if (!root) return { title: "About" };
   const persona = loadPersona(root);
   return {
@@ -33,8 +35,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function About() {
-  await ensurePersonaCacheReady();
-  const root = getActivePersonaRoot();
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  const root = getPersonaStore().getRoot(accountId);
   if (!root) return <NotConfiguredScreen />;
   const kb = await loadKb(path.join(root, "kb"));
   const text = assemblePublicKbText(kb);

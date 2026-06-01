@@ -9,13 +9,15 @@ import "./print.css";
 
 export const revalidate = 3600;
 
-import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { getPersonaStore } from "@/lib/persona/store";
+import { resolveRootAccountId } from "@/lib/accounts/root";
 import { loadPersona } from "@/lib/persona";
 import { NotConfiguredScreen } from "@/components/not-configured-screen";
 
 export async function generateMetadata(): Promise<Metadata> {
-  await ensurePersonaCacheReady();
-  const root = getActivePersonaRoot();
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  const root = getPersonaStore().getRoot(accountId);
   if (!root) return { title: "CV" };
   const persona = loadPersona(root);
   return {
@@ -35,8 +37,9 @@ export default async function CvPage({ searchParams }: Props) {
   const params = await searchParams;
   const lang = parseLang(params.lang);
   const t = CV_STRINGS[lang];
-  await ensurePersonaCacheReady();
-  const root = getActivePersonaRoot();
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  const root = getPersonaStore().getRoot(accountId);
   if (!root) return <NotConfiguredScreen />;
   const [kb, config] = await Promise.all([
     loadKb(path.join(root, "kb"), lang),

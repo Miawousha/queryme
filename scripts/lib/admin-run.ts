@@ -3,15 +3,14 @@ import { resolveOutputMode, renderSuccess, renderError } from "./admin-output";
 import { CliError } from "./admin-errors";
 import { login, fetchStatus, postSync, type StatusResponse } from "./admin-remote";
 import {
-  getActivePersonaSourceRow,
-  listSyncHistory,
-  syncFromGitHub,
-  resolveLatestSha,
+  getActivePersonaSourceRowForAccount,
+  listSyncHistoryForAccount,
   syncFromGitHubForAccount,
+  resolveLatestSha,
 } from "@/lib/persona-source";
 import { runMigrations, listPendingMigrations } from "@/lib/db/migrate";
 import { getDb } from "@/lib/db/client";
-import { createAccount, getAccountBySlug } from "@/lib/accounts/repo";
+import { createAccount, getAccountBySlug, getRootAccountId } from "@/lib/accounts/repo";
 
 export type RunContext = { env: Record<string, string | undefined>; isTTY: boolean };
 type HandlerOutput = { result: unknown; pretty: string };
@@ -101,9 +100,10 @@ async function handleStatus(
     const s = await fetchStatus(cmd.remote, cookie);
     return { result: { mode: "remote", ...s }, pretty: prettyStatus(s, "remote") };
   }
+  const accountId = await getRootAccountId(getDb());
   const [active, history] = await Promise.all([
-    getActivePersonaSourceRow(),
-    listSyncHistory(10),
+    getActivePersonaSourceRowForAccount(accountId),
+    listSyncHistoryForAccount(accountId, 10),
   ]);
   const s: StatusResponse = { active, history };
   return { result: { mode: "local", ...s }, pretty: prettyStatus(s, "local") };
@@ -127,7 +127,8 @@ async function handleSync(
     defaultRepoUrl = s.active?.repoUrl;
     defaultBranch = s.active?.branch;
   } else {
-    const active = await getActivePersonaSourceRow();
+    const accountId = await getRootAccountId(getDb());
+    const active = await getActivePersonaSourceRowForAccount(accountId);
     previousSha = active?.commitSha ?? null;
     defaultRepoUrl = active?.repoUrl;
     defaultBranch = active?.branch;
@@ -160,7 +161,8 @@ async function handleSync(
     };
   }
 
-  const res = await syncFromGitHub(repoUrl, branch);
+  const localAccountId = await getRootAccountId(getDb());
+  const res = await syncFromGitHubForAccount(localAccountId, repoUrl, branch);
   if (res.kind === "error") {
     throw new CliError(
       res.message,
@@ -170,7 +172,7 @@ async function handleSync(
   const changed = res.commitSha !== previousSha;
   return {
     // Normalize to ISO so the envelope's `syncedAt` is a string in both local
-    // and remote modes (syncFromGitHub returns a Date; postSync a string).
+    // and remote modes (syncFromGitHubForAccount returns a Date; postSync a string).
     result: { mode, dryRun: false, changed, commitSha: res.commitSha, previousSha, syncedAt: res.syncedAt.toISOString(), repoUrl, branch },
     pretty: prettySync(changed, res.commitSha, previousSha, false),
   };

@@ -1,8 +1,7 @@
 /**
  * Resolves the active persona's content directory and synchronises it from a
- * public GitHub repository. The KB / prompt / cv-config loaders read from
- * `getActivePersonaRoot()` instead of `process.cwd()`; this module is the
- * only writer of that path.
+ * public GitHub repository. Per-account resolution is provided by the
+ * `*ForAccount` family of functions; the `PersonaStore` interface wraps them.
  */
 
 import fs from "node:fs";
@@ -70,7 +69,7 @@ export function validatePersonaTree(root: string): string | null {
 /**
  * Resolves the latest commit SHA on `branch` for the given repo. Extracted so
  * the CLI's dry-run can preview the would-sync SHA without downloading the
- * tarball; `doSync` reuses it too.
+ * tarball; `doSyncForAccount` reuses it too.
  */
 export async function resolveLatestSha(repoUrl: string, branch: string): Promise<string> {
   const { owner, repo } = parseGitHubRepoUrl(repoUrl);
@@ -85,7 +84,7 @@ export async function resolveLatestSha(repoUrl: string, branch: string): Promise
 }
 
 // ---------------------------------------------------------------------------
-// Sync orchestrator
+// Sync helpers (shared by all *ForAccount functions)
 // ---------------------------------------------------------------------------
 
 export type SyncResult =
@@ -96,19 +95,6 @@ function cacheRoot(): string {
   return process.env.PERSONA_CACHE_ROOT ?? "/tmp/queryme/persona-cache";
 }
 
-let inFlight: Promise<SyncResult> | null = null;
-
-export async function syncFromGitHub(
-  repoUrl: string,
-  branch = "main",
-): Promise<SyncResult> {
-  if (inFlight) return inFlight;
-  inFlight = doSync(repoUrl, branch).finally(() => {
-    inFlight = null;
-  });
-  return inFlight;
-}
-
 async function extractTarball(buf: Buffer, targetDir: string): Promise<void> {
   const extractor = tar.x({ cwd: targetDir, strip: 1 });
   await new Promise<void>((resolve, reject) => {
@@ -116,178 +102,6 @@ async function extractTarball(buf: Buffer, targetDir: string): Promise<void> {
     extractor.once("error", reject);
     Readable.from(buf).pipe(extractor);
   });
-}
-
-async function doSync(repoUrl: string, branch: string): Promise<SyncResult> {
-  let owner: string;
-  let repo: string;
-  try {
-    ({ owner, repo } = parseGitHubRepoUrl(repoUrl));
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    await recordRow(repoUrl, branch, "unknown", "error", message);
-    return { kind: "error", message };
-  }
-
-  // Resolve latest commit SHA on the requested branch.
-  let sha: string;
-  try {
-    sha = await resolveLatestSha(repoUrl, branch);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    await recordRow(repoUrl, branch, "unknown", "error", message);
-    return { kind: "error", message };
-  }
-
-  // Download tarball + extract.
-  const targetDir = `${cacheRoot()}/${sha}`;
-  try {
-    const res = await fetch(
-      `https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`,
-    );
-    if (!res.ok) throw new Error(`tarball fetch returned ${res.status}`);
-    const buf = Buffer.from(await res.arrayBuffer());
-    await rm(targetDir, { recursive: true, force: true });
-    await mkdir(targetDir, { recursive: true });
-    await extractTarball(buf, targetDir);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    await rm(targetDir, { recursive: true, force: true });
-    await recordRow(repoUrl, branch, sha, "error", message);
-    return { kind: "error", message };
-  }
-
-  // Validate required files.
-  const missing = validatePersonaTree(targetDir);
-  if (missing) {
-    await rm(targetDir, { recursive: true, force: true });
-    await recordRow(repoUrl, branch, sha, "error", missing);
-    return { kind: "error", message: missing };
-  }
-
-  // Atomically flip the symlink.
-  const linkPath = `${cacheRoot()}/current`;
-  const tmpLink = `${cacheRoot()}/current.new`;
-  await rm(tmpLink, { recursive: true, force: true });
-  await symlink(targetDir, tmpLink);
-  await rename(tmpLink, linkPath);
-
-  // Persist DB row.
-  const row = await recordRow(repoUrl, branch, sha, "ok", null);
-
-  // Invalidate in-process caches so the next read picks up the new SHA.
-  resetKbCache();
-  _resetPromptCache();
-  _resetPersonaCache();
-
-  // Keep current + previous SHA dirs; delete older ones.
-  await cleanupOldShas(sha);
-
-  return { kind: "ok", commitSha: sha, syncedAt: row.syncedAt };
-}
-
-async function recordRow(
-  repoUrl: string,
-  branch: string,
-  commitSha: string,
-  status: "ok" | "error",
-  error: string | null,
-): Promise<PersonaSource> {
-  const [row] = await getDb()
-    .insert(personaSource)
-    .values({ repoUrl, branch, commitSha, status, error })
-    .returning();
-  return row;
-}
-
-export function getActivePersonaRoot(): string | null {
-  if (process.env.PERSONA_LOCAL_OVERRIDE) {
-    return process.env.PERSONA_LOCAL_OVERRIDE;
-  }
-  const link = `${cacheRoot()}/current`;
-  try {
-    return fs.readlinkSync(link);
-  } catch {
-    return null;
-  }
-}
-
-export async function getActivePersonaSourceRow(): Promise<PersonaSource | null> {
-  const [row] = await getDb()
-    .select()
-    .from(personaSource)
-    .where(eq(personaSource.status, "ok"))
-    .orderBy(desc(personaSource.syncedAt))
-    .limit(1);
-  return row ?? null;
-}
-
-export async function listSyncHistory(limit = 10): Promise<PersonaSource[]> {
-  return getDb()
-    .select()
-    .from(personaSource)
-    .orderBy(desc(personaSource.syncedAt))
-    .limit(limit);
-}
-
-export async function ensurePersonaCacheReady(): Promise<void> {
-  if (process.env.PERSONA_LOCAL_OVERRIDE) return;
-  const linkPath = `${cacheRoot()}/current`;
-  if (fs.existsSync(linkPath)) return;
-
-  const active = await getActivePersonaSourceRow();
-  if (!active) return; // no persona configured at all → caller renders setup screen.
-
-  // Re-fetch the recorded SHA's tarball into the cache. Uses the same
-  // extract/validate/flip path as a sync, but does NOT resolve "latest" —
-  // we want byte-identity with the row's recorded SHA.
-  await refetchFromRecorded(active.repoUrl, active.branch, active.commitSha);
-}
-
-async function refetchFromRecorded(repoUrl: string, branch: string, sha: string): Promise<void> {
-  const { owner, repo } = parseGitHubRepoUrl(repoUrl);
-  const targetDir = `${cacheRoot()}/${sha}`;
-  const res = await fetch(`https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`);
-  if (!res.ok) throw new Error(`cold-start refetch failed: ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  await rm(targetDir, { recursive: true, force: true });
-  await mkdir(targetDir, { recursive: true });
-  await extractTarball(buf, targetDir);
-
-  const missing = validatePersonaTree(targetDir);
-  if (missing) throw new Error(`cold-start refetch validation failed: ${missing}`);
-
-  const linkPath = `${cacheRoot()}/current`;
-  const tmpLink = `${cacheRoot()}/current.new`;
-  await rm(tmpLink, { recursive: true, force: true });
-  await symlink(targetDir, tmpLink);
-  await rename(tmpLink, linkPath);
-}
-
-async function cleanupOldShas(currentSha: string): Promise<void> {
-  const root = cacheRoot();
-  let entries: string[];
-  try {
-    entries = await readdir(root);
-  } catch {
-    return;
-  }
-
-  // Recent SHAs by DB synced_at — keep the current + the one before.
-  const recent = await getDb()
-    .select()
-    .from(personaSource)
-    .where(eq(personaSource.status, "ok"))
-    .orderBy(desc(personaSource.syncedAt))
-    .limit(2);
-  const keep = new Set(recent.map((r) => r.commitSha));
-  keep.add(currentSha);
-
-  for (const name of entries) {
-    if (name === "current" || name === "current.new") continue;
-    if (keep.has(name)) continue;
-    await rm(`${root}/${name}`, { recursive: true, force: true });
-  }
 }
 
 // ---------------------------------------------------------------------------

@@ -33,12 +33,14 @@ const dmSans = DM_Sans({
   weight: ["300", "400", "500"],
 });
 
-import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { getPersonaStore } from "@/lib/persona/store";
+import { resolveRootAccountId } from "@/lib/accounts/root";
 import { loadPersona } from "@/lib/persona";
 
 export async function generateMetadata(): Promise<Metadata> {
-  await ensurePersonaCacheReady();
-  const root = getActivePersonaRoot();
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  const root = getPersonaStore().getRoot(accountId);
   if (!root) return { title: "queryme", description: "Not configured yet." };
   const persona = loadPersona(root);
   return {

@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import {
-  getActivePersonaSourceRow,
-  listSyncHistory,
-  syncFromGitHub,
+  getActivePersonaSourceRowForAccount,
+  listSyncHistoryForAccount,
+  syncFromGitHubForAccount,
 } from "@/lib/persona-source";
+import { resolveRootAccountId } from "@/lib/accounts/root";
 
 export async function GET() {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const accountId = await resolveRootAccountId();
   const [active, history] = await Promise.all([
-    getActivePersonaSourceRow(),
-    listSyncHistory(10),
+    getActivePersonaSourceRowForAccount(accountId),
+    listSyncHistoryForAccount(accountId, 10),
   ]);
   return NextResponse.json({ active, history });
 }
@@ -30,7 +32,8 @@ export async function POST(req: Request) {
   if (!body.repoUrl) {
     return NextResponse.json({ error: "repoUrl required" }, { status: 400 });
   }
-  const result = await syncFromGitHub(body.repoUrl, body.branch);
+  const accountId = await resolveRootAccountId();
+  const result = await syncFromGitHubForAccount(accountId, body.repoUrl, body.branch);
   if (result.kind === "error") {
     return NextResponse.json({ error: result.message }, { status: 400 });
   }

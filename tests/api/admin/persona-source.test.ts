@@ -1,38 +1,14 @@
-import { describe, it, expect, beforeEach, beforeAll, afterEach, afterAll, vi } from "vitest";
-import { getDb } from "@/lib/db/client";
-import { personaSource } from "@/lib/db/schema";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const MIN_REQUIRED_FILES_RAW: Record<string, string> = {
-  "persona.yaml":
-    'id: test-persona\nfullName: Test\ngivenName: Test\ndefaultLocale: en\ni18n:\n  en:\n    possessive: their\n    objectPronoun: them\n    subjectPronoun: they\n  fr:\n    possessive: leur\n    objectPronoun: les\n    subjectPronoun: ils\n',
-  "prompts/system.md": "system prompt body",
-  "kb/profile.yaml": "name: Test\nheadline: Test\nlocation: Earth\nlanguages: [en]\n",
-  "kb/profile.fr.yaml": "name: Personne Test\nheadline: Test\nlocation: Terre\nlanguages: [fr]\n",
-  "kb/public-contact.yaml": "email: test@example.com\n",
-  "kb/public-contact.fr.yaml": "email: test@example.com\n",
-  "kb/skills.yaml": "skills: []\n",
-  "kb/skills.fr.yaml": "skills: []\n",
-  "kb/education.yaml": "education: []\n",
-  "kb/education.fr.yaml": "education: []\n",
-};
+const ROUTE_TEST_ACCOUNT_ID = "route-test-account-id";
 
 describe("GET /api/admin/persona-source", () => {
-  beforeAll(async () => {
-    const rows = await getDb().select().from(personaSource).limit(1);
-    if (rows.length > 0) {
-      throw new Error(
-        "persona_source has existing rows. Integration tests refuse to run against a DB with live data.",
-      );
-    }
-  });
-
-  beforeEach(async () => {
-    await getDb().delete(personaSource);
+  beforeEach(() => {
     vi.resetModules();
-  });
-
-  afterAll(async () => {
-    await getDb().delete(personaSource);
+    // Mock resolveRootAccountId to return a stable test value.
+    vi.doMock("@/lib/accounts/root", () => ({
+      resolveRootAccountId: async () => ROUTE_TEST_ACCOUNT_ID,
+    }));
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -48,6 +24,11 @@ describe("GET /api/admin/persona-source", () => {
     vi.doMock("@/lib/admin/auth", () => ({
       isAdminAuthenticated: async () => true,
     }));
+    vi.doMock("@/lib/persona-source", () => ({
+      getActivePersonaSourceRowForAccount: async () => null,
+      listSyncHistoryForAccount: async () => [],
+      syncFromGitHubForAccount: vi.fn(),
+    }));
     const { GET } = await import("@/app/api/admin/persona-source/route");
     const res = await GET();
     const body = await res.json();
@@ -56,23 +37,36 @@ describe("GET /api/admin/persona-source", () => {
   });
 
   it("returns the active row and the history list", async () => {
-    await getDb().insert(personaSource).values([
+    const fakeActive = {
+      id: "some-uuid",
+      repoUrl: "https://github.com/alex/queryme-content",
+      branch: "main",
+      commitSha: "aaa1111111111111111111111111111111111111",
+      status: "ok" as const,
+      error: null,
+      accountId: ROUTE_TEST_ACCOUNT_ID,
+      syncedAt: new Date(),
+    };
+    const fakeHistory = [
+      fakeActive,
       {
-        repoUrl: "https://github.com/alex/queryme-content",
-        branch: "main",
-        commitSha: "aaa1111111111111111111111111111111111111",
-        status: "ok",
-      },
-      {
+        id: "other-uuid",
         repoUrl: "https://github.com/alex/queryme-content",
         branch: "main",
         commitSha: "bbb2222222222222222222222222222222222222",
-        status: "error",
+        status: "error" as const,
         error: "missing kb/profile.yaml",
+        accountId: ROUTE_TEST_ACCOUNT_ID,
+        syncedAt: new Date(),
       },
-    ]);
+    ];
     vi.doMock("@/lib/admin/auth", () => ({
       isAdminAuthenticated: async () => true,
+    }));
+    vi.doMock("@/lib/persona-source", () => ({
+      getActivePersonaSourceRowForAccount: async () => fakeActive,
+      listSyncHistoryForAccount: async () => fakeHistory,
+      syncFromGitHubForAccount: vi.fn(),
     }));
     const { GET } = await import("@/app/api/admin/persona-source/route");
     const res = await GET();
@@ -83,42 +77,15 @@ describe("GET /api/admin/persona-source", () => {
   });
 });
 
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { mswServer } from "../../../vitest.setup";
-import {
-  FAKE_SHA,
-  happyPathHandlers,
-  makeTarball,
-} from "../../lib/__mocks__/github-handlers";
+import { FAKE_SHA } from "../../lib/__mocks__/github-handlers";
 
 describe("POST /api/admin/persona-source", () => {
-  let cacheRoot: string;
-
-  beforeAll(async () => {
-    const rows = await getDb().select().from(personaSource).limit(1);
-    if (rows.length > 0) {
-      throw new Error(
-        "persona_source has existing rows. Integration tests refuse to run against a DB with live data.",
-      );
-    }
-  });
-
-  beforeEach(async () => {
-    cacheRoot = mkdtempSync(path.join(tmpdir(), "queryme-route-cache-"));
-    process.env.PERSONA_CACHE_ROOT = cacheRoot;
-    await getDb().delete(personaSource);
+  beforeEach(() => {
     vi.resetModules();
-  });
-
-  afterEach(() => {
-    rmSync(cacheRoot, { recursive: true, force: true });
-    delete process.env.PERSONA_CACHE_ROOT;
-  });
-
-  afterAll(async () => {
-    await getDb().delete(personaSource);
+    // Mock resolveRootAccountId to return a stable test value.
+    vi.doMock("@/lib/accounts/root", () => ({
+      resolveRootAccountId: async () => ROUTE_TEST_ACCOUNT_ID,
+    }));
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -155,8 +122,15 @@ describe("POST /api/admin/persona-source", () => {
     vi.doMock("@/lib/admin/auth", () => ({
       isAdminAuthenticated: async () => true,
     }));
-    const tarball = await makeTarball(MIN_REQUIRED_FILES_RAW);
-    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+    vi.doMock("@/lib/persona-source", () => ({
+      getActivePersonaSourceRowForAccount: async () => null,
+      listSyncHistoryForAccount: async () => [],
+      syncFromGitHubForAccount: async () => ({
+        kind: "ok",
+        commitSha: FAKE_SHA,
+        syncedAt: new Date("2026-01-01T00:00:00Z"),
+      }),
+    }));
 
     const { POST } = await import("@/app/api/admin/persona-source/route");
     const req = new Request("http://x/api/admin/persona-source", {
@@ -174,10 +148,14 @@ describe("POST /api/admin/persona-source", () => {
     vi.doMock("@/lib/admin/auth", () => ({
       isAdminAuthenticated: async () => true,
     }));
-    const incomplete = { ...MIN_REQUIRED_FILES_RAW };
-    delete incomplete["kb/skills.yaml"];
-    const tarball = await makeTarball(incomplete);
-    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+    vi.doMock("@/lib/persona-source", () => ({
+      getActivePersonaSourceRowForAccount: async () => null,
+      listSyncHistoryForAccount: async () => [],
+      syncFromGitHubForAccount: async () => ({
+        kind: "error",
+        message: "missing required file(s): kb/skills.yaml",
+      }),
+    }));
 
     const { POST } = await import("@/app/api/admin/persona-source/route");
     const req = new Request("http://x/api/admin/persona-source", {
