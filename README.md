@@ -50,6 +50,38 @@ Persistence needs Postgres (via Vercel/Neon) and Upstash Redis (via Vercel KV).
 
 After this, `pnpm dev` will work end-to-end.
 
+## Multi-tenant accounts
+
+The app serves a "house" account at the bare domain `/` and additional accounts at `/{username}`. Set `ROOT_ACCOUNT_USERNAME` in your environment to the GitHub username of the house account.
+
+### First-time / deploy setup
+
+```bash
+pnpm db:migrate                                         # create tables
+pnpm admin account create <ROOT_ACCOUNT_USERNAME>       # create the house account
+pnpm backfill:root                                      # associate pre-existing rows with the house account
+pnpm admin account link <ROOT_ACCOUNT_USERNAME> <public-github-repo-url>  # point it at a content repo
+```
+
+`pnpm backfill:root` is idempotent — it only touches rows whose `account_id` is NULL (rows created before multi-tenancy). Re-running it after a partial run is safe.
+
+### Adding another account
+
+```bash
+pnpm admin account create <username>
+pnpm admin account link <username> <public-github-repo-url>
+```
+
+The account goes live immediately at `/{username}`.
+
+### Not yet implemented (future plans)
+
+- GitHub OAuth self-serve signup (accounts currently created by the admin CLI only)
+- Per-account admin scoping (all admins share the same `ADMIN_PASSWORD` today)
+- Per-account email / custom-domain config
+- Per-account MCP endpoints
+- `account_id` NOT NULL hardening — the MCP `ask` path creates conversations without an account, so a NOT NULL constraint would be a runtime landmine until that path is threaded through account resolution
+
 ## Environment
 
 - `RESEND_API_KEY` — API key for the Resend transactional-email service.

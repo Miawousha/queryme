@@ -15,6 +15,7 @@
     "evals": "tsx scripts/eval.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
+    "backfill:root": "tsx scripts/backfill-root-account.ts",
     "admin": "tsx scripts/admin-cli.ts"
   },
   "keywords": [
