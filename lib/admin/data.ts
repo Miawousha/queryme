@@ -1,6 +1,6 @@
 /** Read model for the admin dashboard — one query pass over the two tables. */
 
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { getDb } from "@/lib/db/client";
 import {
   conversations,
@@ -52,15 +52,23 @@ export function buildAdminData(
   };
 }
 
-export async function loadAdminData(db: Db): Promise<AdminData> {
-  const [convs, questionRows] = await Promise.all([
+export async function loadAdminData(db: Db, accountId: string): Promise<AdminData> {
+  const [convs, qRows] = await Promise.all([
     db
       .select()
       .from(conversations)
+      .where(eq(conversations.accountId, accountId))
       .orderBy(desc(conversations.lastMessageAt))
       .limit(CONVERSATION_LIMIT),
-    db.select().from(forwardedQuestions).orderBy(desc(forwardedQuestions.createdAt)),
+    db
+      .select({ q: forwardedQuestions })
+      .from(forwardedQuestions)
+      .innerJoin(conversations, eq(forwardedQuestions.conversationId, conversations.id))
+      .where(eq(conversations.accountId, accountId))
+      .orderBy(desc(forwardedQuestions.createdAt)),
   ]);
-
-  return buildAdminData(convs, questionRows);
+  return buildAdminData(
+    convs,
+    qRows.map((r) => r.q),
+  );
 }

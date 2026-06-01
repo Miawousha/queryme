@@ -5,7 +5,7 @@ import type { PersonaSource } from "@/lib/db/schema";
 
 type State = { active: PersonaSource | null; history: PersonaSource[] };
 
-export function ContentTab() {
+export function ContentTab({ apiBasePath }: { apiBasePath: string }) {
   const [state, setState] = useState<State | null>(null);
   const [url, setUrl] = useState("");
   const [branch, setBranch] = useState("main");
@@ -13,7 +13,7 @@ export function ContentTab() {
   const [lastError, setLastError] = useState<string | null>(null);
 
   const reload = async () => {
-    const res = await fetch("/api/admin/persona-source");
+    const res = await fetch(`${apiBasePath}/persona-source`);
     if (res.ok) setState(await res.json());
   };
 
@@ -25,7 +25,7 @@ export function ContentTab() {
     e?.preventDefault();
     setSubmitting(true);
     setLastError(null);
-    const res = await fetch("/api/admin/persona-source", {
+    const res = await fetch(`${apiBasePath}/persona-source`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ repoUrl: url, branch }),
@@ -44,7 +44,7 @@ export function ContentTab() {
     if (!state?.active) return;
     setSubmitting(true);
     setLastError(null);
-    const res = await fetch("/api/admin/persona-source", {
+    const res = await fetch(`${apiBasePath}/persona-source`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ repoUrl: state.active.repoUrl, branch: state.active.branch }),

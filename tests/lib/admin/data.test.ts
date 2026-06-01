@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { eq } from "drizzle-orm";
 import { buildAdminData } from "@/lib/admin/data";
 import type { Conversation, ForwardedQuestion } from "@/lib/db/schema";
 
@@ -42,5 +43,35 @@ describe("buildAdminData", () => {
     const data = buildAdminData([conv({ id: "a" })], []);
     expect(data.stats.identified).toBe(0);
     expect(data.interviewers).toEqual([]);
+  });
+});
+
+const RUN_DB = !!process.env.RUN_DB_TESTS;
+const d = RUN_DB ? describe : describe.skip;
+
+d("loadAdminData (account filter, integration)", () => {
+  it("returns only the given account's conversations", async () => {
+    const { getDb } = await import("@/lib/db/client");
+    const { accounts, conversations } = await import("@/lib/db/schema");
+    const { createAccount } = await import("@/lib/accounts/repo");
+    const { getOrCreateConversation } = await import("@/lib/conversations/repo");
+    const { loadAdminData } = await import("@/lib/admin/data");
+    const { randomUUID } = await import("node:crypto");
+
+    const db = getDb();
+    const a = await createAccount(db, { username: `dataf-a-${Date.now()}` });
+    const b = await createAccount(db, { username: `dataf-b-${Date.now()}` });
+    const ca = randomUUID();
+    await getOrCreateConversation(db, { id: ca, channel: "chat", accountId: a.id });
+    try {
+      const data = await loadAdminData(db, a.id);
+      expect(data.conversations.some((c) => c.id === ca)).toBe(true);
+      const dataB = await loadAdminData(db, b.id);
+      expect(dataB.conversations.some((c) => c.id === ca)).toBe(false);
+    } finally {
+      await db.delete(conversations).where(eq(conversations.id, ca));
+      await db.delete(accounts).where(eq(accounts.id, a.id));
+      await db.delete(accounts).where(eq(accounts.id, b.id));
+    }
   });
 });

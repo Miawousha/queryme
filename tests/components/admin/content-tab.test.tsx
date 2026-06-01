@@ -20,7 +20,7 @@ describe("ContentTab", () => {
       json: async () => ({ active: ACTIVE_ROW, history: [ACTIVE_ROW] }),
     }) as unknown as typeof fetch;
 
-    render(<ContentTab />);
+    render(<ContentTab apiBasePath="/api/a/alex/admin" />);
     await waitFor(() => {
       expect(screen.getByText("alex/queryme-content")).toBeInTheDocument();
       // Short SHA appears in the active panel
@@ -39,14 +39,14 @@ describe("ContentTab", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ active: ACTIVE_ROW, history: [ACTIVE_ROW] }) });
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    render(<ContentTab />);
+    render(<ContentTab apiBasePath="/api/a/alex/admin" />);
     const url = await screen.findByLabelText(/repo url/i);
     await userEvent.type(url, "https://github.com/alex/queryme-content");
     await userEvent.click(screen.getByRole("button", { name: /^sync$/i }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/admin/persona-source",
+        "/api/a/alex/admin/persona-source",
         expect.objectContaining({ method: "POST" }),
       );
     });

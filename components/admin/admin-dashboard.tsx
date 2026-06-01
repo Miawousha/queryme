@@ -30,7 +30,13 @@ const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]
 
 type TabId = "interviewers" | "conversations" | "questions" | "content" | "analytics";
 
-export function AdminDashboard({ data }: { data: AdminData }) {
+export function AdminDashboard({
+  data,
+  apiBasePath,
+}: {
+  data: AdminData;
+  apiBasePath: string;
+}) {
   const { stats, conversations, questions, interviewers } = data;
   const [tab, setTab] = useState<TabId>("interviewers");
   // One open record per tab — switching tabs preserves what was open in each.
@@ -193,8 +199,8 @@ export function AdminDashboard({ data }: { data: AdminData }) {
               renderRow={(q) => <QuestionRow question={q} />}
             />
           )}
-          {tab === "content" && <ContentTab />}
-          {tab === "analytics" && <AnalyticsPanel />}
+          {tab === "content" && <ContentTab apiBasePath={apiBasePath} />}
+          {tab === "analytics" && <AnalyticsPanel apiBasePath={apiBasePath} />}
         </div>
       </div>
 
@@ -235,6 +241,7 @@ export function AdminDashboard({ data }: { data: AdminData }) {
             key={selectedId}
             question={questionById.get(selectedId)!}
             onOpenConversation={openConversation}
+            apiBasePath={apiBasePath}
           />
         )}
       </DetailSidebar>
@@ -271,18 +278,18 @@ type AnalyticsData = {
   density: { conversationId: string; assistantTurns: number; avgCitations: number }[];
 };
 
-function AnalyticsPanel() {
+function AnalyticsPanel({ apiBasePath }: { apiBasePath: string }) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    fetch("/api/admin/analytics")
+    fetch(`${apiBasePath}/analytics`)
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, []);
+  }, [apiBasePath]);
   if (error) return <p className="text-xs text-red-400">{error}</p>;
   if (!data)
     return (
@@ -544,9 +551,11 @@ function InterviewerDetail({
 function QuestionDetail({
   question,
   onOpenConversation,
+  apiBasePath,
 }: {
   question: ForwardedQuestion;
   onOpenConversation: (conversationId: string) => void;
+  apiBasePath: string;
 }) {
   const [draft, setDraft] = useState(question.reply ?? "");
   const [busy, setBusy] = useState(false);
@@ -560,7 +569,7 @@ function QuestionDetail({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/questions/${question.id}/reply`, {
+      const res = await fetch(`${apiBasePath}/questions/${question.id}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reply: draft }),
