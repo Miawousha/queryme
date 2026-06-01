@@ -3,11 +3,13 @@ import { z } from "zod";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
 import {
-  ADMIN_COOKIE,
+  SESSION_COOKIE,
   SESSION_TTL_MS,
   createSessionToken,
   verifyPassword,
 } from "@/lib/admin/auth";
+import { getDb } from "@/lib/db/client";
+import { getRootAccountId } from "@/lib/accounts/repo";
 
 export const runtime = "nodejs";
 
@@ -52,8 +54,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
 
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    return NextResponse.json({ error: "Sessions are not configured." }, { status: 500 });
+  }
+  const rootId = await getRootAccountId(getDb());
+
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(ADMIN_COOKIE, createSessionToken(Date.now() + SESSION_TTL_MS, secret), {
+  res.cookies.set(SESSION_COOKIE, createSessionToken(rootId, Date.now() + SESSION_TTL_MS, sessionSecret), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

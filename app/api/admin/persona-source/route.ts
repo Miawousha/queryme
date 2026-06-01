@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/admin/auth";
+import { requireRootAdmin } from "@/lib/accounts/guard";
 import {
   getActivePersonaSourceRowForAccount,
   listSyncHistoryForAccount,
@@ -8,7 +8,7 @@ import {
 import { resolveRootAccountId } from "@/lib/accounts/root";
 
 export async function GET() {
-  if (!(await isAdminAuthenticated())) {
+  if (!(await requireRootAdmin())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const accountId = await resolveRootAccountId();
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (!(await isAdminAuthenticated())) {
+  if (!(await requireRootAdmin())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   let body: { repoUrl?: string; branch?: string };

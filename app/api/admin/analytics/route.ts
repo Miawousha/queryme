@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/admin/auth";
+import { requireRootAdmin } from "@/lib/accounts/guard";
 import { getDb } from "@/lib/db/client";
 import { conversations, forwardedQuestions } from "@/lib/db/schema";
 import {
@@ -11,7 +11,7 @@ import {
 export const runtime = "nodejs";
 
 export async function GET() {
-  if (!(await isAdminAuthenticated())) {
+  if (!(await requireRootAdmin())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const db = getDb();

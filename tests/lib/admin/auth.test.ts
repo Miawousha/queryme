@@ -6,58 +6,49 @@ import {
   SESSION_TTL_MS,
 } from "@/lib/admin/auth";
 
-const SECRET = "super-secret-admin-password";
+const SECRET = "super-secret-session-key";
+const ACCT = "11111111-1111-1111-1111-111111111111";
 
 describe("session tokens", () => {
-  it("round-trips a freshly minted token", () => {
+  it("round-trips a token and returns the accountId", () => {
     const now = Date.now();
-    const token = createSessionToken(now + SESSION_TTL_MS, SECRET);
-    expect(verifySessionToken(token, now, SECRET)).toBe(true);
+    const token = createSessionToken(ACCT, now + SESSION_TTL_MS, SECRET);
+    expect(verifySessionToken(token, now, SECRET)).toBe(ACCT);
   });
 
-  it("rejects a token that has expired", () => {
-    const issuedExpiry = 1_000_000;
-    const token = createSessionToken(issuedExpiry, SECRET);
-    expect(verifySessionToken(token, issuedExpiry + 1, SECRET)).toBe(false);
+  it("rejects an expired token", () => {
+    const exp = 1_000_000;
+    const token = createSessionToken(ACCT, exp, SECRET);
+    expect(verifySessionToken(token, exp + 1, SECRET)).toBeNull();
   });
 
   it("rejects a token signed with a different secret", () => {
     const now = Date.now();
-    const token = createSessionToken(now + SESSION_TTL_MS, SECRET);
-    expect(verifySessionToken(token, now, "a-different-secret")).toBe(false);
+    const token = createSessionToken(ACCT, now + SESSION_TTL_MS, SECRET);
+    expect(verifySessionToken(token, now, "other-secret")).toBeNull();
   });
 
-  it("rejects a tampered token", () => {
+  it("rejects a tampered payload", () => {
     const now = Date.now();
-    const token = createSessionToken(now + SESSION_TTL_MS, SECRET);
-    // Bump the expiry in the payload without re-signing.
-    const [, sig] = token.split(".");
-    const forged = `${now + SESSION_TTL_MS * 10}.${sig}`;
-    expect(verifySessionToken(forged, now, SECRET)).toBe(false);
+    const token = createSessionToken(ACCT, now + SESSION_TTL_MS, SECRET);
+    const sig = token.slice(token.lastIndexOf(".") + 1);
+    const forged = `${ACCT}.${now + SESSION_TTL_MS * 10}.${sig}`;
+    expect(verifySessionToken(forged, now, SECRET)).toBeNull();
   });
 
-  it("rejects a malformed token", () => {
+  it("rejects malformed tokens", () => {
     const now = Date.now();
-    expect(verifySessionToken("", now, SECRET)).toBe(false);
-    expect(verifySessionToken("no-dot-here", now, SECRET)).toBe(false);
-    expect(verifySessionToken("notanumber.sig", now, SECRET)).toBe(false);
+    expect(verifySessionToken("", now, SECRET)).toBeNull();
+    expect(verifySessionToken("no-dots", now, SECRET)).toBeNull();
+    expect(verifySessionToken("acct.notanumber.sig", now, SECRET)).toBeNull();
   });
 });
 
 describe("verifyPassword", () => {
-  it("accepts an exact match", () => {
+  it("accepts an exact match and rejects mismatches", () => {
     expect(verifyPassword("hunter2", "hunter2")).toBe(true);
-  });
-
-  it("rejects a wrong password", () => {
     expect(verifyPassword("hunter3", "hunter2")).toBe(false);
-  });
-
-  it("rejects passwords of differing length", () => {
     expect(verifyPassword("short", "a-much-longer-password")).toBe(false);
-  });
-
-  it("rejects an empty input", () => {
     expect(verifyPassword("", "hunter2")).toBe(false);
   });
 });

@@ -9,7 +9,7 @@ export function LogoutButton() {
   async function logout() {
     setBusy(true);
     try {
-      await fetch("/api/admin/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST" });
     } finally {
       window.location.reload();
     }

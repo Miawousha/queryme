@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { isAdminAuthenticated } from "@/lib/admin/auth";
+import { requireRootAdmin } from "@/lib/accounts/guard";
 import { loadAdminData } from "@/lib/admin/data";
 import { getDb } from "@/lib/db/client";
 import { AdminLogin } from "@/components/admin/admin-login";
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
-  if (!(await isAdminAuthenticated())) {
+  if (!(await requireRootAdmin())) {
     return <AdminLogin />;
   }
 

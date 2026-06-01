@@ -12,8 +12,8 @@ describe("GET /api/admin/persona-source", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    vi.doMock("@/lib/admin/auth", () => ({
-      isAdminAuthenticated: async () => false,
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => null,
     }));
     const { GET } = await import("@/app/api/admin/persona-source/route");
     const res = await GET();
@@ -21,8 +21,8 @@ describe("GET /api/admin/persona-source", () => {
   });
 
   it("returns { active: null, history: [] } when no persona is configured", async () => {
-    vi.doMock("@/lib/admin/auth", () => ({
-      isAdminAuthenticated: async () => true,
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => null,
@@ -60,8 +60,8 @@ describe("GET /api/admin/persona-source", () => {
         syncedAt: new Date(),
       },
     ];
-    vi.doMock("@/lib/admin/auth", () => ({
-      isAdminAuthenticated: async () => true,
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => fakeActive,
@@ -89,8 +89,8 @@ describe("POST /api/admin/persona-source", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    vi.doMock("@/lib/admin/auth", () => ({
-      isAdminAuthenticated: async () => false,
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => null,
     }));
     const { POST } = await import("@/app/api/admin/persona-source/route");
     const req = new Request("http://x/api/admin/persona-source", {
@@ -103,8 +103,8 @@ describe("POST /api/admin/persona-source", () => {
   });
 
   it("returns 400 when repoUrl is missing", async () => {
-    vi.doMock("@/lib/admin/auth", () => ({
-      isAdminAuthenticated: async () => true,
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
     }));
     const { POST } = await import("@/app/api/admin/persona-source/route");
     const req = new Request("http://x/api/admin/persona-source", {
@@ -119,8 +119,8 @@ describe("POST /api/admin/persona-source", () => {
   });
 
   it("triggers a sync and returns the new row info", async () => {
-    vi.doMock("@/lib/admin/auth", () => ({
-      isAdminAuthenticated: async () => true,
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => null,
@@ -145,8 +145,8 @@ describe("POST /api/admin/persona-source", () => {
   });
 
   it("returns 400 with the error message when sync fails", async () => {
-    vi.doMock("@/lib/admin/auth", () => ({
-      isAdminAuthenticated: async () => true,
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => null,

@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { handleReply } from "@/app/api/admin/questions/[id]/reply/handler";
 
-vi.mock("@/lib/admin/auth", () => ({
-  isAdminAuthenticated: vi.fn(),
+vi.mock("@/lib/accounts/guard", () => ({
+  requireRootAdmin: vi.fn(),
 }));
 vi.mock("@/lib/db/client", () => ({
   getDb: vi.fn(() => ({})),
@@ -13,7 +13,7 @@ vi.mock("@/lib/questions/repo", () => ({
   getQuestion: vi.fn(),
 }));
 
-import { isAdminAuthenticated } from "@/lib/admin/auth";
+import { requireRootAdmin } from "@/lib/accounts/guard";
 import { recordReply, getQuestion } from "@/lib/questions/repo";
 
 function req(body: unknown): NextRequest {
@@ -41,7 +41,7 @@ beforeEach(() => {
 
 describe("POST /api/admin/questions/[id]/reply", () => {
   it("401s when not admin", async () => {
-    vi.mocked(isAdminAuthenticated).mockResolvedValue(false);
+    vi.mocked(requireRootAdmin).mockResolvedValue(null);
     const res = await handleReply(req({ reply: "hi" }), { params: Promise.resolve({ id: "q1" }) }, {
       transport: fakeTransport(),
       from: "queryme@example.com",
@@ -50,7 +50,7 @@ describe("POST /api/admin/questions/[id]/reply", () => {
   });
 
   it("400s on empty reply", async () => {
-    vi.mocked(isAdminAuthenticated).mockResolvedValue(true);
+    vi.mocked(requireRootAdmin).mockResolvedValue({ id: "acct", role: "admin" } as never);
     const res = await handleReply(req({ reply: "" }), { params: Promise.resolve({ id: "q1" }) }, {
       transport: fakeTransport(),
       from: "queryme@example.com",
@@ -59,7 +59,7 @@ describe("POST /api/admin/questions/[id]/reply", () => {
   });
 
   it("persists, then emails the contact when present", async () => {
-    vi.mocked(isAdminAuthenticated).mockResolvedValue(true);
+    vi.mocked(requireRootAdmin).mockResolvedValue({ id: "acct", role: "admin" } as never);
     vi.mocked(getQuestion).mockResolvedValue({
       id: "q1",
       question: "Q",
@@ -93,7 +93,7 @@ describe("POST /api/admin/questions/[id]/reply", () => {
   });
 
   it("does not email when there is no contact", async () => {
-    vi.mocked(isAdminAuthenticated).mockResolvedValue(true);
+    vi.mocked(requireRootAdmin).mockResolvedValue({ id: "acct", role: "admin" } as never);
     vi.mocked(getQuestion).mockResolvedValue({
       id: "q1", question: "Q", contact: null, reply: null, answeredAt: null,
       conversationId: null, createdAt: new Date(),
