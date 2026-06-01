@@ -57,6 +57,13 @@
       "when": 1748390400000,
       "tag": "0007_rename_questions_table",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780315166024,
+      "tag": "0008_lovely_network",
+      "breakpoints": true
     }
   ]
 }

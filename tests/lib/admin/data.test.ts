@@ -11,6 +11,7 @@ function conv(overrides: Partial<Conversation>): Conversation {
     interviewer: null,
     startedAt: new Date(0),
     lastMessageAt: new Date(0),
+    accountId: null,
     ...overrides,
   };
 }

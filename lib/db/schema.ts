@@ -1,15 +1,38 @@
 import { pgTable, uuid, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-export const conversations = pgTable("conversations", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  channel: text("channel", { enum: ["chat", "mcp"] }).notNull(),
-  language: text("language", { enum: ["en", "fr"] }),
-  transcript: jsonb("transcript").$type<ConversationTurn[]>().notNull().default(sql`'[]'::jsonb`),
-  interviewer: jsonb("interviewer").$type<InterviewerIdentity>(),
-  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
-  lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    githubId: text("github_id"), // nullable until OAuth (later plan); unique-when-present added then
+    username: text("username").notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    channel: text("channel", { enum: ["chat", "mcp"] }).notNull(),
+    language: text("language", { enum: ["en", "fr"] }),
+    transcript: jsonb("transcript").$type<ConversationTurn[]>().notNull().default(sql`'[]'::jsonb`),
+    interviewer: jsonb("interviewer").$type<InterviewerIdentity>(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
+    accountId: uuid("account_id").references(() => accounts.id),
+  },
+  (table) => ({
+    accountLastMsgIdx: index("conversations_account_last_msg_idx").on(
+      table.accountId,
+      sql`${table.lastMessageAt} DESC`,
+    ),
+  }),
+);
 
 export const forwardedQuestions = pgTable("forwarded_questions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -58,9 +81,14 @@ export const personaSource = pgTable(
     syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
     status: text("status", { enum: ["ok", "error"] }).notNull(),
     error: text("error"),
+    accountId: uuid("account_id").references(() => accounts.id),
   },
   (table) => ({
     syncedAtIdx: index("persona_source_synced_at_idx").on(sql`${table.syncedAt} DESC`),
+    accountSyncedAtIdx: index("persona_source_account_synced_at_idx").on(
+      table.accountId,
+      sql`${table.syncedAt} DESC`,
+    ),
   }),
 );
 
