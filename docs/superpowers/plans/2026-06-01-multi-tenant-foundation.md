@@ -438,6 +438,9 @@ git commit -m "feat(persona): account-scope persona resolution behind PersonaSto
 
 ### Task 5: Account-scope the in-memory caches and migrate all current callers
 
+> **REVISED DURING EXECUTION (scoped down).** Because Task 4 kept the legacy persona-source functions, only callers of the **cache functions** whose signatures change must be migrated now: `app/api/chat/route.ts`, `app/api/kb/route.ts`, `app/api/kb/file/route.ts`, `app/api/mcp/route.ts`, `lib/answerer.ts`, `lib/mcp/server.ts`. The pages and persona-source-only callers (`app/page.tsx`, `app/layout.tsx`, `app/about/page.tsx`, `app/cv/page.tsx`, `app/api/cv/route.ts`, `app/api/admin/persona-source/route.ts`) keep using the still-present legacy `getActivePersonaRoot()`/`ensurePersonaCacheReady()`/`getActivePersonaSourceRow()` and are migrated in **Task 8** before the legacy functions are deleted.
+> Add `lib/accounts/root.ts` → `resolveRootAccountId()`: returns the sentinel `"local-override"` when `PERSONA_LOCAL_OVERRIDE` is set (so dev/test need no DB), else `getRootAccountId(getDb())`. Cache funcs key by `accountId` and resolve the root via `getPersonaStore().getRoot(accountId)`. `loadPersona(root)` signature is unchanged (cache keyed by root path). In `app/api/chat/route.ts`, resolve the account id **after** body validation so the existing 400-validation tests stay green. `answer()` and `buildMcpServer()` gain an `accountId` param. Check `lib/mcp/tools.ts` for the `loadPublicKbText` callback type and wrap as `(lang) => getCachedPublicKbText(accountId, lang)`.
+
 **Files:**
 - Modify: `lib/kb/cache.ts`, `lib/prompts.ts`, `lib/persona.ts`
 - Modify callers: `app/page.tsx`, `app/api/chat/route.ts`, `app/api/mcp/route.ts`, `app/api/kb/route.ts`, `app/api/kb/file/route.ts`, `app/api/cv/route.ts`, `app/admin/page.tsx`, `app/cv/page.tsx`, `app/about/page.tsx`, and `lib/mcp/server.ts` (anything calling `getCachedKb`/`getCachedPublicKbText`/`getCachedKbManifest`/`buildSystemPromptParts`/`loadPersona`/`getActivePersonaRoot`/`getActivePersonaSourceRow`)
@@ -852,7 +855,7 @@ Add to `package.json` scripts: `"backfill:root": "tsx scripts/backfill-root-acco
 
 After running the backfill, make the columns NOT NULL: change `accountId: uuid("account_id").references(...)` to `.notNull().references(...)` in `schema.ts`, then `pnpm db:generate` → `0009_*.sql`.
 
-Per the Task 4 additive revision: delete the now-unused **legacy** persona-source functions (`getActivePersonaRoot`, `syncFromGitHub`, `ensurePersonaCacheReady`, `getActivePersonaSourceRow`, `listSyncHistory`) plus the legacy global `{cacheRoot}/current` path, once a grep confirms zero remaining callers (everything now goes through the `*ForAccount` functions / `PersonaStore`). Optionally drop the `ForAccount` suffix at this point if desired.
+Per the Task 4 + Task 5 revisions: FIRST migrate the remaining legacy callers — `app/page.tsx`, `app/layout.tsx`, `app/about/page.tsx`, `app/cv/page.tsx`, `app/api/cv/route.ts`, `app/api/admin/persona-source/route.ts` — to use `resolveRootAccountId()` + `getPersonaStore()` + `getActivePersonaSourceRowForAccount()` (mirroring the Task 5 edge pattern). THEN delete the now-unused **legacy** persona-source functions (`getActivePersonaRoot`, `syncFromGitHub`, `ensurePersonaCacheReady`, `getActivePersonaSourceRow`, `listSyncHistory`) plus the legacy global `{cacheRoot}/current` path, after a grep confirms zero remaining callers. Optionally drop the `ForAccount` suffix at this point if desired.
 
 `.env.example`: add
 ```
