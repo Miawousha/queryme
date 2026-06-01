@@ -330,6 +330,18 @@ git commit -m "feat(accounts): add account repository (create/getBySlug/getById/
 
 ### Task 4: Account-scoped persona resolution behind a `PersonaStore` seam
 
+> **REVISED DURING EXECUTION (additive approach — overrides the contract/shim wording below).**
+> To keep every commit compiling, Task 4 **adds new account-scoped functions alongside the existing ones** rather than changing existing signatures. Existing exports (`getActivePersonaRoot()`, `syncFromGitHub(repoUrl, branch)`, `ensurePersonaCacheReady()`, `getActivePersonaSourceRow()`, `listSyncHistory(limit)`) stay **byte-for-byte unchanged** so their current callers keep working. New canonical functions:
+> ```ts
+> getPersonaRootForAccount(accountId: string): string | null   // PERSONA_LOCAL_OVERRIDE wins; else reads {cacheRoot}/{accountId}/current
+> syncFromGitHubForAccount(accountId: string, repoUrl: string, branch?: string): Promise<SyncResult>
+> ensurePersonaCacheReadyForAccount(accountId: string): Promise<void>
+> getActivePersonaSourceRowForAccount(accountId: string): Promise<PersonaSource | null>
+> listSyncHistoryForAccount(accountId: string, limit?: number): Promise<PersonaSource[]>
+> ```
+> These use per-account cache dirs `{cacheRoot}/{accountId}/{sha}` + symlink `{cacheRoot}/{accountId}/current`, a per-account `Map<string, Promise<SyncResult>>` in-flight guard, per-account cleanup, and set/filter `persona_source.account_id`. Share internal helpers with the legacy functions (DRY) without changing legacy signatures. `lib/persona/store.ts`'s `PersonaStore` wraps the `*ForAccount` functions. Task 5 migrates callers to these; Task 8 deletes the now-unused legacy functions. The temporary duplication is intentional and called out so the quality reviewer doesn't flag it.
+> No `getActivePersonaRoot()` shim is needed (the original stays as-is). Tests for the new functions can exercise `getPersonaRootForAccount` via `PERSONA_LOCAL_OVERRIDE` (no DB); DB-touching tests are `RUN_DB_TESTS`-guarded (skip by default).
+
 **Files:**
 - Create: `lib/persona/store.ts` (interface + FS implementation)
 - Modify: `lib/persona-source.ts` (functions become account-scoped; keep a root-resolving `getActivePersonaRoot()` shim)
@@ -840,7 +852,7 @@ Add to `package.json` scripts: `"backfill:root": "tsx scripts/backfill-root-acco
 
 After running the backfill, make the columns NOT NULL: change `accountId: uuid("account_id").references(...)` to `.notNull().references(...)` in `schema.ts`, then `pnpm db:generate` → `0009_*.sql`.
 
-Remove the now-unused `getActivePersonaRoot()` shim from `lib/persona-source.ts` and run the grep from Task 5 to confirm zero remaining callers.
+Per the Task 4 additive revision: delete the now-unused **legacy** persona-source functions (`getActivePersonaRoot`, `syncFromGitHub`, `ensurePersonaCacheReady`, `getActivePersonaSourceRow`, `listSyncHistory`) plus the legacy global `{cacheRoot}/current` path, once a grep confirms zero remaining callers (everything now goes through the `*ForAccount` functions / `PersonaStore`). Optionally drop the `ForAccount` suffix at this point if desired.
 
 `.env.example`: add
 ```
