@@ -6,7 +6,7 @@ type Db = ReturnType<typeof getDb>;
 
 export async function getOrCreateConversation(
   db: Db,
-  input: { id: string; channel: "chat" | "mcp"; language?: "en" | "fr" },
+  input: { id: string; channel: "chat" | "mcp"; language?: "en" | "fr"; accountId?: string },
 ): Promise<Conversation> {
   const existing = await db.select().from(conversations).where(eq(conversations.id, input.id));
   if (existing.length > 0) return existing[0];
@@ -19,6 +19,7 @@ export async function getOrCreateConversation(
       id: input.id,
       channel: input.channel,
       language: input.language,
+      accountId: input.accountId,
       transcript: [],
     })
     .onConflictDoNothing()

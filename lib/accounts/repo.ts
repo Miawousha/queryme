@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { accounts, type Account } from "@/lib/db/schema";
-import { isValidUsername } from "@/lib/accounts/slug";
+import { isValidUsername, isReservedSlug } from "@/lib/accounts/slug";
 import type { getDb } from "@/lib/db/client";
 
 type Db = ReturnType<typeof getDb>;
@@ -34,6 +34,12 @@ export async function getRootAccount(db: Db): Promise<Account | null> {
   const username = process.env.ROOT_ACCOUNT_USERNAME;
   if (!username) return null;
   return getAccountBySlug(db, username);
+}
+
+/** Resolve a path slug to an account, rejecting reserved slugs. Null ⇒ 404. */
+export async function resolveAccountSlug(db: Db, slug: string): Promise<Account | null> {
+  if (isReservedSlug(slug)) return null;
+  return getAccountBySlug(db, slug);
 }
 
 export async function getRootAccountId(db: Db): Promise<string> {
