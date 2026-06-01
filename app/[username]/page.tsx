@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getPersonaStore } from "@/lib/persona/store";
 import { loadPersona } from "@/lib/persona";
 import { buildUiStrings } from "@/lib/language";
@@ -13,10 +13,6 @@ export default async function AccountHome({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  // The root/house account is canonical at "/"; redirect its slug there.
-  if (process.env.ROOT_ACCOUNT_USERNAME && username === process.env.ROOT_ACCOUNT_USERNAME) {
-    redirect("/");
-  }
   const account = await loadAccountForSlug(username);
   if (!account) notFound();
 

@@ -1,18 +1,14 @@
-import { getActivePersonaSourceRowForAccount } from "@/lib/persona-source";
-import { getPersonaStore } from "@/lib/persona/store";
-import { resolveRootAccountId } from "@/lib/accounts/root";
-import { loadPersona } from "@/lib/persona";
-import { buildUiStrings } from "@/lib/language";
-import { HomePageClient } from "@/components/home-page-client";
-import { NotConfiguredScreen } from "@/components/not-configured-screen";
+import type { Metadata } from "next";
+import { LandingPage } from "@/components/landing/landing-page";
 
-export default async function Home() {
-  const accountId = await resolveRootAccountId();
-  await getPersonaStore().ensureReady(accountId);
-  const root = getPersonaStore().getRoot(accountId);
-  if (!root) return <NotConfiguredScreen />;
-  const persona = loadPersona(root);
-  const strings = buildUiStrings(persona);
-  const sourceRow = await getActivePersonaSourceRowForAccount(accountId);
-  return <HomePageClient strings={strings} contentRepoUrl={sourceRow?.repoUrl ?? null} />;
+export const metadata: Metadata = {
+  title: "queryme — a CV you can talk to",
+  description:
+    "Turn a public GitHub repo of your experience into a grounded AI agent — and an MCP endpoint — that answers recruiters' questions and cites its sources.",
+};
+
+// The bare domain serves the platform landing page. Individual accounts live at
+// /{username}; the house/featured account is linked via ROOT_ACCOUNT_USERNAME.
+export default function Home() {
+  return <LandingPage seeItLiveUsername={process.env.ROOT_ACCOUNT_USERNAME ?? null} />;
 }
