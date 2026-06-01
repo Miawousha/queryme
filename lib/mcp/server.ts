@@ -56,7 +56,10 @@ export function buildMcpServer(accountId: string): McpServer {
         const result = await handleAsk(
           {
             db: getDb(),
-            getOrCreateConversation,
+            // Inject this account's id so MCP `ask` conversations are scoped
+            // to it (the callback's input type omits accountId).
+            getOrCreateConversation: (db, input) =>
+              getOrCreateConversation(db, { ...input, accountId }),
             appendTurn,
             loadPublicKbText: () => getCachedPublicKbText(accountId),
             produceAnswer: async ({ messages, kbText, conversationId }) => {
