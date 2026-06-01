@@ -123,7 +123,10 @@ async function handle(req: NextRequest, accountId?: string): Promise<Response> {
           if (transport.sessionId) sessions.delete(transport.sessionId);
         };
 
-        const server = buildMcpServer(accountId!);
+        if (!accountId) {
+          return jsonRpcError(-32603, "Internal error: missing account context", 500);
+        }
+        const server = buildMcpServer(accountId);
         await server.connect(transport);
         return transport.handleRequest(req, { parsedBody: body });
       }

@@ -453,8 +453,11 @@ async function doSyncForAccount(
 
   const row = await recordRowForAccount(accountId, repoUrl, branch, sha, "ok", null);
 
-  resetKbCache();
-  _resetPromptCache();
+  // Invalidate only THIS account's caches (other accounts' content is unchanged).
+  // _resetPersonaCache is a clear-all (persona is keyed by root path, not account);
+  // persona objects are tiny so the over-clear is harmless.
+  resetKbCache(accountId);
+  _resetPromptCache(accountId);
   _resetPersonaCache();
 
   await cleanupOldShasForAccount(accountId, sha);
