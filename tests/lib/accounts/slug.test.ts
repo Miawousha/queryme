@@ -9,6 +9,9 @@ describe("isReservedSlug", () => {
     }
     expect(RESERVED_SLUGS.has("admin")).toBe(true);
   });
+  it("reserves the auth top-level route", () => {
+    expect(isReservedSlug("auth")).toBe(true);
+  });
   it("does not flag ordinary usernames", () => {
     expect(isReservedSlug("alexcollet")).toBe(false);
   });
