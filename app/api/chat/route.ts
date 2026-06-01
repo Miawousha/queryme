@@ -12,7 +12,8 @@ import { buildIdentifyTools } from "@/lib/interviewer/tool";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
 import { requestIp } from "@/lib/request-ip";
-import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { getPersonaStore } from "@/lib/persona/store";
+import { resolveRootAccountId } from "@/lib/accounts/root";
 
 export const runtime = "nodejs";
 
@@ -44,11 +45,6 @@ const RequestBodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  await ensurePersonaCacheReady();
-  if (!getActivePersonaRoot()) {
-    return NextResponse.json({ error: "persona_not_configured" }, { status: 503 });
-  }
-
   let rawBody: unknown;
   try {
     rawBody = await req.json();
@@ -83,6 +79,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
   }
 
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  if (!getPersonaStore().getRoot(accountId)) {
+    return NextResponse.json({ error: "persona_not_configured" }, { status: 503 });
+  }
+
   const conversationId = parsed.data.conversationId ?? randomUUID();
   const db = getDb();
 
@@ -97,8 +99,8 @@ export async function POST(req: NextRequest) {
   });
   const lang = (conv.language ?? parsed.data.language ?? "en") as "en" | "fr";
   const [publicKbText, parsedKb] = await Promise.all([
-    getCachedPublicKbText(lang),
-    getCachedKb(lang),
+    getCachedPublicKbText(accountId, lang),
+    getCachedKb(accountId, lang),
   ]);
 
   // Append the last user turn to the transcript before streaming.
@@ -113,6 +115,7 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await answer({
+    accountId,
     messages: convertToModelMessages(parsed.data.messages as UIMessage[]),
     kbText: publicKbText,
     tools: {

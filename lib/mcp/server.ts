@@ -29,7 +29,7 @@ function errorResult(err: unknown) {
   return jsonResult({ ok: false, error: message }, true);
 }
 
-export function buildMcpServer(): McpServer {
+export function buildMcpServer(accountId: string): McpServer {
   const server = new McpServer(
     { name: "queryme", version: "1.0.0" },
     {
@@ -58,10 +58,11 @@ export function buildMcpServer(): McpServer {
             db: getDb(),
             getOrCreateConversation,
             appendTurn,
-            loadPublicKbText: getCachedPublicKbText,
+            loadPublicKbText: () => getCachedPublicKbText(accountId),
             produceAnswer: async ({ messages, kbText, conversationId }) => {
-              const parsedKb = await getCachedKb();
+              const parsedKb = await getCachedKb(accountId);
               const streamed = await answer({
+                accountId,
                 messages,
                 kbText,
                 tools: {

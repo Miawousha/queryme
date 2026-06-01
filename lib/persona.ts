@@ -31,16 +31,18 @@ const PersonaSchema = z
 
 export type Persona = z.infer<typeof PersonaSchema>;
 
-let cached: Persona | null = null;
+const byRoot = new Map<string, Persona>();
 
 export function loadPersona(activeRoot: string): Persona {
+  const cached = byRoot.get(activeRoot);
   if (cached) return cached;
   const file = path.join(activeRoot, "persona.yaml");
   const raw = fs.readFileSync(file, "utf8");
-  cached = PersonaSchema.parse(parseYaml(raw));
-  return cached;
+  const persona = PersonaSchema.parse(parseYaml(raw));
+  byRoot.set(activeRoot, persona);
+  return persona;
 }
 
 export function _resetPersonaCache(): void {
-  cached = null;
+  byRoot.clear();
 }

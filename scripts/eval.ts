@@ -46,6 +46,7 @@ async function main() {
   for (const q of questions) {
     process.stderr.write(`▶ ${q.id} … `);
     const stream = await answer({
+      accountId: "local-override",
       messages: [{ role: "user", content: q.question }],
       kbText,
     });

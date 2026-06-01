@@ -3,67 +3,89 @@ import { loadKb, type Kb, type KbLang } from "@/lib/kb/loader";
 import { assemblePublicKbText } from "@/lib/kb/assembler";
 import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
 import { loadCvConfig, getFeaturedCodeSlugs, type CvConfig } from "@/lib/kb/cv-config";
-import { getActivePersonaRoot } from "@/lib/persona-source";
+import { getPersonaStore } from "@/lib/persona/store";
 
 /**
- * Process-lifetime caches for the knowledge base. These are invalidated via
- * `resetKbCache()` whenever a sync completes and the active persona root changes.
+ * Per-account, LRU-bounded caches for the knowledge base. Keyed by accountId;
+ * an instance serving many accounts evicts the least-recently-used past the cap.
+ * resetKbCache(accountId) clears one account; resetKbCache() clears all (used by
+ * persona-source after a sync).
  */
+const MAX_ACCOUNTS = 50;
 
-function kbDir(): string {
-  const root = getActivePersonaRoot();
-  if (!root) throw new Error("Persona not configured — no active root");
-  return path.join(root, "kb");
+function lruGet<V>(m: Map<string, V>, key: string): V | undefined {
+  const v = m.get(key);
+  if (v !== undefined) { m.delete(key); m.set(key, v); }
+  return v;
+}
+function lruSet<V>(m: Map<string, V>, key: string, value: V): void {
+  m.delete(key);
+  m.set(key, value);
+  if (m.size > MAX_ACCOUNTS) m.delete(m.keys().next().value as string);
 }
 
-function configDir(): string {
-  const root = getActivePersonaRoot();
-  if (!root) throw new Error("Persona not configured — no active root");
+function rootFor(accountId: string): string {
+  const root = getPersonaStore().getRoot(accountId);
+  if (!root) throw new Error(`Persona not configured for account ${accountId}`);
   return root;
 }
+function kbDir(accountId: string): string { return path.join(rootFor(accountId), "kb"); }
+function configDir(accountId: string): string { return rootFor(accountId); }
 
-const parsedKbByLang = new Map<KbLang, Kb>();
-const publicKbTextByLang = new Map<KbLang, string>();
+const parsedKbByAccount = new Map<string, Map<KbLang, Kb>>();
+const publicKbTextByAccount = new Map<string, Map<KbLang, string>>();
+const cvConfigByAccount = new Map<string, Promise<CvConfig | null>>();
+const manifestByAccount = new Map<string, KbFile[]>();
 
-let cvConfigPromise: Promise<CvConfig | null> | null = null;
-
-function getCvConfig(): Promise<CvConfig | null> {
-  if (cvConfigPromise === null) cvConfigPromise = loadCvConfig(configDir());
-  return cvConfigPromise;
+function getCvConfig(accountId: string): Promise<CvConfig | null> {
+  let p = lruGet(cvConfigByAccount, accountId);
+  if (p === undefined) { p = loadCvConfig(configDir(accountId)); lruSet(cvConfigByAccount, accountId, p); }
+  return p;
 }
 
-export function resetKbCache(): void {
-  parsedKbByLang.clear();
-  publicKbTextByLang.clear();
-  cvConfigPromise = null;
+export function resetKbCache(accountId?: string): void {
+  if (accountId === undefined) {
+    parsedKbByAccount.clear();
+    publicKbTextByAccount.clear();
+    cvConfigByAccount.clear();
+    manifestByAccount.clear();
+    return;
+  }
+  parsedKbByAccount.delete(accountId);
+  publicKbTextByAccount.delete(accountId);
+  cvConfigByAccount.delete(accountId);
+  manifestByAccount.delete(accountId);
 }
 
-/** The parsed KB graph. Used both by the assembler and by lookup tools. */
-export async function getCachedKb(lang: KbLang = "en"): Promise<Kb> {
-  const cached = parsedKbByLang.get(lang);
+/** The parsed KB graph for an account. */
+export async function getCachedKb(accountId: string, lang: KbLang = "en"): Promise<Kb> {
+  let byLang = lruGet(parsedKbByAccount, accountId);
+  if (byLang === undefined) { byLang = new Map(); lruSet(parsedKbByAccount, accountId, byLang); }
+  const cached = byLang.get(lang);
   if (cached !== undefined) return cached;
-  const kb = await loadKb(kbDir(), lang);
-  parsedKbByLang.set(lang, kb);
+  const kb = await loadKb(kbDir(accountId), lang);
+  byLang.set(lang, kb);
   return kb;
 }
 
-/** The assembled public KB text given to the chat / MCP agent. */
-export async function getCachedPublicKbText(lang: KbLang = "en"): Promise<string> {
-  const cached = publicKbTextByLang.get(lang);
+/** The assembled public KB text for an account. */
+export async function getCachedPublicKbText(accountId: string, lang: KbLang = "en"): Promise<string> {
+  let byLang = lruGet(publicKbTextByAccount, accountId);
+  if (byLang === undefined) { byLang = new Map(); lruSet(publicKbTextByAccount, accountId, byLang); }
+  const cached = byLang.get(lang);
   if (cached !== undefined) return cached;
-  const [kb, config] = await Promise.all([getCachedKb(lang), getCvConfig()]);
+  const [kb, config] = await Promise.all([getCachedKb(accountId, lang), getCvConfig(accountId)]);
   const featuredCodeSlugs = getFeaturedCodeSlugs(config) ?? undefined;
   const text = assemblePublicKbText(kb, { featuredCodeSlugs });
-  publicKbTextByLang.set(lang, text);
+  byLang.set(lang, text);
   return text;
 }
 
-let manifest: KbFile[] | null = null;
-
-/** The public KB file manifest served by the `/api/kb` routes. */
-export async function getCachedKbManifest(): Promise<KbFile[]> {
-  if (manifest === null) {
-    manifest = await loadKbManifest(kbDir());
-  }
+/** The public KB file manifest for an account. */
+export async function getCachedKbManifest(accountId: string): Promise<KbFile[]> {
+  const cached = lruGet(manifestByAccount, accountId);
+  if (cached !== undefined) return cached;
+  const manifest = await loadKbManifest(kbDir(accountId));
+  lruSet(manifestByAccount, accountId, manifest);
   return manifest;
 }

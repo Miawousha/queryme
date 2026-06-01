@@ -5,7 +5,7 @@ import { buildMcpServer } from "@/lib/mcp/server";
 
 describe("buildMcpServer", () => {
   it("registers exactly the expected tools", async () => {
-    const server = buildMcpServer();
+    const server = buildMcpServer("local-override");
 
     // The in-process protocol Server has no transport on its own, so connect a
     // linked InMemoryTransport pair and drive a `tools/list` request through a

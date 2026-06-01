@@ -6,7 +6,8 @@ import { buildMcpServer } from "@/lib/mcp/server";
 import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
 import { requestIp } from "@/lib/request-ip";
-import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { getPersonaStore } from "@/lib/persona/store";
+import { resolveRootAccountId } from "@/lib/accounts/root";
 
 export const runtime = "nodejs";
 
@@ -72,8 +73,10 @@ function jsonRpcError(code: number, message: string, status: number): Response {
 }
 
 // Apply IP rate limiting, then route the Web Request to the per-session
-// transport (creating one on `initialize`).
-async function handle(req: NextRequest): Promise<Response> {
+// transport (creating one on `initialize`). accountId is required when a new
+// session may be initialized (POST); for DELETE (session teardown only) it is
+// unused and may be omitted.
+async function handle(req: NextRequest, accountId?: string): Promise<Response> {
   if (await rateLimited(req)) {
     return jsonRpcError(-32000, "Rate limit exceeded. Try again shortly.", 429);
   }
@@ -120,7 +123,7 @@ async function handle(req: NextRequest): Promise<Response> {
           if (transport.sessionId) sessions.delete(transport.sessionId);
         };
 
-        const server = buildMcpServer();
+        const server = buildMcpServer(accountId!);
         await server.connect(transport);
         return transport.handleRequest(req, { parsedBody: body });
       }
@@ -137,8 +140,9 @@ async function handle(req: NextRequest): Promise<Response> {
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
-  await ensurePersonaCacheReady();
-  if (!getActivePersonaRoot()) {
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  if (!getPersonaStore().getRoot(accountId)) {
     return NextResponse.json(
       {
         jsonrpc: "2.0",
@@ -148,12 +152,13 @@ export async function POST(req: NextRequest): Promise<Response> {
       { status: 503 },
     );
   }
-  return handle(req);
+  return handle(req, accountId);
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
-  await ensurePersonaCacheReady();
-  if (!getActivePersonaRoot()) {
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  if (!getPersonaStore().getRoot(accountId)) {
     return NextResponse.json(
       {
         jsonrpc: "2.0",
@@ -163,7 +168,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       { status: 503 },
     );
   }
-  return handle(req);
+  return handle(req, accountId);
 }
 
 export async function DELETE(req: NextRequest): Promise<Response> {

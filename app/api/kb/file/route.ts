@@ -2,7 +2,8 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { getCachedKbManifest } from "@/lib/kb/cache";
-import { ensurePersonaCacheReady, getActivePersonaRoot } from "@/lib/persona-source";
+import { getPersonaStore } from "@/lib/persona/store";
+import { resolveRootAccountId } from "@/lib/accounts/root";
 import type { KbFileType } from "@/lib/kb/file-type";
 
 export const runtime = "nodejs";
@@ -23,8 +24,9 @@ export async function GET(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: "A `path` query parameter is required." }, { status: 400 });
   }
 
-  await ensurePersonaCacheReady();
-  const root = getActivePersonaRoot();
+  const accountId = await resolveRootAccountId();
+  await getPersonaStore().ensureReady(accountId);
+  const root = getPersonaStore().getRoot(accountId);
   if (!root) {
     return NextResponse.json({ error: "persona_not_configured" }, { status: 503 });
   }
@@ -32,7 +34,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   // Whitelist: the path must be an exact manifest entry. Anything else —
   // including traversal attempts — is rejected before touching the filesystem.
-  const manifest = await getCachedKbManifest();
+  const manifest = await getCachedKbManifest(accountId);
   const entry = manifest.find((f) => f.path === requested);
   if (!entry) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });

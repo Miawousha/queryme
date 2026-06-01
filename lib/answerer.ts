@@ -3,6 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { buildSystemPromptParts } from "./prompts";
 
 export type AnswerInput = {
+  accountId: string;
   messages: ModelMessage[];
   kbText: string;
   model?: LanguageModel;
@@ -29,6 +30,7 @@ const anthropicProvider = createAnthropic({
 export async function answer(input: AnswerInput) {
   const model = input.model ?? anthropicProvider(DEFAULT_MODEL_ID);
   const parts = buildSystemPromptParts({
+    accountId: input.accountId,
     kbText: input.kbText,
   });
 

@@ -28,6 +28,7 @@ describe("answer", () => {
   it("streams text chunks from the model", async () => {
     const model = makeMockModel(["Hello", " world"]);
     const result = await answer({
+      accountId: "local-override",
       messages: [{ role: "user", content: "Hi" }],
       kbText: "FAKE KB",
       model,
@@ -58,6 +59,7 @@ describe("answer", () => {
     });
 
     await answer({
+      accountId: "local-override",
       messages: [{ role: "user", content: "Hi" }],
       kbText: "MARKER_KB_CONTENT",
       model,
@@ -87,6 +89,7 @@ describe("answer", () => {
     });
 
     await answer({
+      accountId: "local-override",
       messages: [{ role: "user", content: "Hi" }],
       kbText: "UNIQUE_KB_MARKER_XYZ",
       model,
@@ -124,7 +127,7 @@ describe("answer", () => {
       },
     });
 
-    await answer({ messages: [{ role: "user", content: "Hi" }], kbText: "KB", model }).then((r) => r.text);
+    await answer({ accountId: "local-override", messages: [{ role: "user", content: "Hi" }], kbText: "KB", model }).then((r) => r.text);
     const prompt = (captured as any).prompt as Array<any>;
     const systemMessages = prompt.filter((m) => m.role === "system");
     expect(systemMessages).toHaveLength(2);
@@ -161,6 +164,7 @@ describe("answer", () => {
     };
 
     await answer({
+      accountId: "local-override",
       messages: [{ role: "user", content: "Hi" }],
       kbText: "KB",
       model,
@@ -191,7 +195,7 @@ describe("answer", () => {
       },
     });
 
-    await answer({ messages: [{ role: "user", content: "Hi" }], kbText: "KB", model }).then((r) => r.text);
+    await answer({ accountId: "local-override", messages: [{ role: "user", content: "Hi" }], kbText: "KB", model }).then((r) => r.text);
 
     expect(captured.tools === undefined || captured.tools.length === 0).toBe(true);
   });
