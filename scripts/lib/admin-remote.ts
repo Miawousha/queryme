@@ -1,4 +1,5 @@
 import { CliError } from "./admin-errors";
+import { SESSION_COOKIE } from "@/lib/admin/session-cookie";
 import type { PersonaSource } from "@/lib/db/schema";
 
 /** A remote admin-API failure, carrying an actionable hint. */
@@ -59,7 +60,7 @@ export async function login(baseUrl: string, password: string): Promise<string> 
   const mapped = mapStatusError(res.status);
   if (mapped) throw mapped;
   if (!res.ok) throw new AdminRemoteError(`login failed (${res.status})`);
-  const cookie = extractCookie(setCookieHeaders(res), "queryme_admin");
+  const cookie = extractCookie(setCookieHeaders(res), SESSION_COOKIE);
   if (!cookie) {
     throw new AdminRemoteError(
       "login succeeded but no session cookie was returned",
@@ -71,7 +72,7 @@ export async function login(baseUrl: string, password: string): Promise<string> 
 
 export async function fetchStatus(baseUrl: string, cookie: string): Promise<StatusResponse> {
   const res = await fetch(`${trimSlash(baseUrl)}/api/admin/persona-source`, {
-    headers: { Cookie: `queryme_admin=${cookie}` },
+    headers: { Cookie: `${SESSION_COOKIE}=${cookie}` },
   });
   const mapped = mapStatusError(res.status);
   if (mapped) throw mapped;
@@ -86,7 +87,7 @@ export async function postSync(
 ): Promise<SyncResponse> {
   const res = await fetch(`${trimSlash(baseUrl)}/api/admin/persona-source`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Cookie: `queryme_admin=${cookie}` },
+    headers: { "Content-Type": "application/json", Cookie: `${SESSION_COOKIE}=${cookie}` },
     body: JSON.stringify(body),
   });
   if (res.status === 400) {

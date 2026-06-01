@@ -10,8 +10,9 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { SESSION_COOKIE } from "./session-cookie";
 
-export const SESSION_COOKIE = "queryme_session";
+export { SESSION_COOKIE };
 
 /** Session lifetime: 7 days. */
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;

@@ -27,7 +27,7 @@ describe("login", () => {
       http.post(`${BASE}/api/admin/login`, () =>
         HttpResponse.json(
           { ok: true },
-          { headers: { "Set-Cookie": "queryme_admin=tok123; HttpOnly; Path=/" } },
+          { headers: { "Set-Cookie": "queryme_session=tok123; HttpOnly; Path=/" } },
         ),
       ),
     );
@@ -69,7 +69,7 @@ describe("fetchStatus", () => {
     );
     const out = await fetchStatus(BASE, "tok123");
     expect(out).toEqual({ active: { commitSha: "s1" }, history: [] });
-    expect(sentCookie).toContain("queryme_admin=tok123");
+    expect(sentCookie).toContain("queryme_session=tok123");
   });
 });
 

@@ -58,7 +58,12 @@ export async function POST(req: NextRequest) {
   if (!sessionSecret) {
     return NextResponse.json({ error: "Sessions are not configured." }, { status: 500 });
   }
-  const rootId = await getRootAccountId(getDb());
+  let rootId: string;
+  try {
+    rootId = await getRootAccountId(getDb());
+  } catch {
+    return NextResponse.json({ error: "Root account is not configured." }, { status: 500 });
+  }
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, createSessionToken(rootId, Date.now() + SESSION_TTL_MS, sessionSecret), {
