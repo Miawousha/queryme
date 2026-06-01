@@ -22,6 +22,10 @@ type Props = {
   onKbCollapsedChange: (next: boolean | ((prev: boolean) => boolean)) => void;
   /** GitHub URL of the active persona content repo, or null if none configured. */
   contentRepoUrl: string | null;
+  /** Base path for API calls. Defaults to "/api". */
+  apiBasePath?: string;
+  /** When false, CV affordance and MCP button/modal are hidden. Defaults to true. */
+  isRootAccount?: boolean;
 };
 
 /**
@@ -40,6 +44,8 @@ export function HomeShell({
   kbCollapsed,
   onKbCollapsedChange,
   contentRepoUrl,
+  apiBasePath = "/api",
+  isRootAccount = true,
 }: Props) {
   const { openFile } = useKb();
 
@@ -55,13 +61,13 @@ export function HomeShell({
           lang={lang}
           onLangChange={onLangChange}
           themeToggleLabel={t.themeToggle}
-          mcpButtonLabel={t.mcp.buttonLabel}
-          onOpenMcp={() => onMcpOpenChange(true)}
+          mcpButtonLabel={isRootAccount ? t.mcp.buttonLabel : undefined}
+          onOpenMcp={isRootAccount ? () => onMcpOpenChange(true) : undefined}
           aboutButtonLabel={t.about.buttonLabel}
           onOpenAbout={() => onAboutOpenChange(true)}
           sourceRepo={contentRepoUrl ? { url: contentRepoUrl, label: t.sourceRepoLabel } : null}
-          cvButtonLabel={t.kb.openCv}
-          onOpenCv={openCv}
+          cvButtonLabel={isRootAccount ? t.kb.openCv : undefined}
+          onOpenCv={isRootAccount ? openCv : undefined}
           kbCollapsed={kbCollapsed}
           onToggleKb={() => onKbCollapsedChange((c) => !c)}
           kbShowLabel={t.kbPanel.show}
@@ -71,12 +77,14 @@ export function HomeShell({
         <KbLayout
           collapsed={kbCollapsed}
           onCollapsedChange={onKbCollapsedChange}
-          chat={<Chat t={t} lang={lang} />}
+          chat={<Chat t={t} lang={lang} apiBasePath={apiBasePath} />}
           panel={<KbPanel onLangChange={onLangChange} />}
         />
       </div>
 
-      <McpModal open={mcpOpen} onClose={() => onMcpOpenChange(false)} strings={t.mcp} />
+      {isRootAccount && (
+        <McpModal open={mcpOpen} onClose={() => onMcpOpenChange(false)} strings={t.mcp} />
+      )}
       <AboutPopover
         open={aboutOpen}
         onClose={() => onAboutOpenChange(false)}

@@ -10,8 +10,8 @@ export type AppTopBarProps = {
   lang: UiLang;
   onLangChange: (next: UiLang) => void;
   themeToggleLabel: string;
-  mcpButtonLabel: string;
-  onOpenMcp: () => void;
+  mcpButtonLabel?: string;
+  onOpenMcp?: () => void;
   aboutButtonLabel: string;
   onOpenAbout: () => void;
   /** Active persona content repo to link to (icon button), or null to hide it. */
@@ -72,16 +72,18 @@ export function AppTopBar({
 
       <div className="flex shrink-0 items-center gap-2">
         <ThemeToggle label={themeToggleLabel} />
-        <button
-          type="button"
-          onClick={onOpenMcp}
-          aria-label={mcpButtonLabel}
-          title={mcpButtonLabel}
-          aria-haspopup="dialog"
-          className={ICON_BTN}
-        >
-          <McpIcon />
-        </button>
+        {onOpenMcp && (
+          <button
+            type="button"
+            onClick={onOpenMcp}
+            aria-label={mcpButtonLabel}
+            title={mcpButtonLabel}
+            aria-haspopup="dialog"
+            className={ICON_BTN}
+          >
+            <McpIcon />
+          </button>
+        )}
         <button
           type="button"
           onClick={onOpenAbout}

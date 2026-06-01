@@ -25,12 +25,12 @@ function stripFrontmatter(text: string): string {
   return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
 }
 
-function fileUrl(path: string): string {
-  return `/api/kb/file?path=${encodeURIComponent(path)}`;
+function fileUrl(apiBasePath: string, path: string): string {
+  return `${apiBasePath}/kb/file?path=${encodeURIComponent(path)}`;
 }
 
 export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void }) {
-  const { strings } = useKb();
+  const { strings, apiBasePath } = useKb();
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [focus, setFocus] = useState(false);
@@ -50,7 +50,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
     let cancelled = false;
     setText(null);
     setError(false);
-    fetch(fileUrl(file.path))
+    fetch(fileUrl(apiBasePath, file.path))
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error("load failed"))))
       .then((t) => {
         if (!cancelled) setText(t);
@@ -89,7 +89,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
       icon: <DownloadIcon />,
       onClick: () => {
         const a = document.createElement("a");
-        a.href = fileUrl(file.path);
+        a.href = fileUrl(apiBasePath, file.path);
         a.download = file.path.split("/").pop() ?? "document";
         document.body.appendChild(a);
         a.click();
@@ -182,7 +182,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
         {file.type === "html" && (
           <iframe
             title={file.title}
-            src={fileUrl(file.path)}
+            src={fileUrl(apiBasePath, file.path)}
             sandbox=""
             className="h-full min-h-[60vh] w-full rounded-lg border border-[var(--color-border)] bg-white"
           />
@@ -191,7 +191,7 @@ export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void })
         {file.type === "pdf" && (
           <iframe
             title={file.title}
-            src={fileUrl(file.path)}
+            src={fileUrl(apiBasePath, file.path)}
             className="h-full min-h-[60vh] w-full rounded-lg border border-[var(--color-border)]"
           />
         )}

@@ -18,6 +18,8 @@ export type ChatProps = {
   t: UiStrings;
   /** The active UI language; posted to /api/chat to ground the answerer. */
   lang: UiLang;
+  /** Base path for API calls. Defaults to "/api". */
+  apiBasePath?: string;
 };
 
 function loadOrCreateConversationId(): string {
@@ -57,7 +59,7 @@ function latestIdentity(
   return found;
 }
 
-export function Chat({ t, lang }: ChatProps) {
+export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
   const { setCitedPaths, openFile } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
@@ -84,14 +86,14 @@ export function Chat({ t, lang }: ChatProps) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/chat",
+        api: `${apiBasePath}/chat`,
         body: () => {
           const id = conversationIdRef.current;
           const language = langRef.current;
           return id ? { conversationId: id, language } : { language };
         },
       }),
-    [],
+    [apiBasePath],
   );
   const { messages, sendMessage, status, error } = useChat({ transport });
 

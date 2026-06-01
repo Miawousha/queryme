@@ -11,9 +11,18 @@ type Props = {
   strings: AllLocaleStrings;
   /** GitHub URL of the active persona content repo, or null if none configured. */
   contentRepoUrl: string | null;
+  /** Base path for API calls. Defaults to "/api". */
+  apiBasePath?: string;
+  /** When false, CV affordance and MCP button/modal are hidden. Defaults to true. */
+  isRootAccount?: boolean;
 };
 
-export function HomePageClient({ strings, contentRepoUrl }: Props) {
+export function HomePageClient({
+  strings,
+  contentRepoUrl,
+  apiBasePath = "/api",
+  isRootAccount = true,
+}: Props) {
   const [lang, setLang] = useState<UiLang>("en");
   const [mcpOpen, setMcpOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -21,7 +30,7 @@ export function HomePageClient({ strings, contentRepoUrl }: Props) {
   const t = strings[lang] as UiStrings;
 
   return (
-    <KbProvider lang={lang} kbStrings={t.kb}>
+    <KbProvider lang={lang} kbStrings={t.kb} apiBasePath={apiBasePath} includeCv={isRootAccount}>
       <GridBackground />
       <HomeShell
         t={t}
@@ -34,6 +43,8 @@ export function HomePageClient({ strings, contentRepoUrl }: Props) {
         kbCollapsed={kbCollapsed}
         onKbCollapsedChange={setKbCollapsed}
         contentRepoUrl={contentRepoUrl}
+        apiBasePath={apiBasePath}
+        isRootAccount={isRootAccount}
       />
     </KbProvider>
   );

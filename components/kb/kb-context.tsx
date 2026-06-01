@@ -31,6 +31,8 @@ type KbContextValue = {
   openFilePath: string | null;
   openFile: (path: string) => void;
   closeFile: () => void;
+  /** Base path for KB API calls (e.g. "/api" or "/api/a/username"). */
+  apiBasePath: string;
 };
 
 const KbContext = createContext<KbContextValue | null>(null);
@@ -44,10 +46,16 @@ export function useKb(): KbContextValue {
 export function KbProvider({
   lang,
   kbStrings,
+  apiBasePath = "/api",
+  includeCv = true,
   children,
 }: {
   lang: UiLang;
   kbStrings: KbStrings;
+  /** Base path for KB API calls. Defaults to "/api". */
+  apiBasePath?: string;
+  /** Whether to prepend the synthetic CV entry. Defaults to true. */
+  includeCv?: boolean;
   children: ReactNode;
 }) {
   const strings = kbStrings;
@@ -57,7 +65,7 @@ export function KbProvider({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/kb")
+    fetch(`${apiBasePath}/kb`)
       .then((r) => (r.ok ? r.json() : { files: [] }))
       .then((data: { files?: KbFile[] }) => {
         if (!cancelled) setManifest(data.files ?? []);
@@ -68,7 +76,7 @@ export function KbProvider({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [apiBasePath]);
 
   const openFile = useCallback((path: string) => setOpenFilePath(path), []);
   const closeFile = useCallback(() => setOpenFilePath(null), []);
@@ -76,13 +84,14 @@ export function KbProvider({
   // Synthetic CV entry, pinned to the top of the file list. Title flips with
   // language so the entry reads naturally in either locale.
   const manifestWithCv = useMemo<KbFile[]>(() => {
+    if (!includeCv) return manifest;
     const cvEntry: KbFile = {
       path: CV_VIRTUAL_PATH,
       title: strings.cv,
       type: "cv",
     };
     return [cvEntry, ...manifest];
-  }, [manifest, strings.cv]);
+  }, [manifest, strings.cv, includeCv]);
 
   const value = useMemo(
     () => ({
@@ -94,8 +103,9 @@ export function KbProvider({
       openFilePath,
       openFile,
       closeFile,
+      apiBasePath,
     }),
-    [lang, strings, manifestWithCv, citedPaths, openFilePath, openFile, closeFile],
+    [lang, strings, manifestWithCv, citedPaths, openFilePath, openFile, closeFile, apiBasePath],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;
