@@ -1,0 +1,2 @@
+ALTER TABLE "accounts" ADD COLUMN "role" text DEFAULT 'user' NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "accounts_github_id_unique" ON "accounts" USING btree ("github_id") WHERE github_id IS NOT NULL;

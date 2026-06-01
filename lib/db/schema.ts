@@ -1,14 +1,20 @@
-import { pgTable, uuid, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const accounts = pgTable(
   "accounts",
   {
     id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-    githubId: text("github_id"), // nullable until OAuth (later plan); unique-when-present added then
+    githubId: text("github_id"), // unique-when-present (see index below)
     username: text("username").notNull().unique(),
+    role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
+  (table) => ({
+    githubIdUnique: uniqueIndex("accounts_github_id_unique")
+      .on(table.githubId)
+      .where(sql`github_id IS NOT NULL`),
+  }),
 );
 
 export type Account = typeof accounts.$inferSelect;

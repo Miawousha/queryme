@@ -64,6 +64,13 @@
       "when": 1780315166024,
       "tag": "0008_lovely_network",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780340222520,
+      "tag": "0009_cuddly_karnak",
+      "breakpoints": true
     }
   ]
 }
