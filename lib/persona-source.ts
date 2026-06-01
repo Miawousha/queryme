@@ -12,7 +12,7 @@ import { Readable } from "node:stream";
 import { rm, mkdir, rename, symlink, readdir } from "node:fs/promises";
 import { getDb } from "@/lib/db/client";
 import { personaSource, type PersonaSource } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { resetKbCache } from "@/lib/kb/cache";
 import { _resetPromptCache } from "@/lib/prompts";
 import { _resetPersonaCache } from "@/lib/persona";
@@ -287,5 +287,218 @@ async function cleanupOldShas(currentSha: string): Promise<void> {
     if (name === "current" || name === "current.new") continue;
     if (keep.has(name)) continue;
     await rm(`${root}/${name}`, { recursive: true, force: true });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Per-account helpers
+// ---------------------------------------------------------------------------
+
+function accountCacheRoot(accountId: string): string {
+  return path.join(cacheRoot(), accountId);
+}
+
+// Per-account in-flight dedupe (separate from the global `inFlight`).
+const inFlightByAccount = new Map<string, Promise<SyncResult>>();
+
+export function getPersonaRootForAccount(accountId: string): string | null {
+  // PERSONA_LOCAL_OVERRIDE wins for any account (dev/test shortcut).
+  if (process.env.PERSONA_LOCAL_OVERRIDE) {
+    return process.env.PERSONA_LOCAL_OVERRIDE;
+  }
+  const link = path.join(accountCacheRoot(accountId), "current");
+  try {
+    return fs.readlinkSync(link);
+  } catch {
+    return null;
+  }
+}
+
+export async function getActivePersonaSourceRowForAccount(
+  accountId: string,
+): Promise<PersonaSource | null> {
+  const [row] = await getDb()
+    .select()
+    .from(personaSource)
+    .where(
+      and(
+        eq(personaSource.accountId, accountId),
+        eq(personaSource.status, "ok"),
+      ),
+    )
+    .orderBy(desc(personaSource.syncedAt))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function listSyncHistoryForAccount(
+  accountId: string,
+  limit = 10,
+): Promise<PersonaSource[]> {
+  return getDb()
+    .select()
+    .from(personaSource)
+    .where(eq(personaSource.accountId, accountId))
+    .orderBy(desc(personaSource.syncedAt))
+    .limit(limit);
+}
+
+export async function syncFromGitHubForAccount(
+  accountId: string,
+  repoUrl: string,
+  branch = "main",
+): Promise<SyncResult> {
+  const existing = inFlightByAccount.get(accountId);
+  if (existing) return existing;
+  const promise = doSyncForAccount(accountId, repoUrl, branch).finally(() => {
+    inFlightByAccount.delete(accountId);
+  });
+  inFlightByAccount.set(accountId, promise);
+  return promise;
+}
+
+export async function ensurePersonaCacheReadyForAccount(accountId: string): Promise<void> {
+  if (process.env.PERSONA_LOCAL_OVERRIDE) return;
+  const linkPath = path.join(accountCacheRoot(accountId), "current");
+  if (fs.existsSync(linkPath)) return;
+
+  const active = await getActivePersonaSourceRowForAccount(accountId);
+  if (!active) return; // no persona configured for this account
+
+  await refetchFromRecordedForAccount(accountId, active.repoUrl, active.branch, active.commitSha);
+}
+
+async function refetchFromRecordedForAccount(
+  accountId: string,
+  repoUrl: string,
+  branch: string,
+  sha: string,
+): Promise<void> {
+  const root = accountCacheRoot(accountId);
+  const { owner, repo } = parseGitHubRepoUrl(repoUrl);
+  const targetDir = path.join(root, sha);
+  const res = await fetch(`https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`);
+  if (!res.ok) throw new Error(`cold-start refetch failed: ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  await rm(targetDir, { recursive: true, force: true });
+  await mkdir(targetDir, { recursive: true });
+  await extractTarball(buf, targetDir);
+
+  const missing = validatePersonaTree(targetDir);
+  if (missing) throw new Error(`cold-start refetch validation failed: ${missing}`);
+
+  const linkPath = path.join(root, "current");
+  const tmpLink = path.join(root, "current.new");
+  await rm(tmpLink, { recursive: true, force: true });
+  await symlink(targetDir, tmpLink);
+  await rename(tmpLink, linkPath);
+}
+
+async function doSyncForAccount(
+  accountId: string,
+  repoUrl: string,
+  branch: string,
+): Promise<SyncResult> {
+  const root = accountCacheRoot(accountId);
+
+  let owner: string;
+  let repo: string;
+  try {
+    ({ owner, repo } = parseGitHubRepoUrl(repoUrl));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await recordRowForAccount(accountId, repoUrl, branch, "unknown", "error", message);
+    return { kind: "error", message };
+  }
+
+  let sha: string;
+  try {
+    sha = await resolveLatestSha(repoUrl, branch);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await recordRowForAccount(accountId, repoUrl, branch, "unknown", "error", message);
+    return { kind: "error", message };
+  }
+
+  const targetDir = path.join(root, sha);
+  try {
+    const res = await fetch(
+      `https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`,
+    );
+    if (!res.ok) throw new Error(`tarball fetch returned ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    await rm(targetDir, { recursive: true, force: true });
+    await mkdir(targetDir, { recursive: true });
+    await extractTarball(buf, targetDir);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await rm(targetDir, { recursive: true, force: true });
+    await recordRowForAccount(accountId, repoUrl, branch, sha, "error", message);
+    return { kind: "error", message };
+  }
+
+  const missing = validatePersonaTree(targetDir);
+  if (missing) {
+    await rm(targetDir, { recursive: true, force: true });
+    await recordRowForAccount(accountId, repoUrl, branch, sha, "error", missing);
+    return { kind: "error", message: missing };
+  }
+
+  // Atomically flip the per-account symlink.
+  const linkPath = path.join(root, "current");
+  const tmpLink = path.join(root, "current.new");
+  await rm(tmpLink, { recursive: true, force: true });
+  await symlink(targetDir, tmpLink);
+  await rename(tmpLink, linkPath);
+
+  const row = await recordRowForAccount(accountId, repoUrl, branch, sha, "ok", null);
+
+  resetKbCache();
+  _resetPromptCache();
+  _resetPersonaCache();
+
+  await cleanupOldShasForAccount(accountId, sha);
+
+  return { kind: "ok", commitSha: sha, syncedAt: row.syncedAt };
+}
+
+async function recordRowForAccount(
+  accountId: string,
+  repoUrl: string,
+  branch: string,
+  commitSha: string,
+  status: "ok" | "error",
+  error: string | null,
+): Promise<PersonaSource> {
+  const [row] = await getDb()
+    .insert(personaSource)
+    .values({ repoUrl, branch, commitSha, status, error, accountId })
+    .returning();
+  return row;
+}
+
+async function cleanupOldShasForAccount(accountId: string, currentSha: string): Promise<void> {
+  const root = accountCacheRoot(accountId);
+  let entries: string[];
+  try {
+    entries = await readdir(root);
+  } catch {
+    return;
+  }
+
+  // Keep current + previous SHA for this account only.
+  const recent = await getDb()
+    .select()
+    .from(personaSource)
+    .where(eq(personaSource.accountId, accountId))
+    .orderBy(desc(personaSource.syncedAt))
+    .limit(2);
+  const keep = new Set(recent.map((r) => r.commitSha));
+  keep.add(currentSha);
+
+  for (const name of entries) {
+    if (name === "current" || name === "current.new") continue;
+    if (keep.has(name)) continue;
+    await rm(path.join(root, name), { recursive: true, force: true });
   }
 }
