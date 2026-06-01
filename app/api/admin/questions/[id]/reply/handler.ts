@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireRootAdmin } from "@/lib/accounts/guard";
 import { getDb } from "@/lib/db/client";
 import { getQuestion, recordReply } from "@/lib/questions/repo";
 import type { EmailTransport } from "@/lib/notify/email";
@@ -17,9 +16,6 @@ export async function handleReply(
   ctx: { params: Promise<{ id: string }> },
   deps: ReplyDeps,
 ): Promise<NextResponse> {
-  if (!(await requireRootAdmin())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
   let raw: unknown;
   try {
     raw = await req.json();
