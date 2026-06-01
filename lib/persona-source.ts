@@ -486,11 +486,13 @@ async function cleanupOldShasForAccount(accountId: string, currentSha: string): 
     return;
   }
 
-  // Keep current + previous SHA for this account only.
+  // Keep current + previous SHA for this account only. Filter by status='ok'
+  // (matching the legacy cleanupOldShas) so a run of recent error syncs can't
+  // evict the last good cache dir from the keep-set.
   const recent = await getDb()
     .select()
     .from(personaSource)
-    .where(eq(personaSource.accountId, accountId))
+    .where(and(eq(personaSource.accountId, accountId), eq(personaSource.status, "ok")))
     .orderBy(desc(personaSource.syncedAt))
     .limit(2);
   const keep = new Set(recent.map((r) => r.commitSha));
