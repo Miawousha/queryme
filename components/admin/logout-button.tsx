@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-/** Ends the admin session and reloads back to the password gate. */
+/** Clears the session cookie and reloads, dropping the user back to sign-in. */
 export function LogoutButton() {
   const [busy, setBusy] = useState(false);
 
