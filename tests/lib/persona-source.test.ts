@@ -11,6 +11,10 @@ import { http, HttpResponse } from "msw";
 import { mswServer } from "../../vitest.setup";
 import { FAKE_SHA, happyPathHandlers, makeTarball } from "./__mocks__/github-handlers";
 
+// DB-integration blocks opt in via RUN_DB_TESTS so the default `pnpm test` run
+// (no test database, dev DB may lack the latest migration) stays green.
+const describeDb = process.env.RUN_DB_TESTS ? describe : describe.skip;
+
 describe("parseGitHubRepoUrl", () => {
   it("parses https://github.com/owner/repo", () => {
     expect(parseGitHubRepoUrl("https://github.com/alex/queryme-content")).toEqual({
@@ -112,7 +116,7 @@ const MIN_REQUIRED_FILES: Record<string, string> = {
   "kb/education.fr.yaml": "education: []\n",
 };
 
-describe("syncFromGitHub — happy path", () => {
+describeDb("syncFromGitHub — happy path", () => {
   let cacheRoot: string;
   let savedLocalOverride: string | undefined;
 
@@ -178,7 +182,7 @@ describe("syncFromGitHub — happy path", () => {
   });
 });
 
-describe("syncFromGitHub — error paths", () => {
+describeDb("syncFromGitHub — error paths", () => {
   let cacheRoot: string;
 
   beforeAll(async () => {
@@ -292,7 +296,7 @@ describe("syncFromGitHub — error paths", () => {
   });
 });
 
-describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
+describeDb("ensurePersonaCacheReady — cold-start re-fetch", () => {
   let cacheRoot: string;
   let savedLocalOverride: string | undefined;
 
@@ -377,7 +381,7 @@ describe("ensurePersonaCacheReady — cold-start re-fetch", () => {
   });
 });
 
-describe("syncFromGitHub — cache cleanup", () => {
+describeDb("syncFromGitHub — cache cleanup", () => {
   let cacheRoot: string;
 
   beforeAll(async () => {
