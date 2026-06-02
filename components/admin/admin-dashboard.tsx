@@ -11,6 +11,7 @@ import { LogoutButton } from "@/components/admin/logout-button";
 import { RecordList } from "@/components/admin/record-list";
 import { DetailSidebar } from "@/components/admin/detail-sidebar";
 import { ContentTab } from "@/components/admin/content-tab";
+import { DomainsPanel } from "@/components/admin/domains-panel";
 import { cn } from "@/lib/utils";
 
 function fmt(value: Date | string | null): string {
@@ -28,7 +29,7 @@ function fmt(value: Date | string | null): string {
 
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
 
-type TabId = "interviewers" | "conversations" | "questions" | "content" | "analytics";
+type TabId = "interviewers" | "conversations" | "questions" | "content" | "analytics" | "domains";
 
 export function AdminDashboard({
   data,
@@ -46,6 +47,7 @@ export function AdminDashboard({
     questions: null,
     content: null,
     analytics: null,
+    domains: null,
   });
 
   const selectedId = selected[tab];
@@ -93,6 +95,7 @@ export function AdminDashboard({
     { id: "questions", label: "Questions", count: questions.length },
     { id: "content", label: "Content", count: 0 },
     { id: "analytics", label: "Analytics", count: 0 },
+    { id: "domains", label: "Domains", count: 0 },
   ];
 
   return (
@@ -201,11 +204,12 @@ export function AdminDashboard({
           )}
           {tab === "content" && <ContentTab apiBasePath={apiBasePath} />}
           {tab === "analytics" && <AnalyticsPanel apiBasePath={apiBasePath} />}
+          {tab === "domains" && <DomainsPanel apiBasePath={apiBasePath} />}
         </div>
       </div>
 
       <DetailSidebar
-        open={tab !== "content" && tab !== "analytics" && selectedId !== null}
+        open={tab !== "content" && tab !== "analytics" && tab !== "domains" && selectedId !== null}
         onClose={() => select(null)}
         eyebrow={
           tab === "interviewers"
@@ -267,7 +271,7 @@ function TabMeta({
   if (tab === "questions") {
     return <>{stats.unanswered > 0 ? `${stats.unanswered} unanswered` : "all answered"}</>;
   }
-  if (tab === "analytics" || tab === "content") return null;
+  if (tab === "analytics" || tab === "content" || tab === "domains") return null;
   const stated = interviewers.filter((c) => c.interviewer?.basis === "stated").length;
   return <>{`${stated} stated · ${interviewers.length - stated} inferred`}</>;
 }
