@@ -100,3 +100,37 @@ export const personaSource = pgTable(
 
 export type PersonaSource = typeof personaSource.$inferSelect;
 export type NewPersonaSource = typeof personaSource.$inferInsert;
+
+/** One Vercel-issued verification challenge for a custom domain. */
+export type DomainVerification = {
+  type: string;
+  domain: string;
+  value: string;
+  reason?: string; // Vercel omits this for some challenge types
+};
+
+export const domains = pgTable(
+  "domains",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    accountId: uuid("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    hostname: text("hostname").notNull(), // normalized lowercase; unique below
+    status: text("status", { enum: ["pending", "active", "error"] })
+      .notNull()
+      .default("pending"),
+    verification: jsonb("verification").$type<DomainVerification[]>(),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+  },
+  (table) => ({
+    hostnameUnique: uniqueIndex("domains_hostname_unique").on(table.hostname),
+    accountIdx: index("domains_account_idx").on(table.accountId),
+  }),
+);
+
+export type Domain = typeof domains.$inferSelect;
+export type NewDomain = typeof domains.$inferInsert;
