@@ -37,16 +37,30 @@ import { getPersonaStore } from "@/lib/persona/store";
 import { resolveRootAccountId } from "@/lib/accounts/root";
 import { loadPersona } from "@/lib/persona";
 
+const FALLBACK_METADATA: Metadata = {
+  title: "queryme",
+  description: "A queryable CV — interview the agent.",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  const accountId = await resolveRootAccountId();
-  await getPersonaStore().ensureReady(accountId);
-  const root = getPersonaStore().getRoot(accountId);
-  if (!root) return { title: "queryme", description: "Not configured yet." };
-  const persona = loadPersona(root);
-  return {
-    title: `${persona.fullName} — queryable CV`,
-    description: `Ask the agent about ${persona.givenName}'s background, experience, and projects.`,
-  };
+  // Metadata generation runs on every route (root layout). It must never throw —
+  // an unresolved root account or a cold-start persona fetch failure would
+  // otherwise crash the entire render — so any failure falls back to generic
+  // platform metadata. (The landing at `/` also overrides title/description via
+  // its own `metadata` export.)
+  try {
+    const accountId = await resolveRootAccountId();
+    await getPersonaStore().ensureReady(accountId);
+    const root = getPersonaStore().getRoot(accountId);
+    if (!root) return FALLBACK_METADATA;
+    const persona = loadPersona(root);
+    return {
+      title: `${persona.fullName} — queryable CV`,
+      description: `Ask the agent about ${persona.givenName}'s background, experience, and projects.`,
+    };
+  } catch {
+    return FALLBACK_METADATA;
+  }
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
