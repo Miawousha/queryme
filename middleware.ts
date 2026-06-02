@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isPlatformHost, resolveCustomHost } from "@/lib/domains/host";
+import { getDomainSlug } from "@/lib/domains/edge-cache";
 
 /**
  * Per-request nonce-based Content-Security-Policy.
@@ -12,7 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
  * `style-src` keeps `'unsafe-inline'` — the app uses inline `style` attributes
  * throughout and Tailwind injects styles; style injection is low-risk.
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV !== "production";
 
@@ -36,6 +38,23 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("content-security-policy", csp);
+
+  const host = (request.headers.get("host") ?? "").toLowerCase().replace(/:\d+$/, "");
+  const platformHost = process.env.PLATFORM_HOST ?? null;
+
+  // Custom-domain vanity hosting: a non-platform host hitting the root renders
+  // that account's page in place. Only "/" is rewritten — the namespaced
+  // /api/a/{slug}/* calls are excluded from middleware and resolve by path.
+  if (request.nextUrl.pathname === "/" && !isPlatformHost(host, platformHost)) {
+    const slug = await resolveCustomHost(host, getDomainSlug);
+    if (slug) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${slug}`;
+      const rewrite = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+      rewrite.headers.set("content-security-policy", csp);
+      return rewrite;
+    }
+  }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("content-security-policy", csp);
