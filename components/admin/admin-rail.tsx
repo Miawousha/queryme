@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Route } from "next";
 import { LABEL } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +62,7 @@ export function AdminRail({
               return (
                 <li key={it.href}>
                   <Link
-                    href={it.href as never}
+                    href={it.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors",

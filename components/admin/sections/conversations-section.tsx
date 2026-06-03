@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 import type { Conversation } from "@/lib/db/schema";
 import { RecordList } from "@/components/admin/record-list";
 import { DetailSidebar } from "@/components/admin/detail-sidebar";
@@ -30,8 +31,7 @@ export function ConversationsSection({ conversations }: { conversations: Convers
     if (id) next.set("c", id);
     else next.delete("c");
     const qs = next.toString();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    router.push((qs ? `${pathname}?${qs}` : pathname) as any);
+    router.push((qs ? `${pathname}?${qs}` : pathname) as Route);
   }
 
   return (
