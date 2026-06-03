@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import { redirect } from "next/navigation";
 
 export const runtime = "nodejs";
@@ -9,5 +10,7 @@ export default async function SettingsIndexPage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  redirect(`/${username}/admin/settings/content`);
+  // Cast for `typedRoutes`: the destination is built from a dynamic segment,
+  // so it can't be statically verified against the generated route union.
+  redirect(`/${username}/admin/settings/content` as Route);
 }
