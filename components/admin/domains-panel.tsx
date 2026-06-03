@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-
-const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
+import { LABEL } from "@/components/admin/ui";
 
 type Instructions = { type: string; name: string; value: string };
 type DomainView = {
