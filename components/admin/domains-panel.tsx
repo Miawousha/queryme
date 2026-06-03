@@ -109,7 +109,37 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
 
       <div className="flex flex-col gap-3">
         {domains.length === 0 && (
-          <p className="text-xs text-[var(--color-text-tertiary)]">No custom domains yet.</p>
+          <div className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] p-4">
+            <span className={LABEL}>How to connect your domain</span>
+            <ol className="flex flex-col gap-2 text-[13px] text-[var(--color-text-secondary)]">
+              <li>
+                <span className="text-[var(--color-text-primary)]">1. Enter a subdomain</span> — e.g.{" "}
+                <code className="font-mono text-[12px]">cv.yourname.com</code>. Bare domains like{" "}
+                <code className="font-mono text-[12px]">yourname.com</code> aren&apos;t supported yet — use
+                a subdomain.
+              </li>
+              <li>
+                <span className="text-[var(--color-text-primary)]">2. Add a DNS record</span> at your
+                domain provider — a <code className="font-mono text-[12px]">CNAME</code> from your
+                subdomain to{" "}
+                <code className="font-mono text-[12px]">cname.vercel-dns.com</code>. The exact record
+                appears on the domain below once you add it.
+              </li>
+              <li>
+                <span className="text-[var(--color-text-primary)]">3. Click Verify</span> — status goes
+                pending → active once DNS propagates and the HTTPS certificate is issued automatically.
+                Usually a few minutes; DNS can take longer.
+              </li>
+              <li>
+                <span className="text-[var(--color-text-primary)]">4. Visit your domain</span> — your page
+                loads there directly, on your own URL.
+              </li>
+            </ol>
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              Stuck on pending? DNS usually just hasn&apos;t propagated yet. If you use Cloudflare, set the
+              record to &ldquo;DNS only&rdquo; (grey cloud), not proxied.
+            </p>
+          </div>
         )}
         {domains.map((d) => (
           <div
