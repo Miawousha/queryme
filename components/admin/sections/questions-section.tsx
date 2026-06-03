@@ -27,11 +27,13 @@ export function QuestionsSection({
     if (id) next.set("q", id);
     else next.delete("q");
     const qs = next.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    router.push((qs ? `${pathname}?${qs}` : pathname) as any);
   }
 
   function openConversation(conversationId: string) {
-    router.push(`${adminBasePath}?c=${conversationId}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    router.push(`${adminBasePath}?c=${conversationId}` as any);
   }
 
   return (

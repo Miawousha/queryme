@@ -30,7 +30,8 @@ export function ConversationsSection({ conversations }: { conversations: Convers
     if (id) next.set("c", id);
     else next.delete("c");
     const qs = next.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    router.push((qs ? `${pathname}?${qs}` : pathname) as any);
   }
 
   return (

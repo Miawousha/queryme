@@ -61,7 +61,7 @@ export function AdminRail({
               return (
                 <li key={it.href}>
                   <Link
-                    href={it.href}
+                    href={it.href as never}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors",
