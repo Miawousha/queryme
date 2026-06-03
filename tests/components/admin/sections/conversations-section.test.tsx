@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConversationsSection } from "@/components/admin/sections/conversations-section";
 import type { Conversation } from "@/lib/db/schema";
@@ -64,6 +64,9 @@ describe("ConversationsSection", () => {
     nav.params = new URLSearchParams("c=c2");
     render(<ConversationsSection conversations={items} />);
     // Detail sidebar shows the interviewer identity block.
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    // The interviewer name renders inside the detail panel (c2's identity).
+    expect(within(dialog).getByText("Sarah Lee")).toBeInTheDocument();
   });
 });

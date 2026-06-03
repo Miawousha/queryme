@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { Conversation } from "@/lib/db/schema";
+import { CONVERSATION_LIMIT } from "@/lib/admin/data";
 import { RecordList } from "@/components/admin/record-list";
 import { DetailSidebar } from "@/components/admin/detail-sidebar";
 import { ConversationRow } from "@/components/admin/rows/conversation-row";
@@ -45,6 +46,11 @@ export function ConversationsSection({ conversations }: { conversations: Convers
           count={interviewers.length}
         />
       </div>
+      {conversations.length === CONVERSATION_LIMIT && (
+        <p className="mb-3 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+          Showing most recent {CONVERSATION_LIMIT}
+        </p>
+      )}
       <RecordList
         items={shown}
         getId={(c) => c.id}

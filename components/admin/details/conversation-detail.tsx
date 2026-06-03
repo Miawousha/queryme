@@ -25,7 +25,10 @@ export function ConversationDetail({ conversation }: { conversation: Conversatio
 
       {identity && (
         <div className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] p-3">
-          <span className={LABEL}>Interviewer</span>
+          <div className="flex items-center justify-between">
+            <span className={LABEL}>Interviewer</span>
+            <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">updated {fmt(identity.updatedAt)}</span>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             {identity.company && <Field label="Company" value={identity.company} />}
             {identity.role && <Field label="Role" value={identity.role} />}

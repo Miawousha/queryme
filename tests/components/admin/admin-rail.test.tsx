@@ -33,4 +33,11 @@ describe("AdminRail", () => {
     expect(screen.getByRole("link", { name: /questions/i })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: /conversations/i })).not.toHaveAttribute("aria-current");
   });
+
+  it("marks Custom domains active for a settings sub-route", () => {
+    nav.pathname = "/alex/admin/settings/domains";
+    render(<AdminRail adminBasePath="/alex/admin" counts={{ conversations: 12, unanswered: 3 }} />);
+    expect(screen.getByRole("link", { name: /custom domains/i })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: /conversations/i })).not.toHaveAttribute("aria-current");
+  });
 });
