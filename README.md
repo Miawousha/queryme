@@ -124,6 +124,11 @@ login for `admin sync/status --remote`.
 
 ## Editing the knowledge base
 
+> **Building your own content repo?** See
+> [docs/content-repo-guide.md](docs/content-repo-guide.md) for the full,
+> step-by-step guide to the repo layout, every file's schema, validation, and
+> connecting it from your admin.
+
 The KB is just files. Edit them and commit; the agent picks up the new content on the next build.
 
 - `kb/profile.yaml` — name, headline, location, links
