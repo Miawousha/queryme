@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { allRepos, type Kb, type KbLang } from "@/lib/kb/loader";
+import type { Kb, KbLang } from "@/lib/kb/loader";
+import { allRepos } from "@/lib/kb/repos";
 import { CV_STRINGS } from "@/lib/cv/strings";
 
 function formatMonth(date: string, locale: "en-US" | "fr-FR", presentLabel: string): string {

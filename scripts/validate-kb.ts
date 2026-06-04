@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
-import { loadKb, allRepos } from "../lib/kb/loader";
+import { loadKb } from "../lib/kb/loader";
+import { allRepos } from "../lib/kb/repos";
 import { assemblePublicKbText } from "../lib/kb/assembler";
 
 /**

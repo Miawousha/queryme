@@ -18,7 +18,6 @@ import {
   type ExperienceFrontmatter,
   type ProjectFrontmatter,
   type TalkFrontmatter,
-  type Repo,
   type RecommendationFrontmatter,
 } from "./schemas";
 
@@ -189,12 +188,4 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
     talks,
     recommendations,
   };
-}
-
-/** Every repo hosted across all projects, sorted year desc then name. Used by
- * the aggregated "Repositories" view on the CV / KB panel. */
-export function allRepos(kb: Kb): Repo[] {
-  return kb.projects
-    .flatMap((p) => p.frontmatter.repos ?? [])
-    .sort((a, b) => (b.year ?? 0) - (a.year ?? 0) || a.name.localeCompare(b.name));
 }

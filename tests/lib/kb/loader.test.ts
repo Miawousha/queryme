@@ -69,7 +69,7 @@ describe("loadKb", () => {
   });
 
   it("allRepos flattens every project's repos, sorted year desc then name", async () => {
-    const { allRepos } = await import("@/lib/kb/loader");
+    const { allRepos } = await import("@/lib/kb/repos");
     const kb = await loadKb(FIXTURE_DIR);
     const repos = allRepos(kb);
     expect(repos.map((r) => r.name)).toEqual(["queryme", "sample-indexed"]);

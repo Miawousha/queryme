@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useKb } from "@/components/kb/kb-context";
-import { allRepos } from "@/lib/kb/loader";
+import { allRepos } from "@/lib/kb/repos";
 import { useDialog } from "@/lib/use-dialog";
 import { cn } from "@/lib/utils";
 import {
