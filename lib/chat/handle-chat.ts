@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getCachedKb, getCachedPublicKbText } from "@/lib/kb/cache";
-import { buildKbLookupTools } from "@/lib/kb/tools";
+import { getCachedPublicKbText } from "@/lib/kb/cache";
 import { answer } from "@/lib/answerer";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { getDb } from "@/lib/db/client";
@@ -95,10 +94,7 @@ export async function handleChat(req: NextRequest, accountId: string): Promise<R
     accountId,
   });
   const lang = (conv.language ?? parsed.data.language ?? "en") as "en" | "fr";
-  const [publicKbText, parsedKb] = await Promise.all([
-    getCachedPublicKbText(accountId, lang),
-    getCachedKb(accountId, lang),
-  ]);
+  const publicKbText = await getCachedPublicKbText(accountId, lang);
 
   // Append the last user turn to the transcript before streaming.
   const lastMessage = parsed.data.messages[parsed.data.messages.length - 1];
@@ -117,7 +113,6 @@ export async function handleChat(req: NextRequest, accountId: string): Promise<R
     kbText: publicKbText,
     tools: {
       ...buildIdentifyTools((identity) => setInterviewer(db, conversationId, identity)),
-      ...buildKbLookupTools(parsedKb),
     },
   });
 

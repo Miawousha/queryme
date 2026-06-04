@@ -167,19 +167,6 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
       .join("");
   }
 
-  // The most recent tool the agent is invoking on the active turn, if any.
-  // Tool parts arrive as `tool-<name>` before any text — we scan in reverse so
-  // the indicator reflects the latest tool when several fire in one turn.
-  function activeToolName(m: (typeof messages)[number]): string | null {
-    for (let i = m.parts.length - 1; i >= 0; i--) {
-      const type = m.parts[i].type;
-      if (typeof type === "string" && type.startsWith("tool-")) {
-        return type.slice("tool-".length);
-      }
-    }
-    return null;
-  }
-
   // Show a placeholder bubble whenever the agent is working but the user has
   // no visible text yet: either the request was just submitted, or the
   // assistant message exists but only carries tool-call parts so far.
@@ -187,10 +174,7 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
   const lastIsAssistant = lastMessage?.role === "assistant";
   const lastHasText = lastIsAssistant && messageText(lastMessage) !== "";
   const showThinking = isBusy && (!lastIsAssistant || !lastHasText);
-  const thinkingLabel =
-    lastIsAssistant && activeToolName(lastMessage) === "lookup_code_entries"
-      ? t.thinking.searchingKb
-      : t.thinking.generic;
+  const thinkingLabel = t.thinking.generic;
 
   useEffect(() => {
     const assistantTexts = messages

@@ -1,12 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getDb } from "@/lib/db/client";
-import { getCachedKb, getCachedPublicKbText } from "@/lib/kb/cache";
+import { getCachedPublicKbText } from "@/lib/kb/cache";
 import { answer } from "@/lib/answerer";
 import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 import { forwardQuestion } from "@/lib/questions/repo";
 import { setInterviewer } from "@/lib/interviewer/repo";
 import { buildIdentifyTools } from "@/lib/interviewer/tool";
-import { buildKbLookupTools } from "@/lib/kb/tools";
 import {
   handleAsk,
   handleForwardQuestion,
@@ -63,7 +62,6 @@ export function buildMcpServer(accountId: string): McpServer {
             appendTurn,
             loadPublicKbText: () => getCachedPublicKbText(accountId),
             produceAnswer: async ({ messages, kbText, conversationId }) => {
-              const parsedKb = await getCachedKb(accountId);
               const streamed = await answer({
                 accountId,
                 messages,
@@ -72,7 +70,6 @@ export function buildMcpServer(accountId: string): McpServer {
                   ...buildIdentifyTools((identity) =>
                     setInterviewer(getDb(), conversationId, identity),
                   ),
-                  ...buildKbLookupTools(parsedKb),
                 },
               });
               return await streamed.text;
