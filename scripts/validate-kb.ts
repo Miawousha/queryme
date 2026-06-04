@@ -1,6 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
-import { loadKb } from "../lib/kb/loader";
+import { loadKb, allRepos } from "../lib/kb/loader";
 import { assemblePublicKbText } from "../lib/kb/assembler";
 
 /**
@@ -25,11 +25,11 @@ async function main() {
   }
   const kb = await loadKb(dir);
   const text = assemblePublicKbText(kb);
+  const repoCount = allRepos(kb).length;
   console.log(`OK — KB validates and assembles to ${text.length} chars.`);
   console.log(`  experience:      ${kb.experience.length} entries`);
-  console.log(`  projects:        ${kb.projects.length} entries`);
+  console.log(`  projects:        ${kb.projects.length} entries (${repoCount} repos)`);
   console.log(`  talks:           ${kb.talks.length} entries`);
-  console.log(`  code:            ${kb.code.length} entries`);
   console.log(`  recommendations: ${kb.recommendations.length} entries`);
   console.log(`  skills:          ${kb.skills.skills.length} entries`);
 }
