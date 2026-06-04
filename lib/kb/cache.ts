@@ -2,7 +2,6 @@ import path from "node:path";
 import { loadKb, type Kb, type KbLang } from "@/lib/kb/loader";
 import { assemblePublicKbText } from "@/lib/kb/assembler";
 import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
-import { loadCvConfig, getFeaturedCodeSlugs, type CvConfig } from "@/lib/kb/cv-config";
 import { getPersonaStore } from "@/lib/persona/store";
 
 /**
@@ -30,30 +29,20 @@ function rootFor(accountId: string): string {
   return root;
 }
 function kbDir(accountId: string): string { return path.join(rootFor(accountId), "kb"); }
-function configDir(accountId: string): string { return rootFor(accountId); }
 
 const parsedKbByAccount = new Map<string, Map<KbLang, Kb>>();
 const publicKbTextByAccount = new Map<string, Map<KbLang, string>>();
-const cvConfigByAccount = new Map<string, Promise<CvConfig | null>>();
 const manifestByAccount = new Map<string, KbFile[]>();
-
-function getCvConfig(accountId: string): Promise<CvConfig | null> {
-  let p = lruGet(cvConfigByAccount, accountId);
-  if (p === undefined) { p = loadCvConfig(configDir(accountId)); lruSet(cvConfigByAccount, accountId, p); }
-  return p;
-}
 
 export function resetKbCache(accountId?: string): void {
   if (accountId === undefined) {
     parsedKbByAccount.clear();
     publicKbTextByAccount.clear();
-    cvConfigByAccount.clear();
     manifestByAccount.clear();
     return;
   }
   parsedKbByAccount.delete(accountId);
   publicKbTextByAccount.delete(accountId);
-  cvConfigByAccount.delete(accountId);
   manifestByAccount.delete(accountId);
 }
 
@@ -74,9 +63,8 @@ export async function getCachedPublicKbText(accountId: string, lang: KbLang = "e
   if (byLang === undefined) { byLang = new Map(); lruSet(publicKbTextByAccount, accountId, byLang); }
   const cached = byLang.get(lang);
   if (cached !== undefined) return cached;
-  const [kb, config] = await Promise.all([getCachedKb(accountId, lang), getCvConfig(accountId)]);
-  const featuredCodeSlugs = getFeaturedCodeSlugs(config) ?? undefined;
-  const text = assemblePublicKbText(kb, { featuredCodeSlugs });
+  const kb = await getCachedKb(accountId, lang);
+  const text = assemblePublicKbText(kb);
   byLang.set(lang, text);
   return text;
 }
