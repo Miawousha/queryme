@@ -7,7 +7,7 @@
 #   - include: [...]         → whitelist; order preserved from the array
 #
 # Identifiers:
-#   experience / projects / talks / code → file slug (basename, no .md)
+#   experience / projects / talks → file slug (basename, no .md)
 #   skills      → skill.name (case-insensitive)
 #   education   → institution (case-insensitive)
 #
@@ -33,35 +33,3 @@ projects:
 
 talks:
   all: true
-
-code:
-  all: true
-
-# Chat agent curation. `featured_code` is the curated set the chat agent
-# pre-loads in its system prompt under `# Code (featured)`; remaining repos
-# render as one-line stubs under `# Code (index)` and are fetched on demand
-# via the `lookup_code_entries` tool. Omit or leave empty to inline every
-# repo (back-compat).
-chat:
-  featured_code:
-    # Meta: the agent answering you is this codebase.
-    - queryme
-    # Battery / energy domain — Alexandre's anchor.
-    - aging-battery-lifetime-simulator
-    - battery-capacity-sizer
-    - battery-usage-analyzer
-    - bess-control-sim
-    - hydrogen
-    - rtbm
-    - rtbm-dataset-generator
-    - soc
-    - sop
-    - arbitrage
-    # AI agents and Next.js full-stack range.
-    - learn-anything
-    - polypress
-    - ontoloom
-    - feedsnap
-    # Desktop and marketing-stack range.
-    - sirene
-    - matrice-website
