@@ -80,6 +80,50 @@ export async function readBilingualRepos(codeDir: string): Promise<BilingualRepo
   return out;
 }
 
+function docFor(r: BilingualRepo, lang: Lang): RepoDoc {
+  return lang === "fr" ? (r.fr ?? r.en) : r.en;
+}
+
+/** Build one project file (front-matter + body) for the given language. */
+export function buildProjectDoc(
+  proj: PlanProject,
+  repos: BilingualRepo[], // in plan order
+  lang: Lang,
+): { fm: Record<string, unknown>; body: string } {
+  const docs = repos.map((r) => docFor(r, lang));
+  const single = repos.length === 1;
+  const fm: Record<string, unknown> = { name: proj.name };
+
+  if (single) {
+    const d = docs[0].fm;
+    if (d.year !== undefined) fm.year = d.year;
+    if (d.stack !== undefined) fm.stack = d.stack;
+    if (d.tags !== undefined) fm.tags = d.tags;
+    if (d.visibility === "public" && d.url) fm.url = d.url;
+  } else {
+    const years = docs
+      .map((d) => d.fm.year)
+      .filter((y): y is number => typeof y === "number");
+    if (years.length) fm.year = Math.max(...years);
+    if (proj.tags) fm.tags = proj.tags;
+  }
+
+  fm.repos = docs.map((d) => d.fm); // code_bytes already stripped by readDoc
+
+  let body: string;
+  if (single) {
+    body = docs[0].body;
+  } else {
+    const intro = lang === "fr" ? (proj.intro_fr ?? proj.intro_en ?? "") : (proj.intro_en ?? "");
+    const sections = repos.map((r, i) => {
+      const title = (docs[i].fm.name as string) ?? r.slug;
+      return `## ${title}\n\n${docs[i].body}`;
+    });
+    body = [intro, ...sections].filter(Boolean).join("\n\n");
+  }
+  return { fm, body };
+}
+
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }

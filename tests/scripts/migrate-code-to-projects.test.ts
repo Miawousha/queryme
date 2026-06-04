@@ -123,3 +123,57 @@ describe("readBilingualRepos", () => {
     }
   });
 });
+
+import { buildProjectDoc, type BilingualRepo } from "@/scripts/migrate-code-to-projects";
+
+const biRepo = (
+  slug: string,
+  name: string,
+  body: string,
+  frBody: string | null,
+  extra: Record<string, unknown> = {},
+): BilingualRepo => ({
+  slug,
+  en: { fm: { name, role: "author", visibility: "public", url: `https://x/${slug}`, year: 2024, ...extra }, body },
+  fr: frBody ? { fm: { name, role: "author", visibility: "public", url: `https://x/${slug}`, year: 2024, ...extra }, body: frBody } : null,
+});
+
+describe("buildProjectDoc", () => {
+  it("single-repo: project body is the repo body; metadata copied from repo", () => {
+    const proj = { slug: "ontoloom", name: "Ontoloom", repos: ["ontoloom"] };
+    const repos = [biRepo("ontoloom", "ontoloom", "EN narrative.", "Récit FR.")];
+    const en = buildProjectDoc(proj, repos, "en");
+    expect(en.fm.name).toBe("Ontoloom");
+    expect(en.fm.year).toBe(2024);
+    expect(en.fm.url).toBe("https://x/ontoloom");
+    expect((en.fm.repos as unknown[]).length).toBe(1);
+    expect(en.body).toBe("EN narrative.");
+    const fr = buildProjectDoc(proj, repos, "fr");
+    expect(fr.body).toBe("Récit FR."); // FR body used
+  });
+
+  it("multi-repo: body is intro + one ## section per repo; tags from plan; year = max", () => {
+    const proj = {
+      slug: "spritz", name: "Spritz", tags: ["productivity"],
+      intro_en: "Spritz intro.", intro_fr: "Intro Spritz.",
+      repos: ["spritz", "spritz-modern"],
+    };
+    const repos = [
+      biRepo("spritz", "spritz", "Body one.", "Corps un.", { year: 2022 }),
+      biRepo("spritz-modern", "spritz-modern", "Body two.", "Corps deux.", { year: 2024 }),
+    ];
+    const en = buildProjectDoc(proj, repos, "en");
+    expect(en.fm.tags).toEqual(["productivity"]);
+    expect(en.fm.year).toBe(2024);
+    expect(en.fm.url).toBeUndefined(); // multi-repo omits url
+    expect(en.body).toBe("Spritz intro.\n\n## spritz\n\nBody one.\n\n## spritz-modern\n\nBody two.");
+    const fr = buildProjectDoc(proj, repos, "fr");
+    expect(fr.body).toBe("Intro Spritz.\n\n## spritz\n\nCorps un.\n\n## spritz-modern\n\nCorps deux.");
+  });
+
+  it("fr falls back to en doc when a repo lacks a .fr.md", () => {
+    const proj = { slug: "x", name: "X", repos: ["x"] };
+    const repos = [biRepo("x", "x", "Only EN.", null)];
+    expect(buildProjectDoc(proj, repos, "fr").body).toBe("Only EN.");
+  });
+});
