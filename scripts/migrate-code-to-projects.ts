@@ -84,6 +84,12 @@ function docFor(r: BilingualRepo, lang: Lang): RepoDoc {
   return lang === "fr" ? (r.fr ?? r.en) : r.en;
 }
 
+/** Add one `#` to each ATX heading (h1–h5 → h2–h6; h6 left as-is) so a repo's
+ * own headings nest one level under the `## <RepoName>` section that wraps it. */
+function demoteHeadings(md: string): string {
+  return md.replace(/^(#{1,5})(\s)/gm, "#$1$2");
+}
+
 /** Build one project file (front-matter + body) for the given language. */
 export function buildProjectDoc(
   proj: PlanProject,
@@ -117,7 +123,7 @@ export function buildProjectDoc(
     const intro = lang === "fr" ? (proj.intro_fr ?? proj.intro_en ?? "") : (proj.intro_en ?? "");
     const sections = repos.map((r, i) => {
       const title = (docs[i].fm.name as string) ?? r.slug;
-      return `## ${title}\n\n${docs[i].body}`;
+      return `## ${title}\n\n${demoteHeadings(docs[i].body)}`;
     });
     body = [intro, ...sections].filter(Boolean).join("\n\n");
   }

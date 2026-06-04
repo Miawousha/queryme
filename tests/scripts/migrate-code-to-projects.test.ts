@@ -169,4 +169,28 @@ describe("buildProjectDoc", () => {
     const repos = [biRepo("x", "x", "Only EN.", null)];
     expect(buildProjectDoc(proj, repos, "fr").body).toBe("Only EN.");
   });
+
+  it("multi-repo: demotes each repo's internal headings under its ## section", () => {
+    const proj = {
+      slug: "g", name: "G", tags: ["x"], intro_en: "Intro.", intro_fr: "Intro.",
+      repos: ["a", "b"],
+    };
+    const repos = [
+      biRepo("a", "a", "Lead A.\n\n## What\n\nWhat A.\n\n### Deep\n\nDeep A.", "Lead A FR."),
+      biRepo("b", "b", "Lead B.\n\n## What\n\nWhat B.", "Lead B FR."),
+    ];
+    const en = buildProjectDoc(proj, repos, "en");
+    // Repo titles stay at ##; the repos' own ## become ### and ### become ####.
+    expect(en.body).toContain("## a\n\nLead A.\n\n### What\n\nWhat A.\n\n#### Deep\n\nDeep A.");
+    expect(en.body).toContain("## b\n\nLead B.\n\n### What\n\nWhat B.");
+    // No repo's internal heading remains at ## level (only the 2 repo titles are ##):
+    const h2 = en.body.split("\n").filter((l) => /^## /.test(l));
+    expect(h2).toEqual(["## a", "## b"]);
+  });
+
+  it("single-repo: body is verbatim (headings NOT demoted)", () => {
+    const proj = { slug: "s", name: "S", repos: ["s"] };
+    const repos = [biRepo("s", "s", "Lead.\n\n## What\n\nDetail.", "Tête.")];
+    expect(buildProjectDoc(proj, repos, "en").body).toBe("Lead.\n\n## What\n\nDetail.");
+  });
 });
