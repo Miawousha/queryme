@@ -194,3 +194,48 @@ describe("buildProjectDoc", () => {
     expect(buildProjectDoc(proj, repos, "en").body).toBe("Lead.\n\n## What\n\nDetail.");
   });
 });
+
+describe("migrate-code-to-projects apply — merge mode", () => {
+  it("appends the repo to an existing project's repos: and KEEPS its body (EN+FR)", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "migrate-merge-"));
+    try {
+      // existing project files with a hand-written narrative and no repos yet
+      await mkdir(path.join(root, "kb", "projects"), { recursive: true });
+      await writeFile(path.join(root, "kb", "projects", "queryme.md"),
+        "---\nname: Queryme\nyear: 2026\nurl: https://x/queryme\n---\n\n## Summary\nExisting EN narrative.\n");
+      await writeFile(path.join(root, "kb", "projects", "queryme.fr.md"),
+        "---\nname: Queryme\nyear: 2026\nurl: https://x/queryme\n---\n\n## Résumé\nRécit FR existant.\n");
+      // the code repo to merge in
+      await mkdir(path.join(root, "kb", "code"), { recursive: true });
+      await writeFile(path.join(root, "kb", "code", "queryme.md"),
+        "---\nname: queryme\nrole: author\nvisibility: public\nurl: https://x/queryme\ncode_bytes: 7\n---\n\nCode body EN that must NOT replace the narrative.\n");
+      await writeFile(path.join(root, "kb", "code", "queryme.fr.md"),
+        "---\nname: queryme\nrole: author\nvisibility: public\nurl: https://x/queryme\n---\n\nCorps de code FR.\n");
+
+      const plan = path.join(root, "plan.yaml");
+      await writeFile(plan, "projects:\n  - slug: queryme\n    name: Queryme\n    merge: true\n    repos: [queryme]\n");
+
+      const res = await runMigrate(["--root", root, "--apply", plan]);
+      expect(res.code).toBe(0);
+
+      const en = await readFile(path.join(root, "kb", "projects", "queryme.md"), "utf8");
+      // existing narrative preserved
+      expect(en).toContain("Existing EN narrative.");
+      // repo appended to repos:
+      expect(en).toContain("- name: queryme");
+      // incoming code body intentionally NOT merged into prose
+      expect(en).not.toContain("must NOT replace the narrative");
+      // code_bytes stripped
+      expect(en).not.toContain("code_bytes");
+
+      const fr = await readFile(path.join(root, "kb", "projects", "queryme.fr.md"), "utf8");
+      expect(fr).toContain("Récit FR existant.");
+      expect(fr).toContain("- name: queryme");
+
+      // kb/code removed after a successful lossless apply
+      await expect(readdir(path.join(root, "kb", "code"))).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30000);
+});

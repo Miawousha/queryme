@@ -184,6 +184,9 @@ async function applyPlan(root: string, repos: BilingualRepo[], plan: PlanV2): Pr
 
     // EN file (always)
     const enFile = path.join(projectsDir, `${proj.slug}.md`);
+    // merge mode: append repos to an existing project file and keep its
+    // hand-written body verbatim — the incoming repo bodies are intentionally
+    // NOT composed in (used for the pre-existing `queryme` project).
     if (proj.merge && (await fileExists(enFile))) {
       const ex = matter(await fs.readFile(enFile, "utf8"));
       const fm = ex.data as Record<string, unknown>;
