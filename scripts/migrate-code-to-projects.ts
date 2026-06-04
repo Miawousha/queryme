@@ -146,26 +146,11 @@ export function proposePlan(repos: CodeRepo[]): Plan {
   };
 }
 
-async function readCodeRepos(codeDir: string): Promise<CodeRepo[]> {
-  let files: string[];
-  try {
-    files = await fs.readdir(codeDir);
-  } catch {
-    return [];
-  }
-  const md = files.filter((f) => f.endsWith(".md") && !/\.[a-z]{2}\.md$/.test(f)).sort();
-  const out: CodeRepo[] = [];
-  for (const f of md) {
-    const raw = await fs.readFile(path.join(codeDir, f), "utf8");
-    const { data, content } = matter(raw);
-    const { code_bytes, ...rest } = data as Record<string, unknown>; // drop code_bytes
-    void code_bytes;
-    out.push({ slug: f.replace(/\.md$/, ""), repo: rest, body: content.trim() });
-  }
-  return out;
+function frCount(repos: BilingualRepo[]): number {
+  return repos.filter((r) => r.fr !== null).length;
 }
 
-function assertLossless(repos: CodeRepo[], plan: Plan): void {
+function assertLosslessBi(repos: BilingualRepo[], plan: PlanV2): void {
   const assigned = plan.projects.flatMap((p) => p.repos);
   const seen = new Set(assigned);
   if (assigned.length !== seen.size) throw new Error("Plan assigns a repo to more than one project.");
@@ -174,42 +159,62 @@ function assertLossless(repos: CodeRepo[], plan: Plan): void {
   for (const slug of seen) if (!inputSlugs.has(slug)) throw new Error(`Plan references unknown repo "${slug}".`);
 }
 
-async function applyPlan(root: string, repos: CodeRepo[], plan: Plan): Promise<void> {
-  assertLossless(repos, plan);
+async function fileExists(p: string): Promise<boolean> {
+  try { await fs.access(p); return true; } catch { return false; }
+}
+
+async function applyPlan(root: string, repos: BilingualRepo[], plan: PlanV2): Promise<void> {
+  assertLosslessBi(repos, plan);
   const bySlug = new Map(repos.map((r) => [r.slug, r]));
   const projectsDir = path.join(root, "kb", "projects");
   await fs.mkdir(projectsDir, { recursive: true });
-  let written = 0;
+
+  let writtenEn = 0;
+  let writtenFr = 0;
 
   for (const proj of plan.projects) {
-    const file = path.join(projectsDir, `${proj.slug}.md`);
-    const reposFm = proj.repos.map((s) => {
-      const r = bySlug.get(s)!;
-      written++;
-      return { ...r.repo, name: r.repo.name ?? s };
-    });
-    let fm: Record<string, unknown>;
-    let body: string;
-    try {
-      const existing = matter(await fs.readFile(file, "utf8"));
-      fm = existing.data as Record<string, unknown>;
-      body = existing.content.trim();
-      fm.repos = [...((fm.repos as unknown[]) ?? []), ...reposFm];
-    } catch {
-      fm = { name: proj.name, repos: reposFm };
-      body = `Repositories grouped under ${proj.name}.`;
+    const projRepos = proj.repos.map((s) => bySlug.get(s)!);
+    const hasFr = projRepos.some((r) => r.fr !== null);
+
+    // EN file (always)
+    const enFile = path.join(projectsDir, `${proj.slug}.md`);
+    if (proj.merge && (await fileExists(enFile))) {
+      const ex = matter(await fs.readFile(enFile, "utf8"));
+      const fm = ex.data as Record<string, unknown>;
+      fm.repos = [...((fm.repos as unknown[]) ?? []), ...projRepos.map((r) => r.en.fm)];
+      await fs.writeFile(enFile, `---\n${stringifyYaml(fm)}---\n\n${ex.content.trim()}\n`, "utf8");
+    } else {
+      const { fm, body } = buildProjectDoc(proj, projRepos, "en");
+      await fs.writeFile(enFile, `---\n${stringifyYaml(fm)}---\n\n${body}\n`, "utf8");
     }
-    const content = `---\n${stringifyYaml(fm)}---\n\n${body}\n`;
-    await fs.writeFile(file, content, "utf8");
+    writtenEn += projRepos.length;
+
+    // FR file (only when there is French content to write, or a merge target exists)
+    const frFile = path.join(projectsDir, `${proj.slug}.fr.md`);
+    const frMergeTarget = proj.merge && (await fileExists(frFile));
+    if (hasFr || frMergeTarget) {
+      if (frMergeTarget) {
+        const ex = matter(await fs.readFile(frFile, "utf8"));
+        const fm = ex.data as Record<string, unknown>;
+        fm.repos = [...((fm.repos as unknown[]) ?? []), ...projRepos.map((r) => docFor(r, "fr").fm)];
+        await fs.writeFile(frFile, `---\n${stringifyYaml(fm)}---\n\n${ex.content.trim()}\n`, "utf8");
+      } else {
+        const { fm, body } = buildProjectDoc(proj, projRepos, "fr");
+        await fs.writeFile(frFile, `---\n${stringifyYaml(fm)}---\n\n${body}\n`, "utf8");
+      }
+      writtenFr += projRepos.filter((r) => r.fr !== null).length;
+    }
   }
 
-  if (written !== repos.length) {
-    throw new Error(`Lossless check failed: wrote ${written} repos but read ${repos.length}.`);
+  if (writtenEn !== repos.length) {
+    throw new Error(`Lossless (EN) failed: wrote ${writtenEn} but read ${repos.length}.`);
+  }
+  if (writtenFr !== frCount(repos)) {
+    throw new Error(`Lossless (FR) failed: used ${writtenFr} French sidecars but found ${frCount(repos)}.`);
   }
 
-  // Safe to remove the old code/ tree only after every repo was written.
   await fs.rm(path.join(root, "kb", "code"), { recursive: true, force: true });
-  console.log(`Migrated ${written} repos into ${plan.projects.length} projects; removed kb/code/.`);
+  console.log(`Migrated ${writtenEn} repos (${writtenFr} FR) into ${plan.projects.length} projects; removed kb/code/.`);
 }
 
 async function main() {
@@ -217,12 +222,12 @@ async function main() {
   const root = args[args.indexOf("--root") + 1] ?? process.env.PERSONA_LOCAL_OVERRIDE;
   if (!root) throw new Error("Pass --root <content-repo> or set PERSONA_LOCAL_OVERRIDE.");
   const codeDir = path.join(root, "kb", "code");
-  const repos = await readCodeRepos(codeDir);
+  const repos = await readBilingualRepos(codeDir);
   if (repos.length === 0) throw new Error(`No kb/code/*.md found under ${root}.`);
 
   const applyIdx = args.indexOf("--apply");
   if (applyIdx === -1) {
-    const plan = proposePlan(repos);
+    const plan = proposePlan(repos.map((r) => ({ slug: r.slug, repo: r.en.fm, body: r.en.body })));
     const planPath = path.join(codeDir, "_migration-plan.yaml");
     await fs.writeFile(planPath, stringifyYaml(plan), "utf8");
     console.log(`Proposed ${plan.projects.length} projects for ${repos.length} repos.`);
@@ -230,7 +235,7 @@ async function main() {
     if (args.includes("--json")) console.log(JSON.stringify(plan, null, 2));
   } else {
     const planPath = args[applyIdx + 1];
-    const plan = parseYaml(await fs.readFile(planPath, "utf8")) as Plan;
+    const plan = parseYaml(await fs.readFile(planPath, "utf8")) as PlanV2;
     await applyPlan(root, repos, plan);
   }
 }

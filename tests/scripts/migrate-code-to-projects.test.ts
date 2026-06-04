@@ -9,20 +9,6 @@ import path from "node:path";
 const exec = promisify(execFile);
 const SCRIPT = path.resolve(__dirname, "../../scripts/migrate-code-to-projects.ts");
 
-async function makeRepo(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), "migrate-test-"));
-  await mkdir(path.join(root, "kb", "code"), { recursive: true });
-  await writeFile(
-    path.join(root, "kb", "code", "alpha.md"),
-    "---\nname: alpha\nrole: author\ntags: [ai]\n---\n\nAlpha.\n",
-  );
-  await writeFile(
-    path.join(root, "kb", "code", "beta.md"),
-    "---\nname: beta\nrole: author\n---\n\nBeta.\n",
-  );
-  return root;
-}
-
 async function runMigrate(args: string[]): Promise<{ code: number; stderr: string; stdout: string }> {
   try {
     const { stdout, stderr } = await exec("node", ["--import", "tsx", SCRIPT, ...args], {
@@ -57,22 +43,31 @@ describe("proposePlan", () => {
   });
 });
 
-describe("migrate-code-to-projects apply (lossless)", () => {
-  it("dry run then apply migrates all repos and removes kb/code/", async () => {
-    const root = await makeRepo();
+describe("migrate-code-to-projects apply (bilingual, lossless)", () => {
+  async function makeBilingualRepo(): Promise<string> {
+    const root = await mkdtemp(path.join(tmpdir(), "migrate-bi-"));
+    await mkdir(path.join(root, "kb", "code"), { recursive: true });
+    await writeFile(path.join(root, "kb", "code", "alpha.md"), "---\nname: alpha\nrole: author\ntags: [battery]\ncode_bytes: 9\n---\n\nAlpha EN.\n");
+    await writeFile(path.join(root, "kb", "code", "alpha.fr.md"), "---\nname: alpha\nrole: author\ntags: [battery]\n---\n\nAlpha FR.\n");
+    await writeFile(path.join(root, "kb", "code", "beta.md"), "---\nname: beta\nrole: author\ntags: [battery]\n---\n\nBeta EN.\n");
+    await writeFile(path.join(root, "kb", "code", "beta.fr.md"), "---\nname: beta\nrole: author\ntags: [battery]\n---\n\nBeta FR.\n");
+    return root;
+  }
+
+  it("applies a hand-authored plan, writes EN+FR project files, removes kb/code/", async () => {
+    const root = await makeBilingualRepo();
     try {
-      await runMigrate(["--root", root]);
-      const planPath = path.join(root, "kb", "code", "_migration-plan.yaml");
-      await runMigrate(["--root", root, "--apply", planPath]);
-      const projects = await readdir(path.join(root, "kb", "projects"));
-      // Both repos landed across the generated project files.
-      const bodies = await Promise.all(
-        projects.map((f) => readFile(path.join(root, "kb", "projects", f), "utf8")),
-      );
-      const joined = bodies.join("\n");
-      expect(joined).toContain("alpha");
-      expect(joined).toContain("beta");
-      // code/ is gone after a successful, lossless apply.
+      const plan = path.join(root, "plan.yaml");
+      await writeFile(plan,
+        "projects:\n" +
+        "  - slug: battery\n    name: Battery\n    tags: [battery]\n    intro_en: Intro.\n    intro_fr: Intro FR.\n    repos: [alpha, beta]\n");
+      const res = await runMigrate(["--root", root, "--apply", plan]);
+      expect(res.code).toBe(0);
+      const en = await readFile(path.join(root, "kb", "projects", "battery.md"), "utf8");
+      const fr = await readFile(path.join(root, "kb", "projects", "battery.fr.md"), "utf8");
+      expect(en).toContain("## alpha"); expect(en).toContain("Alpha EN."); expect(en).toContain("Beta EN.");
+      expect(en).not.toContain("code_bytes");
+      expect(fr).toContain("Alpha FR."); expect(fr).toContain("Beta FR.");
       await expect(readdir(path.join(root, "kb", "code"))).rejects.toThrow();
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -80,17 +75,15 @@ describe("migrate-code-to-projects apply (lossless)", () => {
   }, 30000);
 
   it("aborts WITHOUT deleting kb/code/ when the plan drops a repo", async () => {
-    const root = await makeRepo();
+    const root = await makeBilingualRepo();
     try {
-      // A plan that omits 'beta' must be rejected by assertLossless before any deletion.
-      const badPlan = path.join(root, "bad-plan.yaml");
-      await writeFile(badPlan, "projects:\n  - slug: ai\n    name: AI\n    repos: [alpha]\n");
-      const res = await runMigrate(["--root", root, "--apply", badPlan]);
+      const plan = path.join(root, "plan.yaml");
+      await writeFile(plan, "projects:\n  - slug: battery\n    name: Battery\n    repos: [alpha]\n");
+      const res = await runMigrate(["--root", root, "--apply", plan]);
       expect(res.code).not.toBe(0);
-      // kb/code/ must still be intact (nothing deleted on a failed lossless check).
       const codeFiles = await readdir(path.join(root, "kb", "code"));
-      expect(codeFiles.sort()).toContain("alpha.md");
-      expect(codeFiles.sort()).toContain("beta.md");
+      expect(codeFiles).toContain("alpha.md");
+      expect(codeFiles).toContain("beta.md");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
