@@ -1,17 +1,7 @@
 import type { Kb } from "./loader";
+import type { Repo } from "./schemas";
 
-export type AssembleOptions = {
-  /**
-   * Slugs to inline as full entries under `# Code (featured)`. Remaining code
-   * entries render as one-line stubs under `# Code (index)`.
-   *
-   * `undefined` or empty array → today's behaviour: single `# Code` section
-   * with full bodies for all entries.
-   */
-  featuredCodeSlugs?: string[];
-};
-
-export function assemblePublicKbText(kb: Kb, options: AssembleOptions = {}): string {
+export function assemblePublicKbText(kb: Kb): string {
   const sections: string[] = [];
 
   sections.push(renderProfile(kb));
@@ -21,21 +11,6 @@ export function assemblePublicKbText(kb: Kb, options: AssembleOptions = {}): str
   sections.push(renderExperience(kb));
   sections.push(renderProjects(kb));
   if (kb.talks.length) sections.push(renderTalks(kb));
-  if (kb.code.length) {
-    const featured = (options.featuredCodeSlugs ?? []).length > 0 ? options.featuredCodeSlugs! : null;
-    if (featured === null) {
-      sections.push(renderRepos(kb.code, "# Code"));
-    } else {
-      const featuredSet = new Set(featured);
-      const featuredEntries = featured
-        .map((slug) => kb.code.find((r) => r.slug === slug))
-        .filter((r): r is (typeof kb.code)[number] => r !== undefined);
-      const indexedEntries = kb.code.filter((r) => !featuredSet.has(r.slug));
-
-      if (featuredEntries.length) sections.push(renderRepos(featuredEntries, "# Code (featured)"));
-      if (indexedEntries.length) sections.push(renderIndexedRepos(indexedEntries));
-    }
-  }
   if (kb.recommendations.length) sections.push(renderRecommendations(kb));
 
   return sections.join("\n\n");
@@ -116,9 +91,28 @@ function renderProjects(kb: Kb): string {
     if (p.frontmatter.tags?.length) lines.push(`Tags: ${p.frontmatter.tags.join(", ")}`);
     lines.push(``);
     lines.push(p.body);
+    const repos = p.frontmatter.repos ?? [];
+    if (repos.length) {
+      lines.push(``, `### Repositories`);
+      for (const r of repos) lines.push(renderRepoLine(r));
+    }
     lines.push(``);
   }
   return lines.join("\n");
+}
+
+function renderRepoLine(r: Repo): string {
+  const meta: string[] = [`role: ${r.role}`, `visibility: ${r.visibility}`];
+  if (r.url) meta.push(`url: ${r.url}`);
+  if (r.language) meta.push(`language: ${r.language}`);
+  if (r.year !== undefined) meta.push(`year: ${r.year}`);
+  if (r.last_active) meta.push(`last active: ${r.last_active}`);
+  if (r.stars !== undefined) meta.push(`stars: ${r.stars}`);
+  if (r.archived) meta.push(`archived`);
+  if (r.stack?.length) meta.push(`stack: ${r.stack.join(", ")}`);
+  if (r.tags?.length) meta.push(`tags: ${r.tags.join(", ")}`);
+  const desc = r.description ? ` — ${r.description}` : "";
+  return `- ${r.name}${desc} (${meta.join(", ")})`;
 }
 
 function renderTalks(kb: Kb): string {
@@ -132,48 +126,6 @@ function renderTalks(kb: Kb): string {
     if (t.frontmatter.tags?.length) lines.push(`Tags: ${t.frontmatter.tags.join(", ")}`);
     lines.push(``, t.body, ``);
   }
-  return lines.join("\n");
-}
-
-function renderRepos(entries: Kb["code"], heading: string): string {
-  const lines = [heading, ``];
-  for (const p of entries) {
-    lines.push(`## ${p.frontmatter.name}`);
-    lines.push(`[ref: ${p.relativePath}]`);
-    lines.push(`Role: ${p.frontmatter.role}`);
-    lines.push(`Visibility: ${p.frontmatter.visibility}`);
-    if (p.frontmatter.url) lines.push(`URL: ${p.frontmatter.url}`);
-    if (p.frontmatter.language) lines.push(`Language: ${p.frontmatter.language}`);
-    if (p.frontmatter.year !== undefined) lines.push(`Year: ${p.frontmatter.year}`);
-    if (p.frontmatter.last_active) lines.push(`Last active: ${p.frontmatter.last_active}`);
-    if (p.frontmatter.code_bytes !== undefined) lines.push(`Code size: ${p.frontmatter.code_bytes} bytes`);
-    if (p.frontmatter.stars !== undefined) lines.push(`Stars: ${p.frontmatter.stars}`);
-    if (p.frontmatter.archived) lines.push(`Archived: yes`);
-    if (p.frontmatter.description) lines.push(`Description: ${p.frontmatter.description}`);
-    if (p.frontmatter.tags?.length) lines.push(`Tags: ${p.frontmatter.tags.join(", ")}`);
-    lines.push(``, p.body, ``);
-  }
-  return lines.join("\n");
-}
-
-function renderIndexedRepos(entries: Kb["code"]): string {
-  const lines = ["# Code (index)", ""];
-  for (const p of entries) {
-    const desc = p.frontmatter.description ?? "(no description)";
-    lines.push(`- ${p.frontmatter.name} — ${desc}`);
-    const meta: string[] = [];
-    if (p.frontmatter.tags?.length) meta.push(`tags: [${p.frontmatter.tags.join(", ")}]`);
-    if (p.frontmatter.language) meta.push(`language: ${p.frontmatter.language}`);
-    if (p.frontmatter.year !== undefined) meta.push(`year: ${p.frontmatter.year}`);
-    if (meta.length) lines.push(`  ${meta.join(", ")}`);
-    lines.push(`  [ref: ${p.relativePath}]`);
-  }
-  lines.push(
-    "",
-    "These additional repos are not pre-loaded. Call `lookup_code_entries`",
-    "with up to 5 of the `[ref: code/<slug>.md]` paths above to fetch their",
-    "full bodies before answering questions about them.",
-  );
   return lines.join("\n");
 }
 

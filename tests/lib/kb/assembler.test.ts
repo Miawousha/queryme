@@ -34,11 +34,14 @@ describe("assemblePublicKbText", () => {
     expect(text).toContain("Fixture body.");
   });
 
-  it("includes one section per project entry with file ref", () => {
+  it("includes one section per project entry with file ref and its repos", () => {
     const text = assemblePublicKbText(kb);
     expect(text).toContain("# Projects");
     expect(text).toContain("## Fixture Project (2025)");
     expect(text).toContain("[ref: projects/fixture-project.md]");
+    expect(text).toContain("### Repositories");
+    expect(text).toContain("- queryme — An agent-driven CV.");
+    expect(text).toContain("- sample-indexed");
   });
 
   it("includes education and public contact sections", () => {
@@ -69,11 +72,10 @@ describe("assemblePublicKbText", () => {
     expect(text).toContain("EVS37");
   });
 
-  it("includes a Code section with [ref: code/...] markers", () => {
+  it("no longer emits a top-level Code section", () => {
     const text = assemblePublicKbText(kb);
-    expect(text).toContain("# Code");
-    expect(text).toContain("[ref: code/queryme.md]");
-    expect(text).toContain("queryme");
+    expect(text).not.toContain("# Code");
+    expect(text).not.toContain("[ref: code/");
   });
 
   it("includes a Recommendations section with [ref: recommendations/...] markers", () => {
@@ -81,65 +83,5 @@ describe("assemblePublicKbText", () => {
     expect(text).toContain("# Recommendations");
     expect(text).toContain("[ref: recommendations/2024-09-jane-doe.md]");
     expect(text).toContain("Jane Doe");
-  });
-});
-
-describe("assemblePublicKbText — code featured/indexed split", () => {
-  let kb: Kb;
-
-  beforeAll(async () => {
-    kb = await loadKb(FIXTURE_DIR);
-  });
-
-  it("with no featured list, renders one `# Code` section with all bodies (back-compat)", () => {
-    const text = assemblePublicKbText(kb);
-    expect(text).toContain("# Code");
-    expect(text).not.toContain("# Code (featured)");
-    expect(text).not.toContain("# Code (index)");
-    // Both bodies present.
-    expect(text).toContain("Project body — what it is and contributors.");
-    expect(text).toContain("Sample indexed body");
-  });
-
-  it("with a featured list, renders featured entries fully and indexed entries as stubs", () => {
-    const text = assemblePublicKbText(kb, { featuredCodeSlugs: ["queryme"] });
-    expect(text).toContain("# Code (featured)");
-    expect(text).toContain("## queryme");
-    expect(text).toContain("Project body — what it is and contributors.");
-    expect(text).toContain("# Code (index)");
-    // Stub for the indexed entry.
-    expect(text).toMatch(/^- sample-indexed — A fixture used to test/m);
-    expect(text).toContain("tags: [ai, software]");
-    expect(text).toContain("language: TypeScript");
-    expect(text).toContain("year: 2024");
-    expect(text).toContain("[ref: code/sample-indexed.md]");
-    // Indexed body must NOT be in the prompt.
-    expect(text).not.toContain("Sample indexed body");
-  });
-
-  it("appends a usage hint after the index section telling the agent to call lookup_code_entries", () => {
-    const text = assemblePublicKbText(kb, { featuredCodeSlugs: ["queryme"] });
-    expect(text).toContain("lookup_code_entries");
-  });
-
-  it("unknown featured slugs are silently skipped (no throw)", () => {
-    const text = assemblePublicKbText(kb, { featuredCodeSlugs: ["does-not-exist", "queryme"] });
-    expect(text).toContain("## queryme");
-    expect(text).toContain("# Code (index)");
-  });
-
-  it("when every code entry is featured, no index section is emitted", () => {
-    const text = assemblePublicKbText(kb, { featuredCodeSlugs: ["queryme", "sample-indexed"] });
-    expect(text).toContain("# Code (featured)");
-    expect(text).not.toContain("# Code (index)");
-  });
-
-  it("when featured list is empty, falls back to single `# Code` section (back-compat)", () => {
-    const text = assemblePublicKbText(kb, { featuredCodeSlugs: [] });
-    // Empty array means "no featured" — assembler should fall back to today's
-    // behaviour (single `# Code` section with full bodies). This matches
-    // getFeaturedCodeSlugs returning null for an empty list.
-    expect(text).toContain("# Code");
-    expect(text).not.toContain("# Code (index)");
   });
 });
