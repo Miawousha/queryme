@@ -25,6 +25,9 @@ describe("loadKb", () => {
     expect(kb.projects).toHaveLength(1);
     expect(kb.projects[0].slug).toBe("fixture-project");
     expect(kb.projects[0].frontmatter.name).toBe("Fixture Project");
+    expect(kb.projects[0].frontmatter.repos).toHaveLength(2);
+    expect(kb.projects[0].frontmatter.repos![0].name).toBe("queryme");
+    expect(kb.projects[0].frontmatter.repos![0].visibility).toBe("public");
     expect(kb.projects[0].body).toContain("A fixture project body.");
     expect(kb.projects[0].relativePath).toBe("projects/fixture-project.md");
   });
@@ -54,22 +57,22 @@ describe("loadKb", () => {
     }
   });
 
-  it("loads talks, code, and recommendations entries", async () => {
+  it("loads talks and recommendations entries", async () => {
     const kb = await loadKb(FIXTURE_DIR);
     expect(kb.talks).toHaveLength(1);
     expect(kb.talks[0].frontmatter.title).toBe("Battery emulation at scale");
     expect(kb.talks[0].relativePath).toBe("talks/2024-evs37.md");
 
-    expect(kb.code).toHaveLength(2);
-    const queryme = kb.code.find((c) => c.slug === "queryme");
-    expect(queryme).toBeDefined();
-    expect(queryme!.frontmatter.name).toBe("queryme");
-    expect(queryme!.frontmatter.visibility).toBe("public");
-    expect(queryme!.relativePath).toBe("code/queryme.md");
-
     expect(kb.recommendations).toHaveLength(1);
     expect(kb.recommendations[0].frontmatter.from).toBe("Jane Doe");
     expect(kb.recommendations[0].relativePath).toBe("recommendations/2024-09-jane-doe.md");
+  });
+
+  it("allRepos flattens every project's repos, sorted year desc then name", async () => {
+    const { allRepos } = await import("@/lib/kb/loader");
+    const kb = await loadKb(FIXTURE_DIR);
+    const repos = allRepos(kb);
+    expect(repos.map((r) => r.name)).toEqual(["queryme", "sample-indexed"]);
   });
 
   it("prefers a *.fr.md sidecar when lang=fr is requested", async () => {

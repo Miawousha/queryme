@@ -10,7 +10,6 @@ import {
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
   TalkFrontmatterSchema,
-  RepoFrontmatterSchema,
   RecommendationFrontmatterSchema,
   type Profile,
   type Skills,
@@ -19,10 +18,9 @@ import {
   type ExperienceFrontmatter,
   type ProjectFrontmatter,
   type TalkFrontmatter,
-  type RepoFrontmatter,
+  type Repo,
   type RecommendationFrontmatter,
 } from "./schemas";
-import { loadCodeIndex, resolveRepoTags } from "./code-index";
 
 export type ExperienceEntry = {
   slug: string;
@@ -45,13 +43,6 @@ export type TalkEntry = {
   body: string;
 };
 
-export type RepoEntry = {
-  slug: string;
-  relativePath: string;
-  frontmatter: RepoFrontmatter;
-  body: string;
-};
-
 export type RecommendationEntry = {
   slug: string;
   relativePath: string;
@@ -67,7 +58,6 @@ export type Kb = {
   experience: ExperienceEntry[];
   projects: ProjectEntry[];
   talks: TalkEntry[];
-  code: RepoEntry[];
   recommendations: RecommendationEntry[];
 };
 
@@ -172,8 +162,7 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
   const [
     profile, skills, education, publicContact,
     experience, projects,
-    talks, code, recommendations,
-    codeIndex,
+    talks, recommendations,
   ] = await Promise.all([
     readYamlFile(await pickFile(path.join(rootDir, "profile"), "yaml", lang), ProfileSchema, "profile.yaml"),
     readYamlFile(await pickFile(path.join(rootDir, "skills"), "yaml", lang), SkillsSchema, "skills.yaml"),
@@ -182,27 +171,12 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
     readMarkdownDir(path.join(rootDir, "experience"), ExperienceFrontmatterSchema, "experience", lang),
     readMarkdownDir(path.join(rootDir, "projects"), ProjectFrontmatterSchema, "projects", lang),
     readMarkdownDir(path.join(rootDir, "talks"), TalkFrontmatterSchema, "talks", lang),
-    readMarkdownDir(path.join(rootDir, "code"), RepoFrontmatterSchema, "code", lang),
     readMarkdownDir(path.join(rootDir, "recommendations"), RecommendationFrontmatterSchema, "recommendations", lang),
-    loadCodeIndex(rootDir),
   ]);
-
-  // Apply the code-index: validate per-repo tags against the registry and
-  // fill missing tags from `assignments`. Throws on unknown tags so typos
-  // surface at load time.
-  for (const repo of code) {
-    repo.frontmatter = {
-      ...repo.frontmatter,
-      tags: resolveRepoTags(repo.slug, repo.frontmatter.tags, codeIndex),
-    };
-  }
 
   experience.sort((a, b) => (startSortKey(a.frontmatter.start) < startSortKey(b.frontmatter.start) ? 1 : -1));
   projects.sort((a, b) => (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0));
   talks.sort((a, b) => b.frontmatter.year - a.frontmatter.year);
-  code.sort((a, b) =>
-    (b.frontmatter.year ?? 0) - (a.frontmatter.year ?? 0) || a.frontmatter.name.localeCompare(b.frontmatter.name),
-  );
   recommendations.sort((a, b) => (a.frontmatter.date < b.frontmatter.date ? 1 : -1));
 
   return {
@@ -213,7 +187,14 @@ export async function loadKb(rootDir: string, lang: KbLang = "en"): Promise<Kb> 
     experience,
     projects,
     talks,
-    code,
     recommendations,
   };
+}
+
+/** Every repo hosted across all projects, sorted year desc then name. Used by
+ * the aggregated "Repositories" view on the CV / KB panel. */
+export function allRepos(kb: Kb): Repo[] {
+  return kb.projects
+    .flatMap((p) => p.frontmatter.repos ?? [])
+    .sort((a, b) => (b.year ?? 0) - (a.year ?? 0) || a.name.localeCompare(b.name));
 }
