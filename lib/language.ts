@@ -26,7 +26,6 @@ export function buildUiStrings(persona: Persona) {
       statusReady: "ready",
       thinking: {
         generic: "Thinking…",
-        searchingKb: "Searching the knowledge base…",
       },
       forwardAction: `Send this question to ${enGiven}`,
       forward: {
@@ -119,15 +118,12 @@ export function buildUiStrings(persona: Persona) {
         cv: "Curriculum Vitae",
         openCv: "Open CV",
         sections: {
-          code: "Code",
           experience: "Experience",
           projects: "Projects",
           talks: "Talks",
           recommendations: "Recommendations",
           other: "Other",
         },
-        privateBadge: "private",
-        openRepo: "Open repo",
         expandGroup: "Expand",
         collapseGroup: "Collapse",
         meta: {
@@ -158,7 +154,6 @@ export function buildUiStrings(persona: Persona) {
       statusReady: "prêt",
       thinking: {
         generic: "Réflexion…",
-        searchingKb: "Consultation de la base de connaissances…",
       },
       forwardAction: `Envoyer cette question à ${frGiven}`,
       forward: {
@@ -251,15 +246,12 @@ export function buildUiStrings(persona: Persona) {
         cv: "Curriculum Vitae",
         openCv: "Ouvrir le CV",
         sections: {
-          code: "Code",
           experience: "Expérience",
           projects: "Projets",
           talks: "Conférences",
           recommendations: "Recommandations",
           other: "Autres",
         },
-        privateBadge: "privé",
-        openRepo: "Ouvrir le dépôt",
         expandGroup: "Déplier",
         collapseGroup: "Replier",
         meta: {
