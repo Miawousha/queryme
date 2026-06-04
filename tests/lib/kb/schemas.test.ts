@@ -7,7 +7,7 @@ import {
   ExperienceFrontmatterSchema,
   ProjectFrontmatterSchema,
   TalkFrontmatterSchema,
-  RepoFrontmatterSchema,
+  RepoSchema,
   RecommendationFrontmatterSchema,
 } from "@/lib/kb/schemas";
 
@@ -101,6 +101,18 @@ describe("ProjectFrontmatterSchema", () => {
     };
     expect(ProjectFrontmatterSchema.parse(data)).toEqual(data);
   });
+
+  it("accepts a project with a nested repos array", () => {
+    const data = {
+      name: "Queryme",
+      repos: [
+        { name: "queryme", role: "author", url: "https://github.com/x/queryme" },
+      ],
+    };
+    const parsed = ProjectFrontmatterSchema.parse(data);
+    expect(parsed.repos).toHaveLength(1);
+    expect(parsed.repos![0].visibility).toBe("public"); // default applied
+  });
 });
 
 describe("TalkFrontmatterSchema", () => {
@@ -119,9 +131,9 @@ describe("TalkFrontmatterSchema", () => {
   });
 });
 
-describe("RepoFrontmatterSchema", () => {
+describe("RepoSchema", () => {
   it("accepts a minimal public repo (visibility defaults to public)", () => {
-    const parsed = RepoFrontmatterSchema.parse({
+    const parsed = RepoSchema.parse({
       name: "queryme",
       url: "https://github.com/Miawousha/queryme",
       role: "author",
@@ -131,56 +143,39 @@ describe("RepoFrontmatterSchema", () => {
 
   it("accepts a private repo without a url", () => {
     expect(() =>
-      RepoFrontmatterSchema.parse({
-        name: "internal-tool",
-        role: "author",
-        visibility: "private",
-      }),
+      RepoSchema.parse({ name: "internal-tool", role: "author", visibility: "private" }),
     ).not.toThrow();
   });
 
-  it("accepts optional language/stars/archived fields", () => {
-    const parsed = RepoFrontmatterSchema.parse({
+  it("accepts optional language/stars/archived/last_active/stack/tags fields", () => {
+    const parsed = RepoSchema.parse({
       name: "x",
       url: "https://example.com/x",
       role: "author",
       language: "TypeScript",
       stars: 42,
       archived: true,
+      last_active: "2025-05",
+      stack: ["Rust"],
+      tags: ["tooling"],
     });
     expect(parsed.language).toBe("TypeScript");
     expect(parsed.stars).toBe(42);
     expect(parsed.archived).toBe(true);
+    expect(parsed.last_active).toBe("2025-05");
   });
 
   it("rejects an invalid role", () => {
-    expect(() =>
-      RepoFrontmatterSchema.parse({
-        name: "x",
-        url: "https://example.com/x",
-        role: "owner",
-      }),
-    ).toThrow();
+    expect(() => RepoSchema.parse({ name: "x", url: "https://example.com/x", role: "owner" })).toThrow();
   });
 
   it("rejects an invalid visibility", () => {
-    expect(() =>
-      RepoFrontmatterSchema.parse({
-        name: "x",
-        role: "author",
-        visibility: "secret",
-      }),
-    ).toThrow();
+    expect(() => RepoSchema.parse({ name: "x", role: "author", visibility: "secret" })).toThrow();
   });
 
   it("rejects negative stars", () => {
     expect(() =>
-      RepoFrontmatterSchema.parse({
-        name: "x",
-        url: "https://example.com/x",
-        role: "author",
-        stars: -1,
-      }),
+      RepoSchema.parse({ name: "x", url: "https://example.com/x", role: "author", stars: -1 }),
     ).toThrow();
   });
 });

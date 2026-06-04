@@ -73,12 +73,33 @@ export const ExperienceFrontmatterSchema = z.object({
 });
 export type ExperienceFrontmatter = z.infer<typeof ExperienceFrontmatterSchema>;
 
+export const RepoSchema = z.object({
+  name: z.string().min(1),
+  role: z.enum(["author", "maintainer", "contributor"]),
+  url: z.url().optional(),
+  visibility: z.enum(["public", "private"]).default("public"),
+  /** One-line subtitle for the panel + CV. The project body holds the narrative. */
+  description: z.string().optional(),
+  language: z.string().optional(),
+  year: z.number().int().min(1900).max(2100).optional(),
+  /** YYYY-MM of last activity. */
+  last_active: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+  stars: z.number().int().min(0).optional(),
+  archived: z.boolean().optional(),
+  stack: z.array(z.string()).optional(),
+  /** Free-form; no registry validation. */
+  tags: z.array(z.string()).optional(),
+});
+export type Repo = z.infer<typeof RepoSchema>;
+
 export const ProjectFrontmatterSchema = z.object({
   name: z.string().min(1),
   year: z.number().int().min(1900).max(2100).optional(),
   stack: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
   url: z.url().optional(),
+  /** Repos hosted under this project (replaces the old top-level `code/` category). */
+  repos: z.array(RepoSchema).optional(),
 });
 export type ProjectFrontmatter = z.infer<typeof ProjectFrontmatterSchema>;
 
@@ -91,29 +112,6 @@ export const TalkFrontmatterSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 export type TalkFrontmatter = z.infer<typeof TalkFrontmatterSchema>;
-
-export const RepoFrontmatterSchema = z.object({
-  name: z.string().min(1),
-  url: z.url().optional(),
-  role: z.enum(["author", "maintainer", "contributor"]),
-  visibility: z.enum(["public", "private"]).default("public"),
-  /** One-line subtitle for the panel + CV. The body still holds the narrative. */
-  description: z.string().optional(),
-  year: z.number().int().min(1900).max(2100).optional(),
-  /** YYYY-MM of last activity (from gh `pushedAt` at import time). */
-  last_active: z.string().regex(/^\d{4}-\d{2}$/).optional(),
-  language: z.string().optional(),
-  stars: z.number().int().min(0).optional(),
-  archived: z.boolean().optional(),
-  /** Sum of bytes across detected languages (from gh `languages` API). Used
-   * as a size proxy in the panel; not real LOC but the right magnitude. */
-  code_bytes: z.number().int().min(0).optional(),
-  stack: z.array(z.string()).optional(),
-  /** Tags must be a subset of the registry in `kb/code/index.yaml`. Validated
-   * by the loader, not by this schema (the registry is read at runtime). */
-  tags: z.array(z.string()).optional(),
-});
-export type RepoFrontmatter = z.infer<typeof RepoFrontmatterSchema>;
 
 export const RecommendationFrontmatterSchema = z.object({
   from: z.string().min(1),
