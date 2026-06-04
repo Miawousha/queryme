@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { Kb, KbLang } from "@/lib/kb/loader";
+import { allRepos, type Kb, type KbLang } from "@/lib/kb/loader";
 import { CV_STRINGS } from "@/lib/cv/strings";
 
 function formatMonth(date: string, locale: "en-US" | "fr-FR", presentLabel: string): string {
@@ -40,6 +40,7 @@ function firstBulletList(body: string, max: number): string {
 export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
   const t = CV_STRINGS[lang];
   const fmt = (start: string, end: string) => formatPeriod(start, end, t.monthFormat, t.present);
+  const repos = allRepos(kb);
 
   return (
     <article className="cv-page">
@@ -235,23 +236,27 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
         </section>
       )}
 
-      {kb.code.length > 0 && (
+      {repos.length > 0 && (
         <section className="cv-section mb-3">
           <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
             {t.sections.code}
           </h2>
           <ul className="flex flex-col gap-1.5 text-[14px] leading-snug">
-            {kb.code.map((o) => (
-              <li key={o.slug} className="cv-entry">
-                <a
-                  href={o.frontmatter.url}
-                  className="font-display font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
-                >
-                  {o.frontmatter.name}
-                </a>
-                <span className="text-[var(--color-text-tertiary)]"> · {o.frontmatter.role}</span>
-                {o.frontmatter.description && (
-                  <span className="text-[var(--color-text-secondary)]"> — {o.frontmatter.description}</span>
+            {repos.map((o, i) => (
+              <li key={`${o.name}-${i}`} className="cv-entry">
+                {o.url ? (
+                  <a
+                    href={o.url}
+                    className="font-display font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
+                  >
+                    {o.name}
+                  </a>
+                ) : (
+                  <span className="font-display font-semibold text-[var(--color-text-primary)]">{o.name}</span>
+                )}
+                <span className="text-[var(--color-text-tertiary)]"> · {o.role}</span>
+                {o.description && (
+                  <span className="text-[var(--color-text-secondary)]"> — {o.description}</span>
                 )}
               </li>
             ))}

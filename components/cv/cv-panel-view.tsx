@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useKb } from "@/components/kb/kb-context";
+import { allRepos } from "@/lib/kb/loader";
 import { useDialog } from "@/lib/use-dialog";
 import { cn } from "@/lib/utils";
 import {
@@ -170,11 +171,13 @@ function assembleCvMarkdown(kb: import("@/lib/kb/loader").Kb, lang: UiLang): str
     }
   }
 
-  if (kb.code.length > 0) {
+  const repos = allRepos(kb);
+  if (repos.length > 0) {
     lines.push("");
     lines.push(`## Open source`);
-    for (const o of kb.code) {
-      lines.push(`- **${o.frontmatter.name}** (${o.frontmatter.url}) — ${o.frontmatter.role}${o.frontmatter.description ? `: ${o.frontmatter.description}` : ""}`);
+    for (const o of repos) {
+      const url = o.url ? ` (${o.url})` : "";
+      lines.push(`- **${o.name}**${url} — ${o.role}${o.description ? `: ${o.description}` : ""}`);
     }
   }
 
