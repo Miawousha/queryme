@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
-import { loadCvConfig, getFeaturedCodeSlugs } from "@/lib/kb/cv-config";
+import { loadCvConfig } from "@/lib/kb/cv-config";
 
 async function withTmpDir<T>(yaml: string | null, fn: (dir: string) => Promise<T>): Promise<T> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "cv-config-test-"));
@@ -14,39 +14,24 @@ async function withTmpDir<T>(yaml: string | null, fn: (dir: string) => Promise<T
   }
 }
 
-describe("loadCvConfig — chat block", () => {
-  it("parses chat.featured_code as a list of slugs", async () => {
-    await withTmpDir(
-      `chat:\n  featured_code:\n    - repo-a\n    - repo-b\n`,
-      async (dir) => {
-        const cfg = await loadCvConfig(dir);
-        expect(cfg?.chat?.featured_code).toEqual(["repo-a", "repo-b"]);
-      },
-    );
-  });
-
-  it("accepts a config with no chat block (back-compat)", async () => {
-    await withTmpDir(`experience:\n  all: true\n`, async (dir) => {
+describe("loadCvConfig", () => {
+  it("parses section filters", async () => {
+    await withTmpDir(`projects:\n  all: true\nexperience:\n  include:\n    - a\n`, async (dir) => {
       const cfg = await loadCvConfig(dir);
-      expect(cfg?.chat).toBeUndefined();
+      expect(cfg?.projects).toEqual({ all: true });
+      expect(cfg?.experience).toEqual({ include: ["a"] });
     });
   });
-});
 
-describe("getFeaturedCodeSlugs", () => {
-  it("returns the list when set", () => {
-    expect(getFeaturedCodeSlugs({ chat: { featured_code: ["a", "b"] } })).toEqual(["a", "b"]);
+  it("rejects an unknown top-level key (strict schema)", async () => {
+    await expect(
+      withTmpDir(`chat:\n  featured_code:\n    - x\n`, (dir) => loadCvConfig(dir)),
+    ).rejects.toThrow();
   });
 
-  it("returns null when the chat block is missing", () => {
-    expect(getFeaturedCodeSlugs({})).toBeNull();
-  });
-
-  it("returns null when featured_code is missing", () => {
-    expect(getFeaturedCodeSlugs({ chat: {} })).toBeNull();
-  });
-
-  it("returns null when the config itself is null", () => {
-    expect(getFeaturedCodeSlugs(null)).toBeNull();
+  it("returns null when the file is absent", async () => {
+    await withTmpDir(null, async (dir) => {
+      expect(await loadCvConfig(dir)).toBeNull();
+    });
   });
 });

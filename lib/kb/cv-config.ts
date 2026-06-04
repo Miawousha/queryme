@@ -11,20 +11,13 @@ import type { Kb } from "@/lib/kb/loader";
  *   - `{ include: [...] }`  → whitelist; order preserved from the array
  *
  * Identifiers:
- *   - experience / projects / talks / code → file slug
+ *   - experience / projects / talks → file slug
  *     (`kb/experience/2025-altergo.md` → `2025-altergo`)
  *   - skills      → `skill.name` (case-insensitive exact match)
  *   - education   → `institution` (case-insensitive exact match)
  */
 const SectionFilterSchema = z
   .union([z.object({ all: z.literal(true) }), z.object({ include: z.array(z.string().min(1)).min(1) })])
-  .optional();
-
-const ChatBlockSchema = z
-  .object({
-    featured_code: z.array(z.string().min(1)).optional(),
-  })
-  .strict()
   .optional();
 
 const CvConfigSchema = z
@@ -34,8 +27,6 @@ const CvConfigSchema = z
     skills: SectionFilterSchema,
     projects: SectionFilterSchema,
     talks: SectionFilterSchema,
-    code: SectionFilterSchema,
-    chat: ChatBlockSchema,
   })
   .strict();
 
@@ -98,9 +89,6 @@ export function filterKbForCv(kb: Kb, config: CvConfig | null): Kb {
     experience: whitelist(config.experience, kb.experience, (e) => e.slug, "experience"),
     projects: whitelist(config.projects, kb.projects, (p) => p.slug, "projects"),
     talks: whitelist(config.talks, kb.talks, (t) => t.slug, "talks"),
-    code: whitelist(config.code, kb.code, (o) => o.slug, "code").filter(
-      (o) => o.frontmatter.visibility === "public" && o.frontmatter.url,
-    ),
     skills: {
       skills: whitelist(config.skills, kb.skills.skills, (s) => s.name, "skills"),
     },
@@ -108,15 +96,4 @@ export function filterKbForCv(kb: Kb, config: CvConfig | null): Kb {
       entries: whitelist(config.education, kb.education.entries, (e) => e.institution, "education"),
     },
   };
-}
-
-/**
- * Returns the curated list of code slugs to inline in the chat agent's system
- * prompt, or `null` when no curation is configured (the assembler then ships
- * every code entry — today's default behaviour).
- */
-export function getFeaturedCodeSlugs(config: CvConfig | null): string[] | null {
-  const slugs = config?.chat?.featured_code;
-  if (!slugs || slugs.length === 0) return null;
-  return slugs;
 }
