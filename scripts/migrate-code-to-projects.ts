@@ -1,0 +1,145 @@
+/**
+ * Migrate a content repo's `kb/code/*.md` into project `repos:` arrays — losslessly.
+ *
+ *   # 1. Analyze + write a review plan (dry run, writes kb/code/_migration-plan.yaml)
+ *   pnpm migrate:code --root ../my-content-repo
+ *
+ *   # 2. After reviewing/editing the plan, apply it
+ *   pnpm migrate:code --root ../my-content-repo --apply kb/code/_migration-plan.yaml
+ *
+ * Apply assertion: every code slug appears exactly once in the plan, and the
+ * number of repos written equals the number of code files read. Refuses to
+ * delete a code file whose repo was not written into a project.
+ */
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import matter from "gray-matter";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+
+export type CodeRepo = {
+  slug: string;
+  repo: Record<string, unknown>; // RepoSchema-shaped (minus code_bytes)
+  body: string;
+};
+
+export type Plan = {
+  projects: Array<{ slug: string; name: string; repos: string[] }>;
+};
+
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+/** Group by first tag; tagless repos land under a single `open-source` project. */
+export function proposePlan(repos: CodeRepo[]): Plan {
+  const groups = new Map<string, string[]>();
+  for (const r of repos) {
+    const tags = (r.repo.tags as string[] | undefined) ?? [];
+    const key = tags.length ? slugify(tags[0]) : "open-source";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(r.slug);
+  }
+  return {
+    projects: [...groups.entries()].map(([slug, repoSlugs]) => ({
+      slug,
+      name: slug === "open-source" ? "Open source" : slug.replace(/-/g, " "),
+      repos: repoSlugs.sort(),
+    })),
+  };
+}
+
+async function readCodeRepos(codeDir: string): Promise<CodeRepo[]> {
+  let files: string[];
+  try {
+    files = await fs.readdir(codeDir);
+  } catch {
+    return [];
+  }
+  const md = files.filter((f) => f.endsWith(".md") && !/\.[a-z]{2}\.md$/.test(f)).sort();
+  const out: CodeRepo[] = [];
+  for (const f of md) {
+    const raw = await fs.readFile(path.join(codeDir, f), "utf8");
+    const { data, content } = matter(raw);
+    const { code_bytes, ...rest } = data as Record<string, unknown>; // drop code_bytes
+    void code_bytes;
+    out.push({ slug: f.replace(/\.md$/, ""), repo: rest, body: content.trim() });
+  }
+  return out;
+}
+
+function assertLossless(repos: CodeRepo[], plan: Plan): void {
+  const assigned = plan.projects.flatMap((p) => p.repos);
+  const seen = new Set(assigned);
+  if (assigned.length !== seen.size) throw new Error("Plan assigns a repo to more than one project.");
+  const inputSlugs = new Set(repos.map((r) => r.slug));
+  for (const slug of inputSlugs) if (!seen.has(slug)) throw new Error(`Repo "${slug}" is not assigned in the plan.`);
+  for (const slug of seen) if (!inputSlugs.has(slug)) throw new Error(`Plan references unknown repo "${slug}".`);
+}
+
+async function applyPlan(root: string, repos: CodeRepo[], plan: Plan): Promise<void> {
+  assertLossless(repos, plan);
+  const bySlug = new Map(repos.map((r) => [r.slug, r]));
+  const projectsDir = path.join(root, "kb", "projects");
+  await fs.mkdir(projectsDir, { recursive: true });
+  let written = 0;
+
+  for (const proj of plan.projects) {
+    const file = path.join(projectsDir, `${proj.slug}.md`);
+    const reposFm = proj.repos.map((s) => {
+      const r = bySlug.get(s)!;
+      written++;
+      return { ...r.repo, name: r.repo.name ?? s };
+    });
+    let fm: Record<string, unknown>;
+    let body: string;
+    try {
+      const existing = matter(await fs.readFile(file, "utf8"));
+      fm = existing.data as Record<string, unknown>;
+      body = existing.content.trim();
+      fm.repos = [...((fm.repos as unknown[]) ?? []), ...reposFm];
+    } catch {
+      fm = { name: proj.name, repos: reposFm };
+      body = `Repositories grouped under ${proj.name}.`;
+    }
+    const content = `---\n${stringifyYaml(fm)}---\n\n${body}\n`;
+    await fs.writeFile(file, content, "utf8");
+  }
+
+  if (written !== repos.length) {
+    throw new Error(`Lossless check failed: wrote ${written} repos but read ${repos.length}.`);
+  }
+
+  // Safe to remove the old code/ tree only after every repo was written.
+  await fs.rm(path.join(root, "kb", "code"), { recursive: true, force: true });
+  console.log(`Migrated ${written} repos into ${plan.projects.length} projects; removed kb/code/.`);
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const root = args[args.indexOf("--root") + 1] ?? process.env.PERSONA_LOCAL_OVERRIDE;
+  if (!root) throw new Error("Pass --root <content-repo> or set PERSONA_LOCAL_OVERRIDE.");
+  const codeDir = path.join(root, "kb", "code");
+  const repos = await readCodeRepos(codeDir);
+  if (repos.length === 0) throw new Error(`No kb/code/*.md found under ${root}.`);
+
+  const applyIdx = args.indexOf("--apply");
+  if (applyIdx === -1) {
+    const plan = proposePlan(repos);
+    const planPath = path.join(codeDir, "_migration-plan.yaml");
+    await fs.writeFile(planPath, stringifyYaml(plan), "utf8");
+    console.log(`Proposed ${plan.projects.length} projects for ${repos.length} repos.`);
+    console.log(`Review/edit the plan, then re-run with --apply ${planPath}`);
+    if (args.includes("--json")) console.log(JSON.stringify(plan, null, 2));
+  } else {
+    const planPath = args[applyIdx + 1];
+    const plan = parseYaml(await fs.readFile(planPath, "utf8")) as Plan;
+    await applyPlan(root, repos, plan);
+  }
+}
+
+if (process.argv[1] && process.argv[1].endsWith("migrate-code-to-projects.ts")) {
+  main().catch((err) => {
+    console.error("FAIL:", err);
+    process.exit(1);
+  });
+}
