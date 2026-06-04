@@ -96,3 +96,30 @@ describe("migrate-code-to-projects apply (lossless)", () => {
     }
   }, 30000);
 });
+
+import { mkdtemp as mkdtemp2, mkdir as mkdir2, writeFile as writeFile2, rm as rm2 } from "node:fs/promises";
+import { tmpdir as tmpdir2 } from "node:os";
+import path2 from "node:path";
+import { readBilingualRepos } from "@/scripts/migrate-code-to-projects";
+
+describe("readBilingualRepos", () => {
+  it("pairs each canonical repo with its .fr.md sidecar and strips code_bytes", async () => {
+    const root = await mkdtemp2(path2.join(tmpdir2(), "bi-read-"));
+    try {
+      const dir = path2.join(root, "kb", "code");
+      await mkdir2(dir, { recursive: true });
+      await writeFile2(path2.join(dir, "alpha.md"), "---\nname: alpha\nrole: author\ncode_bytes: 5\n---\n\nEN body.\n");
+      await writeFile2(path2.join(dir, "alpha.fr.md"), "---\nname: alpha\nrole: author\n---\n\nCorps FR.\n");
+      await writeFile2(path2.join(dir, "beta.md"), "---\nname: beta\nrole: author\n---\n\nBeta EN.\n");
+      const repos = await readBilingualRepos(dir);
+      const alpha = repos.find((r) => r.slug === "alpha")!;
+      expect(alpha.en.body).toBe("EN body.");
+      expect(alpha.en.fm.code_bytes).toBeUndefined(); // stripped
+      expect(alpha.fr?.body).toBe("Corps FR.");
+      const beta = repos.find((r) => r.slug === "beta")!;
+      expect(beta.fr).toBeNull(); // no sidecar
+    } finally {
+      await rm2(root, { recursive: true, force: true });
+    }
+  });
+});

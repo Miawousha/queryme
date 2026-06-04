@@ -26,6 +26,60 @@ export type Plan = {
   projects: Array<{ slug: string; name: string; repos: string[] }>;
 };
 
+type Lang = "en" | "fr";
+type RepoDoc = { fm: Record<string, unknown>; body: string };
+
+export type BilingualRepo = {
+  slug: string;
+  en: RepoDoc;
+  fr: RepoDoc | null;
+};
+
+/** A hand-authored or proposed migration plan (bilingual-aware). */
+export type PlanProject = {
+  slug: string;
+  name: string;
+  repos: string[];
+  tags?: string[];
+  intro_en?: string;
+  intro_fr?: string;
+  /** When true, append repos to an EXISTING project file instead of rewriting it. */
+  merge?: boolean;
+};
+export type PlanV2 = { projects: PlanProject[] };
+
+async function readDoc(file: string): Promise<RepoDoc> {
+  const raw = await fs.readFile(file, "utf8");
+  const { data, content } = matter(raw);
+  const { code_bytes, ...fm } = data as Record<string, unknown>; // drop code_bytes
+  void code_bytes;
+  return { fm, body: content.trim() };
+}
+
+/** Reads each canonical `code/<slug>.md` plus its optional `code/<slug>.fr.md`. */
+export async function readBilingualRepos(codeDir: string): Promise<BilingualRepo[]> {
+  let files: string[];
+  try {
+    files = await fs.readdir(codeDir);
+  } catch {
+    return [];
+  }
+  const canonical = files.filter((f) => f.endsWith(".md") && !/\.[a-z]{2}\.md$/.test(f)).sort();
+  const out: BilingualRepo[] = [];
+  for (const f of canonical) {
+    const slug = f.replace(/\.md$/, "");
+    const en = await readDoc(path.join(codeDir, f));
+    let fr: RepoDoc | null = null;
+    try {
+      fr = await readDoc(path.join(codeDir, `${slug}.fr.md`));
+    } catch {
+      fr = null;
+    }
+    out.push({ slug, en, fr });
+  }
+  return out;
+}
+
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
