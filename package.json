@@ -11,7 +11,6 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "validate:kb": "tsx scripts/validate-kb.ts",
-    "migrate:code": "tsx scripts/migrate-code-to-projects.ts",
     "enrich:repo": "tsx scripts/enrich-repo.ts",
     "evals": "tsx scripts/eval.ts",
     "db:generate": "drizzle-kit generate",
