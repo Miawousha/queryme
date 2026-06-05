@@ -50,7 +50,6 @@ export function KbProvider({
   kbStrings,
   apiBasePath = "/api",
   cvPrintBase = "",
-  includeCv = true,
   children,
 }: {
   lang: UiLang;
@@ -59,8 +58,6 @@ export function KbProvider({
   apiBasePath?: string;
   /** Account page base for CV links. Defaults to "" (→ /cv). */
   cvPrintBase?: string;
-  /** Whether to prepend the synthetic CV entry. Defaults to true. */
-  includeCv?: boolean;
   children: ReactNode;
 }) {
   const strings = kbStrings;
@@ -89,14 +86,13 @@ export function KbProvider({
   // Synthetic CV entry, pinned to the top of the file list. Title flips with
   // language so the entry reads naturally in either locale.
   const manifestWithCv = useMemo<KbFile[]>(() => {
-    if (!includeCv) return manifest;
     const cvEntry: KbFile = {
       path: CV_VIRTUAL_PATH,
       title: strings.cv,
       type: "cv",
     };
     return [cvEntry, ...manifest];
-  }, [manifest, strings.cv, includeCv]);
+  }, [manifest, strings.cv]);
 
   const value = useMemo(
     () => ({

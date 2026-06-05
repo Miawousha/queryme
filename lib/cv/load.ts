@@ -26,6 +26,14 @@ export async function loadCvKb(
   return { root, cvKb: filterKbForCv(kb, config) };
 }
 
+/** Parse the `lang` query/search param to a KbLang (defaults to "en").
+ * Accepts a route searchParam value (string | string[] | undefined) or a
+ * URLSearchParams.get() value (string | null). */
+export function parseCvLang(value: string | string[] | null | undefined): KbLang {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw === "fr" ? "fr" : "en";
+}
+
 /** Persona full name for an account's CV `<title>`. Null when unconfigured. */
 export async function cvPersonaName(accountId: string): Promise<string | null> {
   const store = getPersonaStore();

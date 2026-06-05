@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadAccountForSlug } from "@/lib/accounts/load";
-import { loadCvKb } from "@/lib/cv/load";
-import type { KbLang } from "@/lib/kb/loader";
+import { loadCvKb, parseCvLang } from "@/lib/cv/load";
 
 export const runtime = "nodejs";
-
-function parseLang(value: string | null): KbLang {
-  return value === "fr" ? "fr" : "en";
-}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ username: string }> },
 ): Promise<Response> {
-  const lang = parseLang(req.nextUrl.searchParams.get("lang"));
+  const lang = parseCvLang(req.nextUrl.searchParams.get("lang"));
   const { username } = await params;
   const account = await loadAccountForSlug(username);
   if (!account) return NextResponse.json({ error: "account_not_found" }, { status: 404 });

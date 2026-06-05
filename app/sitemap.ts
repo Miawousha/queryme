@@ -19,8 +19,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE}/${a.username}/cv`, changeFrequency: "weekly", priority: 0.6 },
       ]);
     return [...base, ...perAccount];
-  } catch {
+  } catch (err) {
     // DB unavailable at build/runtime → static entries only.
+    // eslint-disable-next-line no-console
+    console.warn("[sitemap] account enumeration failed; serving static entries", err);
     return base;
   }
 }

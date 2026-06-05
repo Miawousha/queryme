@@ -21,6 +21,7 @@ describe("sitemap", () => {
 
   it("falls back to static entries when the DB is unavailable", async () => {
     listAllAccounts.mockRejectedValue(new Error("db down"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
     const { default: sitemap } = await import("@/app/sitemap");
     const urls = (await sitemap()).map((e) => e.url);
     expect(urls.some((u) => u.endsWith("/cv"))).toBe(true);

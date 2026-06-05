@@ -5,7 +5,11 @@ const loadAccountForSlug = vi.fn();
 const loadCvKb = vi.fn();
 
 vi.mock("@/lib/accounts/load", () => ({ loadAccountForSlug }));
-vi.mock("@/lib/cv/load", () => ({ loadCvKb }));
+vi.mock("@/lib/cv/load", () => ({
+  loadCvKb,
+  parseCvLang: (value: string | string[] | null | undefined) =>
+    (Array.isArray(value) ? value[0] : value) === "fr" ? "fr" : "en",
+}));
 
 const ctx = (username: string) => ({ params: Promise.resolve({ username }) });
 beforeEach(() => vi.clearAllMocks());
