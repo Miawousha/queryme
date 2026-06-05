@@ -1,0 +1,43 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { loadCvKb, cvPersonaName } from "@/lib/cv/load";
+import { loadAccountForSlug } from "@/lib/accounts/load";
+import { CvStandalone } from "@/components/cv/cv-standalone";
+import { NotConfiguredScreen } from "@/components/not-configured-screen";
+import type { KbLang } from "@/lib/kb/loader";
+
+export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Metadata> {
+  const { username } = await params;
+  const account = await loadAccountForSlug(username);
+  if (!account) return { title: "CV" };
+  const name = await cvPersonaName(account.id);
+  if (!name) return { title: "CV" };
+  return { title: `${name} — CV`, description: `Printable CV for ${name}.` };
+}
+
+function parseLang(value: string | string[] | undefined): KbLang {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw === "fr" ? "fr" : "en";
+}
+
+type Props = {
+  params: Promise<{ username: string }>;
+  searchParams: Promise<{ lang?: string }>;
+};
+
+export default async function AccountCvPage({ params, searchParams }: Props) {
+  const { username } = await params;
+  const account = await loadAccountForSlug(username);
+  if (!account) notFound();
+  const { lang: langParam } = await searchParams;
+  const lang = parseLang(langParam);
+  const result = await loadCvKb(account.id, lang);
+  if (!result) return <NotConfiguredScreen />;
+  return <CvStandalone cvKb={result.cvKb} lang={lang} basePath={`/${account.username}`} />;
+}

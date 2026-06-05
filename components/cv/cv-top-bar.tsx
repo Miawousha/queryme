@@ -3,10 +3,22 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import type { Route } from "next";
 import { LanguageToggle } from "@/components/language-toggle";
 import type { UiLang } from "@/lib/language";
 
-export function CvTopBar({ lang, printLabel, backLabel }: { lang: UiLang; printLabel: string; backLabel: string }) {
+export function CvTopBar({
+  lang,
+  printLabel,
+  backLabel,
+  basePath = "",
+}: {
+  lang: UiLang;
+  printLabel: string;
+  backLabel: string;
+  /** Account page base: "" for the root account (→ /cv) or "/{username}". */
+  basePath?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -23,7 +35,7 @@ export function CvTopBar({ lang, printLabel, backLabel }: { lang: UiLang; printL
   return (
     <div className="no-print mb-8 flex items-center justify-between gap-3">
       <Link
-        href="/"
+        href={(basePath || "/") as Route}
         className="font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
       >
         ← {backLabel}
@@ -32,7 +44,7 @@ export function CvTopBar({ lang, printLabel, backLabel }: { lang: UiLang; printL
         <LanguageToggle
           value={lang}
           onChange={(next) => {
-            router.push(`/cv?lang=${next}`);
+            router.push(`${basePath}/cv?lang=${next}` as Route);
           }}
         />
         <button

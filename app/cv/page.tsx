@@ -1,29 +1,16 @@
 import type { Metadata } from "next";
-import path from "node:path";
-import { loadKb, type KbLang } from "@/lib/kb/loader";
-import { filterKbForCv, loadCvConfig } from "@/lib/kb/cv-config";
-import { CvDocumentView } from "@/components/cv/cv-document";
-import { CvTopBar } from "./cv-top-bar";
-import { CV_STRINGS } from "@/lib/cv/strings";
-import "./print.css";
+import { loadCvKb, cvPersonaName } from "@/lib/cv/load";
+import { resolveRootAccountId } from "@/lib/accounts/root";
+import { CvStandalone } from "@/components/cv/cv-standalone";
+import { NotConfiguredScreen } from "@/components/not-configured-screen";
+import type { KbLang } from "@/lib/kb/loader";
 
 export const revalidate = 3600;
 
-import { getPersonaStore } from "@/lib/persona/store";
-import { resolveRootAccountId } from "@/lib/accounts/root";
-import { loadPersona } from "@/lib/persona";
-import { NotConfiguredScreen } from "@/components/not-configured-screen";
-
 export async function generateMetadata(): Promise<Metadata> {
-  const accountId = await resolveRootAccountId();
-  await getPersonaStore().ensureReady(accountId);
-  const root = getPersonaStore().getRoot(accountId);
-  if (!root) return { title: "CV" };
-  const persona = loadPersona(root);
-  return {
-    title: `${persona.fullName} — CV`,
-    description: `Printable CV for ${persona.fullName}.`,
-  };
+  const name = await cvPersonaName(await resolveRootAccountId());
+  if (!name) return { title: "CV" };
+  return { title: `${name} — CV`, description: `Printable CV for ${name}.` };
 }
 
 function parseLang(value: string | string[] | undefined): KbLang {
@@ -34,23 +21,9 @@ function parseLang(value: string | string[] | undefined): KbLang {
 type Props = { searchParams: Promise<{ lang?: string }> };
 
 export default async function CvPage({ searchParams }: Props) {
-  const params = await searchParams;
-  const lang = parseLang(params.lang);
-  const t = CV_STRINGS[lang];
-  const accountId = await resolveRootAccountId();
-  await getPersonaStore().ensureReady(accountId);
-  const root = getPersonaStore().getRoot(accountId);
-  if (!root) return <NotConfiguredScreen />;
-  const [kb, config] = await Promise.all([
-    loadKb(path.join(root, "kb"), lang),
-    loadCvConfig(root),
-  ]);
-  const cvKb = filterKbForCv(kb, config);
-
-  return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <CvTopBar lang={lang} printLabel={t.print} backLabel="queryme" />
-      <CvDocumentView kb={cvKb} lang={lang} />
-    </main>
-  );
+  const { lang: langParam } = await searchParams;
+  const lang = parseLang(langParam);
+  const result = await loadCvKb(await resolveRootAccountId(), lang);
+  if (!result) return <NotConfiguredScreen />;
+  return <CvStandalone cvKb={result.cvKb} lang={lang} basePath="" />;
 }
