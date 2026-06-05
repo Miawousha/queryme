@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isPlatformHost, resolveCustomHost } from "@/lib/domains/host";
+import { isPlatformHost, resolveCustomHost, customHostTarget } from "@/lib/domains/host";
 import { getDomainSlug } from "@/lib/domains/edge-cache";
 
 /**
@@ -42,14 +42,16 @@ export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").toLowerCase().replace(/:\d+$/, "");
   const platformHost = process.env.PLATFORM_HOST ?? null;
 
-  // Custom-domain vanity hosting: a non-platform host hitting the root renders
-  // that account's page in place. Only "/" is rewritten — the namespaced
-  // /api/a/{slug}/* calls are excluded from middleware and resolve by path.
-  if (request.nextUrl.pathname === "/" && !isPlatformHost(host, platformHost)) {
+  // Custom-domain vanity hosting: a non-platform host serves that account's home
+  // ("/") and CV ("/cv") in place. The namespaced /api/a/{slug}/* calls are
+  // excluded from middleware and resolve by path. The first `customHostTarget`
+  // call is a cheap membership check that avoids a KV lookup on non-vanity paths.
+  if (!isPlatformHost(host, platformHost) && customHostTarget(request.nextUrl.pathname, "") !== null) {
     const slug = await resolveCustomHost(host, getDomainSlug);
-    if (slug) {
+    const dest = slug ? customHostTarget(request.nextUrl.pathname, slug) : null;
+    if (dest) {
       const url = request.nextUrl.clone();
-      url.pathname = `/${slug}`;
+      url.pathname = dest;
       const rewrite = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
       rewrite.headers.set("content-security-policy", csp);
       return rewrite;

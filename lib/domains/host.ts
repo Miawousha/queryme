@@ -22,3 +22,17 @@ export async function resolveCustomHost(
     return null;
   }
 }
+
+/** Paths the platform vanity-hosts on a tenant's custom domain. */
+const VANITY_PATHS = new Set(["/", "/cv"]);
+
+/**
+ * Map an incoming path on a custom (tenant) host to the internal tenant path to
+ * rewrite to, or null to pass the request through unchanged. Only the account
+ * home ("/") and its CV ("/cv") are vanity-hosted; everything else resolves by
+ * its normal path.
+ */
+export function customHostTarget(pathname: string, slug: string): string | null {
+  if (!VANITY_PATHS.has(pathname)) return null;
+  return pathname === "/" ? `/${slug}` : `/${slug}${pathname}`;
+}
