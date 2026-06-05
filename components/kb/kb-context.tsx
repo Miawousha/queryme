@@ -33,6 +33,8 @@ type KbContextValue = {
   closeFile: () => void;
   /** Base path for KB API calls (e.g. "/api" or "/api/a/username"). */
   apiBasePath: string;
+  /** Account page base for CV links: "" (→ /cv) or "/{username}". */
+  cvPrintBase: string;
 };
 
 const KbContext = createContext<KbContextValue | null>(null);
@@ -47,6 +49,7 @@ export function KbProvider({
   lang,
   kbStrings,
   apiBasePath = "/api",
+  cvPrintBase = "",
   includeCv = true,
   children,
 }: {
@@ -54,6 +57,8 @@ export function KbProvider({
   kbStrings: KbStrings;
   /** Base path for KB API calls. Defaults to "/api". */
   apiBasePath?: string;
+  /** Account page base for CV links. Defaults to "" (→ /cv). */
+  cvPrintBase?: string;
   /** Whether to prepend the synthetic CV entry. Defaults to true. */
   includeCv?: boolean;
   children: ReactNode;
@@ -104,8 +109,9 @@ export function KbProvider({
       openFile,
       closeFile,
       apiBasePath,
+      cvPrintBase,
     }),
-    [lang, strings, manifestWithCv, citedPaths, openFilePath, openFile, closeFile, apiBasePath],
+    [lang, strings, manifestWithCv, citedPaths, openFilePath, openFile, closeFile, apiBasePath, cvPrintBase],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

@@ -27,12 +27,12 @@ export function CvPanelView({
 }: {
   onLangChange: (next: UiLang) => void;
 }) {
-  const { lang, strings, closeFile } = useKb();
+  const { lang, strings, closeFile, apiBasePath, cvPrintBase } = useKb();
   const [focus, setFocus] = useState(false);
   const focusRef = useDialog<HTMLDivElement>(focus, () => setFocus(false));
 
   async function copyCvMarkdown(): Promise<string> {
-    const res = await fetch(`/api/cv?lang=${lang}`);
+    const res = await fetch(`${apiBasePath}/cv?lang=${lang}`);
     const { kb } = await res.json();
     const md = assembleCvMarkdown(kb, lang);
     await navigator.clipboard.writeText(md);
@@ -40,7 +40,7 @@ export function CvPanelView({
   }
 
   async function downloadCvMarkdown(): Promise<void> {
-    const res = await fetch(`/api/cv?lang=${lang}`);
+    const res = await fetch(`${apiBasePath}/cv?lang=${lang}`);
     const { kb } = await res.json();
     const md = assembleCvMarkdown(kb, lang);
     const blob = new Blob([md], { type: "text/markdown" });
@@ -57,7 +57,7 @@ export function CvPanelView({
   function openPrintView(): void {
     // Open the standalone CV route in a new tab — the print stylesheet there
     // is tuned for A4. Auto-trigger print via the `?print=1` flag.
-    window.open(`/cv?lang=${lang}&print=1`, "_blank", "noopener");
+    window.open(`${cvPrintBase}/cv?lang=${lang}&print=1`, "_blank", "noopener");
   }
 
   const actions: KbDocAction[] = [
