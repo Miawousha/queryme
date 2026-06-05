@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
-import { loadCvConfig } from "@/lib/kb/cv-config";
+import { filterKbForCv, loadCvConfig } from "@/lib/kb/cv-config";
+import { allRepos } from "@/lib/kb/repos";
+import type { Kb, ProjectEntry } from "@/lib/kb/loader";
+import type { Repo } from "@/lib/kb/schemas";
 
 async function withTmpDir<T>(yaml: string | null, fn: (dir: string) => Promise<T>): Promise<T> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "cv-config-test-"));
@@ -33,5 +36,56 @@ describe("loadCvConfig", () => {
     await withTmpDir(null, async (dir) => {
       expect(await loadCvConfig(dir)).toBeNull();
     });
+  });
+});
+
+function repo(overrides: Partial<Repo> & Pick<Repo, "name">): Repo {
+  return { role: "author", visibility: "public", ...overrides };
+}
+
+function project(slug: string, repos: Repo[]): ProjectEntry {
+  return { slug, relativePath: `projects/${slug}.md`, frontmatter: { name: slug, repos }, body: "" };
+}
+
+function kbWithProjects(projects: ProjectEntry[]): Kb {
+  return {
+    profile: { name: "Test", headline: "Dev" },
+    skills: { skills: [] },
+    education: { entries: [] },
+    publicContact: {},
+    experience: [],
+    projects,
+    talks: [],
+    recommendations: [],
+  };
+}
+
+describe("filterKbForCv repo privacy", () => {
+  const mixed = () =>
+    kbWithProjects([
+      project("alpha", [
+        repo({ name: "pub", visibility: "public", url: "https://github.com/x/pub" }),
+        repo({ name: "secret", visibility: "private", url: "https://github.com/x/secret", description: "internal" }),
+        repo({ name: "pub-no-url", visibility: "public" }),
+      ]),
+    ]);
+
+  it("drops private repos even when there is no cv-config", () => {
+    const cvKb = filterKbForCv(mixed(), null);
+    const names = (cvKb.projects[0].frontmatter.repos ?? []).map((r) => r.name);
+    expect(names).toEqual(["pub"]);
+    expect(names).not.toContain("secret");
+  });
+
+  it("drops private repos when a cv-config is present", () => {
+    const cvKb = filterKbForCv(mixed(), { projects: { all: true } });
+    const names = (cvKb.projects[0].frontmatter.repos ?? []).map((r) => r.name);
+    expect(names).toEqual(["pub"]);
+  });
+
+  it("yields only public repos through allRepos (the leak vector)", () => {
+    const cvKb = filterKbForCv(mixed(), null);
+    expect(allRepos(cvKb).map((r) => r.name)).toEqual(["pub"]);
+    expect(allRepos(cvKb).every((r) => r.visibility === "public" && r.url)).toBe(true);
   });
 });

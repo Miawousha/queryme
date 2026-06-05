@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
-import type { Kb } from "@/lib/kb/loader";
+import type { Kb, ProjectEntry } from "@/lib/kb/loader";
 
 /**
  * Per-section filter. Three shapes:
@@ -79,15 +79,34 @@ function whitelist<T>(
 }
 
 /**
+ * Privacy invariant: the CV is a public surface, so a project may only expose
+ * repos that are published (`visibility === "public"`) and linkable (have a
+ * `url`). Applied to every project's `repos` regardless of any `cv-config.yaml`
+ * — private repos must never reach the CV page, the `/api/cv` JSON, or the
+ * copy/download markdown, even for an account that ships no config.
+ */
+function withPublicReposOnly(projects: ProjectEntry[]): ProjectEntry[] {
+  return projects.map((p) => ({
+    ...p,
+    frontmatter: {
+      ...p.frontmatter,
+      repos: (p.frontmatter.repos ?? []).filter((r) => r.visibility === "public" && r.url),
+    },
+  }));
+}
+
+/**
  * Applies the CV inclusion config to a loaded KB. The shape of `Kb` is
- * preserved; only the arrays inside are trimmed/reordered.
+ * preserved; only the arrays inside are trimmed/reordered. Private repos are
+ * always stripped first (see `withPublicReposOnly`).
  */
 export function filterKbForCv(kb: Kb, config: CvConfig | null): Kb {
-  if (!config) return kb;
+  const projects = withPublicReposOnly(kb.projects);
+  if (!config) return { ...kb, projects };
   return {
     ...kb,
     experience: whitelist(config.experience, kb.experience, (e) => e.slug, "experience"),
-    projects: whitelist(config.projects, kb.projects, (p) => p.slug, "projects"),
+    projects: whitelist(config.projects, projects, (p) => p.slug, "projects"),
     talks: whitelist(config.talks, kb.talks, (t) => t.slug, "talks"),
     skills: {
       skills: whitelist(config.skills, kb.skills.skills, (s) => s.name, "skills"),
