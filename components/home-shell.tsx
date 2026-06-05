@@ -24,7 +24,7 @@ type Props = {
   contentRepoUrl: string | null;
   /** Base path for API calls. Defaults to "/api". */
   apiBasePath?: string;
-  /** When false, CV affordance and MCP button/modal are hidden. Defaults to true. */
+  /** When false, MCP button/modal are hidden. Defaults to true. */
   isRootAccount?: boolean;
 };
 
@@ -47,7 +47,7 @@ export function HomeShell({
   apiBasePath = "/api",
   isRootAccount = true,
 }: Props) {
-  const { openFile } = useKb();
+  const { openFile, cvPrintBase } = useKb();
 
   const openCv = () => {
     onKbCollapsedChange(false);
@@ -66,8 +66,8 @@ export function HomeShell({
           aboutButtonLabel={t.about.buttonLabel}
           onOpenAbout={() => onAboutOpenChange(true)}
           sourceRepo={contentRepoUrl ? { url: contentRepoUrl, label: t.sourceRepoLabel } : null}
-          cvButtonLabel={isRootAccount ? t.kb.openCv : undefined}
-          onOpenCv={isRootAccount ? openCv : undefined}
+          cvButtonLabel={t.kb.openCv}
+          onOpenCv={openCv}
           kbCollapsed={kbCollapsed}
           onToggleKb={() => onKbCollapsedChange((c) => !c)}
           kbShowLabel={t.kbPanel.show}
@@ -100,7 +100,7 @@ export function HomeShell({
         }}
         repoUrl={REPO_URL}
         branch={REPO_BRANCH}
-        cvHref={`/cv?lang=${lang}`}
+        cvHref={`${cvPrintBase}/cv?lang=${lang}`}
       />
     </>
   );

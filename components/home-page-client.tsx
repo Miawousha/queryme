@@ -13,7 +13,9 @@ type Props = {
   contentRepoUrl: string | null;
   /** Base path for API calls. Defaults to "/api". */
   apiBasePath?: string;
-  /** When false, CV affordance and MCP button/modal are hidden. Defaults to true. */
+  /** Account page base for CV links: "" (→ /cv) or "/{username}". */
+  cvPrintBase?: string;
+  /** When false, MCP button/modal are hidden. Defaults to true. */
   isRootAccount?: boolean;
 };
 
@@ -21,6 +23,7 @@ export function HomePageClient({
   strings,
   contentRepoUrl,
   apiBasePath = "/api",
+  cvPrintBase = "",
   isRootAccount = true,
 }: Props) {
   const [lang, setLang] = useState<UiLang>("en");
@@ -30,7 +33,7 @@ export function HomePageClient({
   const t = strings[lang] as UiStrings;
 
   return (
-    <KbProvider lang={lang} kbStrings={t.kb} apiBasePath={apiBasePath} includeCv={isRootAccount}>
+    <KbProvider lang={lang} kbStrings={t.kb} apiBasePath={apiBasePath} cvPrintBase={cvPrintBase}>
       <GridBackground />
       <HomeShell
         t={t}
