@@ -1,0 +1,58 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Kb } from "@/lib/kb/loader";
+import type { Repo } from "@/lib/kb/schemas";
+
+const ensureReady = vi.fn();
+const getRoot = vi.fn();
+const loadKb = vi.fn();
+
+vi.mock("@/lib/persona/store", () => ({ getPersonaStore: () => ({ ensureReady, getRoot }) }));
+vi.mock("@/lib/kb/loader", () => ({ loadKb }));
+vi.mock("@/lib/persona", () => ({ loadPersona: () => ({ fullName: "Ada Lovelace" }) }));
+
+function kbWithRepos(repos: Repo[]): Kb {
+  return {
+    profile: { name: "Ada", headline: "Dev" },
+    skills: { skills: [] },
+    education: { entries: [] },
+    publicContact: {},
+    experience: [],
+    projects: [{ slug: "p", relativePath: "projects/p.md", frontmatter: { name: "p", repos }, body: "" }],
+    talks: [],
+    recommendations: [],
+  };
+}
+
+beforeEach(() => vi.clearAllMocks());
+
+describe("loadCvKb", () => {
+  it("returns null when the account has no content root", async () => {
+    ensureReady.mockResolvedValue(undefined);
+    getRoot.mockReturnValue(null);
+    const { loadCvKb } = await import("@/lib/cv/load");
+    expect(await loadCvKb("acc", "en")).toBeNull();
+  });
+
+  it("strips private repos through filterKbForCv (the privacy chokepoint)", async () => {
+    ensureReady.mockResolvedValue(undefined);
+    // A dir with no cv-config.yaml → loadCvConfig returns null → unconditional repo filter still runs.
+    getRoot.mockReturnValue("/tmp/per-account-cv-no-config");
+    loadKb.mockResolvedValue(
+      kbWithRepos([
+        { name: "pub", role: "author", visibility: "public", url: "https://x/pub" },
+        { name: "secret", role: "author", visibility: "private", url: "https://x/secret" },
+      ]),
+    );
+    const { loadCvKb } = await import("@/lib/cv/load");
+    const result = await loadCvKb("acc", "en");
+    expect(result).not.toBeNull();
+    expect((result!.cvKb.projects[0].frontmatter.repos ?? []).map((r) => r.name)).toEqual(["pub"]);
+  });
+
+  it("returns the persona full name via cvPersonaName", async () => {
+    ensureReady.mockResolvedValue(undefined);
+    getRoot.mockReturnValue("/tmp/per-account-cv-no-config");
+    const { cvPersonaName } = await import("@/lib/cv/load");
+    expect(await cvPersonaName("acc")).toBe("Ada Lovelace");
+  });
+});
