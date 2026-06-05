@@ -47,7 +47,7 @@ export function CvPanelView({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `alexandre-collet-cv${lang === "fr" ? ".fr" : ""}.md`;
+    a.download = `${cvFileSlug(kb.profile.name)}-cv${lang === "fr" ? ".fr" : ""}.md`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -182,6 +182,17 @@ function assembleCvMarkdown(kb: import("@/lib/kb/loader").Kb, lang: UiLang): str
   }
 
   return lines.join("\n");
+}
+
+/** Slugify a person's name for a download filename: "Ada Lovelace" → "ada-lovelace". */
+function cvFileSlug(name: string): string {
+  const slug = name
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "cv";
 }
 
 function firstBulletList(body: string, max: number): string[] {
