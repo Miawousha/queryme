@@ -56,3 +56,21 @@ describe("loadCvKb", () => {
     expect(await cvPersonaName("acc")).toBe("Ada Lovelace");
   });
 });
+
+describe("parseCvLang", () => {
+  it("returns 'fr' only for the literal 'fr'", async () => {
+    const { parseCvLang } = await import("@/lib/cv/load");
+    expect(parseCvLang("fr")).toBe("fr");
+    expect(parseCvLang(["fr", "en"])).toBe("fr");
+  });
+
+  it("defaults to 'en' for anything else", async () => {
+    const { parseCvLang } = await import("@/lib/cv/load");
+    expect(parseCvLang("en")).toBe("en");
+    expect(parseCvLang("de")).toBe("en");
+    expect(parseCvLang(null)).toBe("en");
+    expect(parseCvLang(undefined)).toBe("en");
+    expect(parseCvLang(["en", "fr"])).toBe("en");
+    expect(parseCvLang([])).toBe("en");
+  });
+});
