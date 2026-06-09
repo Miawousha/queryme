@@ -13,11 +13,11 @@ const BASE = "https://deployed.example.com";
 
 describe("extractCookie", () => {
   it("pulls the named cookie value from Set-Cookie headers", () => {
-    const headers = ["other=1; Path=/", "queryme_admin=abc.def; HttpOnly; Path=/"];
-    expect(extractCookie(headers, "queryme_admin")).toBe("abc.def");
+    const headers = ["other=1; Path=/", "queritae_admin=abc.def; HttpOnly; Path=/"];
+    expect(extractCookie(headers, "queritae_admin")).toBe("abc.def");
   });
   it("returns null when the cookie is absent", () => {
-    expect(extractCookie(["other=1"], "queryme_admin")).toBeNull();
+    expect(extractCookie(["other=1"], "queritae_admin")).toBeNull();
   });
 });
 
@@ -27,7 +27,7 @@ describe("login", () => {
       http.post(`${BASE}/api/admin/login`, () =>
         HttpResponse.json(
           { ok: true },
-          { headers: { "Set-Cookie": "queryme_session=tok123; HttpOnly; Path=/" } },
+          { headers: { "Set-Cookie": "queritae_session=tok123; HttpOnly; Path=/" } },
         ),
       ),
     );
@@ -69,7 +69,7 @@ describe("fetchStatus", () => {
     );
     const out = await fetchStatus(BASE, "tok123");
     expect(out).toEqual({ active: { commitSha: "s1" }, history: [] });
-    expect(sentCookie).toContain("queryme_session=tok123");
+    expect(sentCookie).toContain("queritae_session=tok123");
   });
 });
 

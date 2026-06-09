@@ -10,7 +10,7 @@ export function NotConfiguredScreen() {
     <main className="flex h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
       <MatriceLogo size={48} animated />
       <div>
-        <h1 className="font-display text-lg text-[var(--color-text-primary)]">queryme</h1>
+        <h1 className="font-display text-lg text-[var(--color-text-primary)]">queritae</h1>
         <p className="mt-2 max-w-md text-sm text-[var(--color-text-secondary)]">
           This deployment has no persona configured yet.
         </p>

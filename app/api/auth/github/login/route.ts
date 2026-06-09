@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     state,
   });
   const res = NextResponse.redirect(url);
-  res.cookies.set("queryme_oauth_state", state, {
+  res.cookies.set("queritae_oauth_state", state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

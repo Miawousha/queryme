@@ -2,7 +2,7 @@ import { GridBackground } from "@/components/grid-background";
 import { REPO_URL } from "@/lib/repo";
 
 /**
- * Marketing landing page served at `/`. Pitches the queryme concept and points
+ * Marketing landing page served at `/`. Pitches the queritae concept and points
  * visitors at a live account. Static (server component) — the only client
  * island is the animated dot grid. Shares the app's Arctic design tokens so it
  * reads as part of the product.
@@ -21,7 +21,7 @@ const STEPS = [
   {
     n: "02",
     title: "It becomes an agent",
-    body: "queryme loads your KB into a grounded chat agent that answers questions and cites the exact files it drew from.",
+    body: "queritae loads your KB into a grounded chat agent that answers questions and cites the exact files it drew from.",
   },
   {
     n: "03",
@@ -86,7 +86,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
               className="inline-block h-2 w-2 rounded-full bg-[var(--color-accent)]"
               style={{ boxShadow: "0 0 10px 1px rgba(var(--color-accent-rgb),0.7)" }}
             />
-            queryme
+            queritae
           </span>
           <a
             href="/api/auth/github/login"
@@ -121,7 +121,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             className="fade-up mt-6 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-secondary)] sm:text-base"
             style={{ animationDelay: "0.2s" }}
           >
-            queryme turns a public GitHub repo of your experience into a grounded
+            queritae turns a public GitHub repo of your experience into a grounded
             chat agent — and an MCP endpoint — that answers a recruiter&apos;s
             questions, cites its sources, and hides nothing.
           </p>
@@ -236,7 +236,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
         {/* Footer */}
         <footer className="flex flex-col items-center justify-between gap-3 border-t border-[var(--color-border)] py-8 sm:flex-row">
           <span className={MONO_LABEL} style={{ letterSpacing: "0.22em" }}>
-            queryme — an open, queryable cv
+            queritae — an open, queryable cv
           </span>
           <a
             href={REPO_URL}

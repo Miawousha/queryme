@@ -38,7 +38,7 @@ import { resolveRootAccountId } from "@/lib/accounts/root";
 import { loadPersona } from "@/lib/persona";
 
 const FALLBACK_METADATA: Metadata = {
-  title: "queryme",
+  title: "queritae",
   description: "A queryable CV — interview the agent.",
 };
 

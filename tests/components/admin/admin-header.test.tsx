@@ -9,9 +9,9 @@ beforeEach(() => {
 });
 
 describe("AdminHeader", () => {
-  it("renders the queryme wordmark and the account username", () => {
+  it("renders the queritae wordmark and the account username", () => {
     render(<AdminHeader username="alex" />);
-    expect(screen.getByText("queryme")).toBeInTheDocument();
+    expect(screen.getByText("queritae")).toBeInTheDocument();
     expect(screen.getByText("alex")).toBeInTheDocument();
   });
 });

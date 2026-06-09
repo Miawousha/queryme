@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useKb } from "@/components/kb/kb-context";
 import { useDialog } from "@/lib/use-dialog";
 
-const WIDTH_KEY = "queryme:kbPanelWidth";
+const WIDTH_KEY = "queritae:kbPanelWidth";
 const MIN_PCT = 24;
 const MAX_PCT = 60;
 const DEFAULT_PCT = 38;

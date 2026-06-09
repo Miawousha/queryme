@@ -87,7 +87,7 @@ describe("run: remote status", () => {
   it("logs in and returns active+history (exit 0)", async () => {
     mswServer.use(
       http.post(`${BASE}/api/admin/login`, () =>
-        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queryme_session=tok; Path=/" } }),
+        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queritae_session=tok; Path=/" } }),
       ),
       http.get(`${BASE}/api/admin/persona-source`, () =>
         HttpResponse.json({ active: { commitSha: "s1" }, history: [] }),
@@ -125,7 +125,7 @@ describe("run: remote sync", () => {
   it("syncs and reports changed=true (exit 0)", async () => {
     mswServer.use(
       http.post(`${BASE}/api/admin/login`, () =>
-        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queryme_session=tok; Path=/" } }),
+        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queritae_session=tok; Path=/" } }),
       ),
       http.get(`${BASE}/api/admin/persona-source`, () =>
         HttpResponse.json({ active: { commitSha: "old", repoUrl: "https://github.com/a/b", branch: "main" }, history: [] }),
@@ -151,7 +151,7 @@ describe("run: remote sync", () => {
     let posted = false;
     mswServer.use(
       http.post(`${BASE}/api/admin/login`, () =>
-        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queryme_session=tok; Path=/" } }),
+        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queritae_session=tok; Path=/" } }),
       ),
       http.get(`${BASE}/api/admin/persona-source`, () =>
         HttpResponse.json({ active: { commitSha: "old", repoUrl: "https://github.com/a/b", branch: "main" }, history: [] }),
@@ -221,7 +221,7 @@ describe("run: --verbose on unexpected errors", () => {
   function handlersWithFailingGitHub() {
     return [
       http.post(`${BASE}/api/admin/login`, () =>
-        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queryme_session=tok; Path=/" } }),
+        HttpResponse.json({ ok: true }, { headers: { "Set-Cookie": "queritae_session=tok; Path=/" } }),
       ),
       http.get(`${BASE}/api/admin/persona-source`, () =>
         HttpResponse.json({ active: { commitSha: "old", repoUrl: "https://github.com/a/b", branch: "main" }, history: [] }),

@@ -39,7 +39,7 @@ export function McpModal({ open, onClose, strings }: McpModalProps) {
 
   const endpoint = `${origin || "https://<your-deployment>"}/api/mcp`;
   const config = JSON.stringify(
-    { mcpServers: { queryme: { type: "http", url: endpoint } } },
+    { mcpServers: { queritae: { type: "http", url: endpoint } } },
     null,
     2,
   );

@@ -8,6 +8,6 @@ export async function POST(req: NextRequest) {
   return handleForward(req, {
     transport: resendTransport(),
     notifyTo: process.env.FORWARD_NOTIFICATION_TO ?? "",
-    notifyFrom: process.env.FORWARD_NOTIFICATION_FROM ?? "queryme@localhost",
+    notifyFrom: process.env.FORWARD_NOTIFICATION_FROM ?? "queritae@localhost",
   });
 }

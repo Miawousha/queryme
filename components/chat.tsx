@@ -24,7 +24,7 @@ export type ChatProps = {
 
 function loadOrCreateConversationId(): string {
   if (typeof window === "undefined") return "";
-  const KEY = "queryme:conversationId";
+  const KEY = "queritae:conversationId";
   let id = window.localStorage.getItem(KEY);
   if (!id) {
     id = crypto.randomUUID();

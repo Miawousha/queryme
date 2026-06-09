@@ -20,6 +20,6 @@ export async function POST(
 
   return handleReply(req, { params: Promise.resolve({ id }) }, {
     transport: resendTransport(),
-    from: process.env.FORWARD_NOTIFICATION_FROM ?? "queryme@localhost",
+    from: process.env.FORWARD_NOTIFICATION_FROM ?? "queritae@localhost",
   });
 }

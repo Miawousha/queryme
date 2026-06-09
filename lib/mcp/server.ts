@@ -30,10 +30,10 @@ function errorResult(err: unknown) {
 
 export function buildMcpServer(accountId: string): McpServer {
   const server = new McpServer(
-    { name: "queryme", version: "1.0.0" },
+    { name: "queritae", version: "1.0.0" },
     {
       instructions:
-        "queryme exposes a candidate's CV as an interactive agent. Use `ask` for " +
+        "queritae exposes a candidate's CV as an interactive agent. Use `ask` for " +
         "questions about public CV content; reuse the returned conversationId on " +
         "follow-ups. Use `forward_question` to leave a question for the candidate " +
         "to answer later.",

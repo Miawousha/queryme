@@ -1,7 +1,7 @@
 /**
  * Account sessions.
  *
- * A signed, expiring `queryme_session` cookie carries the owning account id.
+ * A signed, expiring `queritae_session` cookie carries the owning account id.
  * The token is `${accountId}.${expiresAt}.${hmac}` keyed by SESSION_SECRET, so
  * rotating the secret invalidates every session. Minted by GitHub OAuth
  * (browser) or the ADMIN_PASSWORD machine login (CLI). This module stays pure

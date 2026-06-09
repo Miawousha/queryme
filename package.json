@@ -1,7 +1,7 @@
 {
-  "name": "queryme",
+  "name": "queritae",
   "version": "1.0.0",
-  "description": "Queryme — a queryable CV agent. Persona content (kb + system prompt + persona.yaml) lives in an external GitHub repo and is synced from the admin Content tab; the app is a content-free shell.",
+  "description": "Queritae — a queryable CV agent. Persona content (kb + system prompt + persona.yaml) lives in an external GitHub repo and is synced from the admin Content tab; the app is a content-free shell.",
   "private": true,
   "scripts": {
     "dev": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_BASE_URL next dev",

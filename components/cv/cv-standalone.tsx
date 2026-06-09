@@ -21,7 +21,7 @@ export function CvStandalone({
   const t = CV_STRINGS[lang];
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <CvTopBar lang={lang} printLabel={t.print} backLabel="queryme" basePath={basePath} />
+      <CvTopBar lang={lang} printLabel={t.print} backLabel="queritae" basePath={basePath} />
       <CvDocumentView kb={cvKb} lang={lang} />
     </main>
   );

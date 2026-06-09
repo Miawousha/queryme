@@ -1,4 +1,4 @@
-# Queryme
+# Queritae
 
 A queryable CV. The knowledge base about Alexandre Collet, the system prompt that drives the agent, and the code that serves both are all in this repo — nothing hidden, nothing puffed up.
 
@@ -82,7 +82,7 @@ The account goes live immediately at `/{username}`.
 
 ## Sign in / accounts
 
-Visitors sign in with GitHub. The first time someone authenticates, queryme
+Visitors sign in with GitHub. The first time someone authenticates, queritae
 auto-provisions an account for them (slug = their GitHub login) — or, if an
 account with that slug was pre-created by the CLI (e.g. `account create`),
 their GitHub identity **claims** it. Everyone signs in at
@@ -171,7 +171,7 @@ Add new questions by dropping a new `*.yaml` in the folder.
 
 ## MCP server
 
-queryme exposes the CV agent over the [Model Context Protocol](https://modelcontextprotocol.io)
+queritae exposes the CV agent over the [Model Context Protocol](https://modelcontextprotocol.io)
 at a single Streamable-HTTP endpoint:
 
 ```
@@ -236,6 +236,6 @@ MIT.
 
 ## Talk to it from your own agent
 
-queryme is also an MCP server. See [docs/MCP.md](docs/MCP.md) for connector
+queritae is also an MCP server. See [docs/MCP.md](docs/MCP.md) for connector
 configs (Claude Desktop, Cursor, raw HTTP).
 

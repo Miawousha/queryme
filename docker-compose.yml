@@ -36,7 +36,7 @@ services:
       GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:-}
       SESSION_SECRET: ${SESSION_SECRET:-dev-session-secret-change-me}
       FORWARD_NOTIFICATION_TO: ${FORWARD_NOTIFICATION_TO:-}
-      FORWARD_NOTIFICATION_FROM: ${FORWARD_NOTIFICATION_FROM:-queryme@localhost}
+      FORWARD_NOTIFICATION_FROM: ${FORWARD_NOTIFICATION_FROM:-queritae@localhost}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
     command: sh -c "pnpm db:migrate && pnpm start"
     ports:

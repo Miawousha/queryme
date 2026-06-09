@@ -3,4 +3,4 @@
  * server (lib/admin/auth.ts) and the CLI remote client (scripts/lib/admin-remote.ts)
  * can share it without the CLI importing next/headers.
  */
-export const SESSION_COOKIE = "queryme_session";
+export const SESSION_COOKIE = "queritae_session";

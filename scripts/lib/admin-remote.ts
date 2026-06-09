@@ -64,7 +64,7 @@ export async function login(baseUrl: string, password: string): Promise<string> 
   if (!cookie) {
     throw new AdminRemoteError(
       "login succeeded but no session cookie was returned",
-      "verify the --remote URL points at the queryme app",
+      "verify the --remote URL points at the queritae app",
     );
   }
   return cookie;

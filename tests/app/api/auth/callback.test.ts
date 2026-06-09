@@ -17,7 +17,7 @@ function callbackReq(params: Record<string, string>, cookieState?: string): Next
   const u = new URL("http://localhost/api/auth/github/callback");
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   const headers: Record<string, string> = {};
-  if (cookieState) headers.cookie = `queryme_oauth_state=${cookieState}`;
+  if (cookieState) headers.cookie = `queritae_oauth_state=${cookieState}`;
   return new NextRequest(u, { headers });
 }
 
@@ -38,7 +38,7 @@ describe("GET /api/auth/github/callback", () => {
 
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toContain("/octocat/admin");
-    expect(res.headers.get("set-cookie")).toContain("queryme_session=");
+    expect(res.headers.get("set-cookie")).toContain("queritae_session=");
     expect(upsertAccountFromGitHub).toHaveBeenCalledWith({}, { githubId: "42", login: "octocat" });
   });
 

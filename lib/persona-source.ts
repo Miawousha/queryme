@@ -92,7 +92,7 @@ export type SyncResult =
   | { kind: "error"; message: string };
 
 function cacheRoot(): string {
-  return process.env.PERSONA_CACHE_ROOT ?? "/tmp/queryme/persona-cache";
+  return process.env.PERSONA_CACHE_ROOT ?? "/tmp/queritae/persona-cache";
 }
 
 async function extractTarball(buf: Buffer, targetDir: string): Promise<void> {

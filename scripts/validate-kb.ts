@@ -5,7 +5,7 @@ import { allRepos } from "../lib/kb/repos";
 import { assemblePublicKbText } from "../lib/kb/assembler";
 
 /**
- * Resolve the content root. Queryme is now a content-free shell — the KB lives
+ * Resolve the content root. Queritae is now a content-free shell — the KB lives
  * in an external persona repo. Point this script at a local checkout via
  * PERSONA_LOCAL_OVERRIDE (e.g. `PERSONA_LOCAL_OVERRIDE=../queryme-content-alex pnpm validate:kb`).
  */

@@ -204,7 +204,7 @@ async function handleMigrate(
 
 function handleHelp(): HandlerOutput {
   const pretty = [
-    `${MANIFEST.name} — queryme admin CLI`,
+    `${MANIFEST.name} — queritae admin CLI`,
     "",
     ...MANIFEST.commands.map((c) => `  ${c.usage}\n      ${c.summary}`),
     "",

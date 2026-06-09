@@ -7,7 +7,7 @@
  * logic shared (in spirit) with the no-flash inline script in `app/layout.tsx`.
  */
 
-export const THEME_STORAGE_KEY = "queryme:theme";
+export const THEME_STORAGE_KEY = "queritae:theme";
 
 export type Theme = "light" | "dark";
 

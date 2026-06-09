@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Platform admin — queryme",
+  title: "Platform admin — queritae",
   robots: { index: false, follow: false },
 };
 

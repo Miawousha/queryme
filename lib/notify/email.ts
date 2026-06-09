@@ -22,7 +22,7 @@ export async function sendForwardNotification(
   input: ForwardNotification,
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const lines = [
-    `A visitor forwarded a question through queryme.`,
+    `A visitor forwarded a question through queritae.`,
     ``,
     `Question:`,
     input.question,
@@ -33,7 +33,7 @@ export async function sendForwardNotification(
   if (input.conversationId) {
     lines.push(``, `Conversation: ${input.conversationId}`);
   }
-  const subject = `[queryme] forwarded question`;
+  const subject = `[queritae] forwarded question`;
   try {
     const r = await transport.send({
       to: input.to,

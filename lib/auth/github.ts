@@ -40,7 +40,7 @@ export async function fetchGitHubUser(token: string): Promise<GitHubUser> {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
-      "User-Agent": "queryme",
+      "User-Agent": "queritae",
     },
   });
   if (!res.ok) throw new Error(`github /user failed: ${res.status}`);

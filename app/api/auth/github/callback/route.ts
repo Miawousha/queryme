@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   const code = sp.get("code");
   const state = sp.get("state");
-  const cookieState = req.cookies.get("queryme_oauth_state")?.value;
+  const cookieState = req.cookies.get("queritae_oauth_state")?.value;
   if (
     !code ||
     !state ||
@@ -64,6 +64,6 @@ export async function GET(req: NextRequest) {
       maxAge: Math.floor(SESSION_TTL_MS / 1000),
     },
   );
-  res.cookies.set("queryme_oauth_state", "", { path: "/", maxAge: 0 });
+  res.cookies.set("queritae_oauth_state", "", { path: "/", maxAge: 0 });
   return res;
 }
