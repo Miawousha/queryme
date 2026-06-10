@@ -1,10 +1,14 @@
 import { GridBackground } from "@/components/grid-background";
+import { InterviewDemo } from "@/components/landing/interview-demo";
+import { McpTerminal } from "@/components/landing/mcp-terminal";
 import { REPO_URL } from "@/lib/repo";
 
 /**
- * Marketing landing page served at `/`. Pitches the queritae concept and points
- * visitors at a live account. Static (server component) — the only client
- * island is the animated dot grid. Shares the app's Arctic design tokens so it
+ * Marketing landing page served at `/`. Demos the product rather than
+ * describing it: a scripted interview replay (chat + citations + mini KB
+ * panel), a typing MCP terminal, and the public content-repo tree. Static
+ * server component; the client islands are the dot grid, the interview
+ * replay, and the terminal. Shares the app's Arctic design tokens so it
  * reads as part of the product.
  */
 type Props = {
@@ -26,29 +30,23 @@ const STEPS = [
   {
     n: "03",
     title: "Share one link",
-    body: "Send a recruiter a URL — or plug the built-in MCP endpoint straight into their AI tools so they can query you directly.",
+    body: "Send a recruiter a URL — on queritae or your own domain — or hand their AI tools the MCP endpoint so they can query you directly.",
   },
 ];
 
 const VALUES = [
   {
     title: "Nothing hidden",
-    body: "The knowledge base and the system prompt are public and auditable. No puffery, no black box.",
+    body: "The knowledge base and the system prompt are public and auditable. Anyone can read exactly what the agent knows and how it's instructed.",
+  },
+  {
+    title: "No puffery",
+    body: "Every claim traces to a versioned file in your repo. If it isn't in the KB, the agent says so — and can forward the question to the human.",
   },
   {
     title: "Knows who's asking",
-    body: "When a recruiter introduces themselves, the agent recognizes the company and the role they're hiring for.",
+    body: "When a recruiter introduces themselves, the agent records the company and role — visibly, with a chip in the chat showing exactly what was captured.",
   },
-  {
-    title: "Agent-native",
-    body: "A first-class MCP server ships with every account, so other AI agents can interview you over the wire.",
-  },
-];
-
-const SAMPLE_QUESTIONS = [
-  "What have they actually shipped?",
-  "Where do they go deepest?",
-  "Are they a fit for a staff role?",
 ];
 
 function GitHubMark() {
@@ -61,6 +59,106 @@ function GitHubMark() {
 
 const MONO_LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
 
+/** The public content-repo tree, annotated. Rendered as styled mono text. */
+function RepoTree() {
+  const dim = "text-[var(--color-text-tertiary)]";
+  const file = "text-[var(--color-text-secondary)]";
+  const note = "text-[var(--color-accent)]";
+  return (
+    <pre className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/70 p-5 font-mono text-[12px] leading-[1.9] backdrop-blur-sm sm:text-[12.5px]">
+      <code>
+        <span className="text-[var(--color-text-primary)]">you/cv-content</span>
+        {"\n"}
+        <span className={dim}>├── </span>
+        <span className={file}>kb/</span>
+        {"\n"}
+        <span className={dim}>│   ├── </span>
+        <span className={file}>profile.yaml</span>
+        {"\n"}
+        <span className={dim}>│   ├── </span>
+        <span className={file}>skills.yaml</span>
+        {"\n"}
+        <span className={dim}>│   ├── </span>
+        <span className={file}>experience/</span>
+        <span className={note}>   ← one file per role</span>
+        {"\n"}
+        <span className={dim}>│   └── </span>
+        <span className={file}>projects/</span>
+        <span className={note}>     ← one file per project</span>
+        {"\n"}
+        <span className={dim}>└── </span>
+        <span className={file}>prompts/</span>
+        {"\n"}
+        <span className={dim}>    └── </span>
+        <span className={file}>system.md</span>
+        <span className={note}>     ← the agent&apos;s instructions, public</span>
+      </code>
+    </pre>
+  );
+}
+
+/**
+ * The custom-domain visual: the one CNAME record an owner creates, and the
+ * address their page ends up served from. Mirrors the real admin flow
+ * (lib/domains): add the domain, point a CNAME at the platform, TLS and
+ * verification are automatic.
+ */
+function DomainCard() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/70 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.55)] backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
+        <span
+          className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+          style={{ letterSpacing: "0.22em" }}
+        >
+          your dns · one record
+        </span>
+        <span className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase text-[var(--color-accent)]" style={{ letterSpacing: "0.18em" }}>
+          <span
+            aria-hidden
+            className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]"
+            style={{ boxShadow: "0 0 8px 1px rgba(var(--color-accent-rgb),0.7)" }}
+          />
+          verified
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-4 font-mono text-[12px] sm:text-[12.5px]">
+        <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)]/60 px-2 py-0.5 text-[var(--color-text-secondary)]">
+          CNAME
+        </span>
+        <span className="text-[var(--color-text-primary)]">cv.yourname.com</span>
+        <span aria-hidden className="text-[var(--color-text-tertiary)]">
+          →
+        </span>
+        <span className="text-[var(--color-text-secondary)]">cname.vercel-dns.com</span>
+      </div>
+      <div className="border-t border-[var(--color-border)] px-4 py-4">
+        <div className="flex items-center gap-2.5 rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/60 px-4 py-2.5">
+          <svg
+            viewBox="0 0 16 16"
+            width="12"
+            height="12"
+            fill="currentColor"
+            aria-hidden
+            className="shrink-0 text-[var(--color-accent)]"
+          >
+            <path d="M8 1a3.5 3.5 0 00-3.5 3.5V6H4a1.5 1.5 0 00-1.5 1.5v5A1.5 1.5 0 004 14h8a1.5 1.5 0 001.5-1.5v-5A1.5 1.5 0 0012 6h-.5V4.5A3.5 3.5 0 008 1zm2 5H6V4.5a2 2 0 114 0V6z" />
+          </svg>
+          <span className="truncate font-mono text-[12.5px] text-[var(--color-text-primary)]">
+            https://cv.yourname.com
+          </span>
+          <span
+            className="ml-auto hidden shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] sm:inline"
+            style={{ letterSpacing: "0.18em" }}
+          >
+            your page · your cv
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LandingPage({ seeItLiveUsername }: Props) {
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[var(--color-void)] text-[var(--color-text-primary)]">
@@ -69,7 +167,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
       {/* Atmospheric hero glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[18%] -z-0 h-[520px] w-[760px] -translate-x-1/2"
+        className="pointer-events-none absolute left-1/2 top-[14%] -z-0 h-[520px] w-[760px] -translate-x-1/2"
         style={{
           background:
             "radial-gradient(closest-side, rgba(var(--color-accent-rgb),0.16), transparent 72%)",
@@ -98,7 +196,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
         </header>
 
         {/* Hero */}
-        <section className="flex flex-1 flex-col items-center justify-center py-12 text-center sm:py-16">
+        <section className="flex flex-col items-center pb-16 pt-10 text-center sm:pt-14">
           <p
             className={`fade-up ${MONO_LABEL}`}
             style={{ letterSpacing: "0.42em", animationDelay: "0.05s" }}
@@ -112,7 +210,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           >
             A résumé you can{" "}
             <span className="font-serif font-normal italic text-[var(--color-accent)]">
-              talk to
+              interview
             </span>
             .
           </h1>
@@ -121,47 +219,15 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             className="fade-up mt-6 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-secondary)] sm:text-base"
             style={{ animationDelay: "0.2s" }}
           >
-            queritae turns a public GitHub repo of your experience into a grounded
-            chat agent — and an MCP endpoint — that answers a recruiter&apos;s
-            questions, cites its sources, and hides nothing.
+            Your experience lives as plain files in a GitHub repo you own. queritae
+            turns it into a grounded agent — and an MCP endpoint — that answers a
+            recruiter&apos;s questions and cites the exact file behind every claim.
           </p>
-
-          {/* Faux query bar — the product preview */}
-          <div
-            className="fade-up mt-10 w-full max-w-xl"
-            style={{ animationDelay: "0.28s" }}
-          >
-            <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)]/70 px-4 py-3.5 text-left shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)] backdrop-blur-sm">
-              <span
-                aria-hidden
-                className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-primary)]"
-              />
-              <span className="caret-blink flex-1 truncate text-[15px] text-[var(--color-text-secondary)]">
-                Ask about their work on…
-              </span>
-              <span
-                className="shrink-0 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
-                style={{ letterSpacing: "0.28em" }}
-              >
-                /chat
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              {SAMPLE_QUESTIONS.map((q) => (
-                <span
-                  key={q}
-                  className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 text-[12px] text-[var(--color-text-secondary)]"
-                >
-                  {q}
-                </span>
-              ))}
-            </div>
-          </div>
 
           {/* CTAs */}
           <div
-            className="fade-up mt-10 flex flex-col items-center gap-3 sm:flex-row"
-            style={{ animationDelay: "0.36s" }}
+            className="fade-up mt-8 flex flex-col items-center gap-3 sm:flex-row"
+            style={{ animationDelay: "0.28s" }}
           >
             {seeItLiveUsername && (
               <a
@@ -185,6 +251,11 @@ export function LandingPage({ seeItLiveUsername }: Props) {
               How it&apos;s built
             </a>
           </div>
+
+          {/* The product, demoing itself */}
+          <div className="fade-up mt-12 w-full max-w-3xl" style={{ animationDelay: "0.36s" }}>
+            <InterviewDemo />
+          </div>
         </section>
 
         {/* How it works */}
@@ -194,9 +265,12 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           </p>
           <div className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] sm:grid-cols-3">
             {STEPS.map((s) => (
-              <div key={s.n} className="bg-[var(--color-surface)] p-6">
+              <div
+                key={s.n}
+                className="group bg-[var(--color-surface)] p-6 transition-colors hover:bg-[var(--color-card)]"
+              >
                 <span
-                  className="font-mono text-2xl font-light text-[var(--color-accent)]"
+                  className="font-mono text-2xl font-light text-[var(--color-accent)] transition-all group-hover:[text-shadow:0_0_14px_rgba(var(--color-accent-rgb),0.7)]"
                   style={{ letterSpacing: "-0.02em" }}
                 >
                   {s.n}
@@ -212,9 +286,105 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           </div>
         </section>
 
-        {/* Why */}
+        {/* MCP — agent-native */}
         <section className="border-t border-[var(--color-border)] py-14">
-          <div className="grid gap-10 sm:grid-cols-3">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div>
+              <p className={MONO_LABEL} style={{ letterSpacing: "0.3em" }}>
+                agent-native
+              </p>
+              <h2 className="mt-4 font-display text-2xl font-light tracking-[-0.01em] text-[var(--color-text-primary)] sm:text-3xl">
+                Their AI can{" "}
+                <span className="font-serif font-normal italic text-[var(--color-accent)]">
+                  interview
+                </span>{" "}
+                yours.
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+                Recruiters increasingly read CVs through agents, not eyes. Every
+                queritae account ships a first-class MCP server — point Claude,
+                Cursor, or any MCP client at the endpoint and it gets the same
+                grounded answers, with the same citations.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {["tool: ask", "tool: forward_question", "no credentials", "rate-limited"].map(
+                  (chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-[11px] text-[var(--color-text-secondary)]"
+                    >
+                      {chip}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+            <McpTerminal />
+          </div>
+        </section>
+
+        {/* Custom domains */}
+        <section className="border-t border-[var(--color-border)] py-14">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div className="order-2 lg:order-1">
+              <DomainCard />
+            </div>
+            <div className="order-1 lg:order-2">
+              <p className={MONO_LABEL} style={{ letterSpacing: "0.3em" }}>
+                your domain
+              </p>
+              <h2 className="mt-4 font-display text-2xl font-light tracking-[-0.01em] text-[var(--color-text-primary)] sm:text-3xl">
+                Served from{" "}
+                <span className="font-serif font-normal italic text-[var(--color-accent)]">
+                  your
+                </span>{" "}
+                address.
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+                Your page and printable CV don&apos;t have to live on ours — host
+                them at cv.yourname.com. Add the domain in your admin, create one
+                CNAME record, and verification and TLS happen automatically.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {["one CNAME record", "auto TLS", "up to 3 domains"].map((chip) => (
+                  <span
+                    key={chip}
+                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-[11px] text-[var(--color-text-secondary)]"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Transparency */}
+        <section className="border-t border-[var(--color-border)] py-14">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div className="order-2 lg:order-1">
+              <RepoTree />
+            </div>
+            <div className="order-1 lg:order-2">
+              <p className={MONO_LABEL} style={{ letterSpacing: "0.3em" }}>
+                nothing hidden
+              </p>
+              <h2 className="mt-4 font-display text-2xl font-light tracking-[-0.01em] text-[var(--color-text-primary)] sm:text-3xl">
+                The whole act is{" "}
+                <span className="font-serif font-normal italic text-[var(--color-accent)]">
+                  auditable
+                </span>
+                .
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+                The agent&apos;s entire world is a public repo: structured facts,
+                narrative stories, and the system prompt itself. Edit, commit,
+                re-sync — the version history is the paper trail.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-12 grid gap-10 sm:grid-cols-3">
             {VALUES.map((v) => (
               <div key={v.title}>
                 <div
@@ -230,6 +400,40 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                 </p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="border-t border-[var(--color-border)] py-16 text-center">
+          <h2 className="mx-auto max-w-2xl font-display text-3xl font-light leading-tight tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-4xl">
+            Put your career{" "}
+            <span className="font-serif font-normal italic text-[var(--color-accent)]">
+              on the record
+            </span>
+            .
+          </h2>
+          <p className="mx-auto mt-4 max-w-md text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+            Create an account with GitHub and point it at a content repo. New
+            accounts are reviewed by hand — your page goes public as soon as
+            it&apos;s approved.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href="/api/auth/github/login"
+              className="group inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-[14px] font-medium text-white transition-all duration-200 hover:brightness-110"
+              style={{ boxShadow: "0 8px 30px -8px rgba(var(--color-primary-rgb),0.6)" }}
+            >
+              <GitHubMark />
+              Create yours with GitHub
+            </a>
+            {seeItLiveUsername && (
+              <a
+                href={`/${seeItLiveUsername}`}
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-[14px] text-[var(--color-text-secondary)] transition-colors duration-200 hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
+              >
+                Interview the live agent →
+              </a>
+            )}
           </div>
         </section>
 

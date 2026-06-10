@@ -178,6 +178,25 @@ body {
   }
 }
 
+/*
+ * Landing-page interview replay: citation chips, the identify_interviewer
+ * chip, and "cited" KB-file badges pop in as the scripted answer reaches them.
+ */
+@keyframes citePop {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cite-pop {
+  animation: citePop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
 @keyframes slideIn {
   from {
     opacity: 0;
