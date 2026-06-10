@@ -68,6 +68,31 @@ describe("loadKbManifest — generic date frontmatter", () => {
   });
 });
 
+describe("loadKbManifest — locale sidecar exclusion", () => {
+  it("lists web.ui.md as content but excludes note.fr.md as a locale sidecar", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-sidecar-"));
+    try {
+      const notesDir = path.join(dir, "notes");
+      await fs.mkdir(notesDir, { recursive: true });
+      // canonical content file whose name happens to contain a dot-component
+      await fs.writeFile(path.join(notesDir, "web.ui.md"), "---\ntitle: Web UI note\ndate: \"2026-02\"\n---\n\nBody.\n");
+      // real locale sidecar — must be excluded
+      await fs.writeFile(path.join(notesDir, "note.fr.md"), "---\n---\nFrench body.\n");
+      // canonical file for the sidecar — must be included
+      await fs.writeFile(path.join(notesDir, "note.md"), "---\n---\nBody.\n");
+
+      const manifest = await loadKbManifest(dir);
+      const paths = manifest.map((f) => f.path);
+
+      expect(paths).toContain("notes/web.ui.md");
+      expect(paths).toContain("notes/note.md");
+      expect(paths).not.toContain("notes/note.fr.md");
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("loadKbManifest — symlink safety", () => {
   it("excludes symlinks even when their name looks like a public artifact", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-symlink-"));

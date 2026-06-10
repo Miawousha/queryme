@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { fileTypeFromPath, type KbFileType } from "@/lib/kb/file-type";
+import { fileTypeFromPath, isLocaleSidecar, type KbFileType } from "@/lib/kb/file-type";
 import { humanizeSlug } from "@/lib/kb/meta-format";
 
 /**
@@ -117,7 +117,7 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
     // Skip localized sidecars like `foo.fr.md` / `foo.fr.yaml`. The manifest
     // lists canonical files; the file route resolves the right variant at
     // read time via `?lang=`.
-    if (/\.[a-z]{2}\.(md|yaml)$/.test(rel)) continue;
+    if (isLocaleSidecar(rel)) continue;
     if (type === "md") {
       const { title, meta } = await readMarkdown(abs, rel);
       out.push({ path: rel, title, type, ...(meta ? { meta } : {}) });

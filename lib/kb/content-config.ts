@@ -74,7 +74,7 @@ export const ContentConfigSchema = z
         { message: 'the first locale must be "en" (bare filenames are English) and locales must be unique' },
       )
       .default(["en", "fr"]),
-    collections: z.array(CollectionConfigSchema).min(1),
+    collections: z.array(CollectionConfigSchema).min(1).max(64),
   })
   .strict();
 export type ContentConfig = z.infer<typeof ContentConfigSchema>;

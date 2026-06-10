@@ -83,18 +83,22 @@ function labelFor(loaded: LoadedCollection, lang: KbLang): string {
 }
 
 /** Generic yaml: the raw file IS the structured content — emit it fenced
- * under a heading + ref so the agent can read and cite it. */
+ * under a heading + ref so the agent can read and cite it. The fence length
+ * is chosen to be longer than any backtick run that appears in the content,
+ * so a raw YAML value containing ``` never breaks the fence. */
 function renderGenericYaml(
   loaded: Extract<LoadedCollection, { kind: "yaml" }>,
   lang: KbLang,
 ): string {
+  const runs = loaded.raw.match(/`+/g);
+  const fence = "`".repeat(Math.max(3, (runs ? Math.max(...runs.map((r) => r.length)) : 0) + 1));
   return [
     `# ${labelFor(loaded, lang)}`,
     `[ref: ${loaded.relativePath}]`,
     ``,
-    "```yaml",
+    fence + "yaml",
     loaded.raw.trim(),
-    "```",
+    fence,
   ].join("\n");
 }
 

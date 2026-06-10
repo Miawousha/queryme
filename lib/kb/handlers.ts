@@ -1,8 +1,8 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
-import { getCachedKbManifest } from "@/lib/kb/cache";
-import { kbGroups, loadContentConfig, resolveContentConfig } from "@/lib/kb/content-config";
+import { getCachedContent, getCachedKbManifest } from "@/lib/kb/cache";
+import { kbGroups } from "@/lib/kb/content-config";
 import { realpathWithin } from "@/lib/kb/safe-path";
 import { getPersonaStore } from "@/lib/persona/store";
 import type { KbFileType } from "@/lib/kb/file-type";
@@ -28,7 +28,7 @@ export async function handleKbManifest(accountId: string): Promise<Response> {
     const manifest = await getCachedKbManifest(accountId);
     let groups: KbGroup[] = [];
     try {
-      groups = kbGroups(resolveContentConfig(loadContentConfig(root)));
+      groups = kbGroups((await getCachedContent(accountId)).config);
     } catch {
       // A malformed config never blocks the panel — the client falls back to
       // its default groups. (Sync rejects bad configs; this guards local overrides.)

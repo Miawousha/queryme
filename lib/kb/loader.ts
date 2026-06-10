@@ -12,6 +12,7 @@ import {
   type TalkFrontmatter,
   type RecommendationFrontmatter,
 } from "./schemas";
+import { isLocaleSidecar } from "./file-type";
 import {
   SCHEMA_REGISTRY,
   RESUME_PRESET,
@@ -121,7 +122,7 @@ async function readMarkdownDir(
   // Filter out localized sidecars at directory listing — we resolve them via
   // pickFile per canonical entry below.
   const md = files
-    .filter((f) => f.endsWith(".md") && !/\.(en|fr)\.md$/.test(f))
+    .filter((f) => f.endsWith(".md") && !isLocaleSidecar(f))
     .sort();
   const out: GenericEntry[] = [];
   for (const file of md) {

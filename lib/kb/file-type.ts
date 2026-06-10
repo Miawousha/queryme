@@ -2,6 +2,13 @@
  * synthesized printable CV document — not a real file on disk. */
 export type KbFileType = "md" | "yaml" | "html" | "pdf" | "cv";
 
+/** True for localized sidecar files like `foo.fr.md` / `foo.fr.yaml`. The
+ * locale set is fixed to the app's shipped locales — a two-letter suffix like
+ * `web.ui.md` is content, not a sidecar. */
+export function isLocaleSidecar(relPath: string): boolean {
+  return /\.(en|fr)\.(md|yaml)$/.test(relPath);
+}
+
 /**
  * Maps a file path to its `KbFileType`, or `null` if the extension is not a
  * supported artifact type.

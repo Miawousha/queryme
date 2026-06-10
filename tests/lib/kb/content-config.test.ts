@@ -227,6 +227,33 @@ collections:
   });
 });
 
+describe("Fix 5 — collections cap", () => {
+  it("rejects a config with 65 collections (max is 64)", () => {
+    // Build a config with profile + public-contact + 63 extra markdown collections = 65 total
+    const extras = Array.from({ length: 63 }, (_, i) => `  - name: col-${String(i).padStart(2, "0")}\n    kind: markdown`).join("\n");
+    const dir = writeConfig(`
+locales: [en]
+collections:
+${CORE}
+${extras}
+`);
+    expect(() => loadContentConfig(dir)).toThrow();
+  });
+
+  it("accepts a config with exactly 64 collections", () => {
+    // Build a config with profile + public-contact + 62 extra markdown collections = 64 total
+    const extras = Array.from({ length: 62 }, (_, i) => `  - name: col-${String(i).padStart(2, "0")}\n    kind: markdown`).join("\n");
+    const dir = writeConfig(`
+locales: [en]
+collections:
+${CORE}
+${extras}
+`);
+    const config = loadContentConfig(dir);
+    expect(config!.collections).toHaveLength(64);
+  });
+});
+
 describe("RESUME_PRESET", () => {
   it("declares the 8 legacy collections in assembly order", () => {
     expect(RESUME_PRESET.collections.map((c) => c.name)).toEqual([

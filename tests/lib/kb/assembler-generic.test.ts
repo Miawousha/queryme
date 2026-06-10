@@ -164,6 +164,59 @@ describe("fr label fallback", () => {
   });
 });
 
+// ─── Fix 4: backtick-safe yaml fence ──────────────────────────────────────────
+
+describe("backtick-safe generic yaml fence", () => {
+  it("uses a 4-backtick fence when content contains a triple-backtick line", () => {
+    const col: ResolvedCollection = {
+      name: "snippets",
+      kind: "yaml",
+      schemaKey: "generic",
+      required: false,
+    };
+    const rawWithBackticks = "note: |\n  ```\n  code block\n  ```\n";
+    const content = makeContent([
+      {
+        kind: "yaml",
+        config: col,
+        relativePath: "snippets.yaml",
+        data: {},
+        raw: rawWithBackticks,
+      },
+    ]);
+    const text = assembleContentText(content);
+    // The fence must be at least 4 backticks to safely wrap the triple-backtick content
+    expect(text).toMatch(/^````yaml/m);
+    // The closing fence must also be 4 backticks
+    expect(text).toMatch(/^````$/m);
+    // The original content must be preserved intact
+    expect(text).toContain("```");
+  });
+
+  it("uses a standard 3-backtick fence when content has no backticks", () => {
+    const col: ResolvedCollection = {
+      name: "glossary",
+      kind: "yaml",
+      schemaKey: "generic",
+      required: false,
+    };
+    const content = makeContent([
+      {
+        kind: "yaml",
+        config: col,
+        relativePath: "glossary.yaml",
+        data: {},
+        raw: "term: widget\ndefinition: A small gadget.\n",
+      },
+    ]);
+    const text = assembleContentText(content);
+    expect(text).toMatch(/^```yaml/m);
+    expect(text).toMatch(/^```$/m);
+    // Must NOT use a longer fence unnecessarily
+    expect(text).not.toMatch(/^````/m);
+  });
+});
+
 // ─── Fix 3: renamed preset — heading + ref use collection name, not schema key ─
 
 describe("renamed preset collection", () => {
