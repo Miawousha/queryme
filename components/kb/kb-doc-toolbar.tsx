@@ -3,6 +3,79 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+function OutlineTitle({
+  title,
+  outline,
+  onJumpTo,
+  outlineLabel,
+}: {
+  title: string;
+  outline: { slug: string; title: string; level: 2 | 3; chip?: number }[];
+  onJumpTo: (slug: string) => void;
+  outlineLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className="relative min-w-0"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={outlineLabel}
+        className="flex min-w-0 items-center gap-1 text-[13px] text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
+      >
+        <span className="min-w-0 truncate">{title}</span>
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+          className={cn("transition-transform", open && "rotate-180")}
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-20 mt-1 max-h-72 min-w-56 overflow-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-lg"
+        >
+          {outline.map((s) => (
+            <button
+              key={s.slug}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onJumpTo(s.slug);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] text-[var(--color-text-secondary)] hover:bg-[rgba(var(--color-primary-rgb),0.08)] hover:text-[var(--color-text-primary)]"
+              style={{ paddingLeft: s.level === 3 ? 20 : 8 }}
+            >
+              <span className="min-w-0 flex-1 truncate">{s.title}</span>
+              {s.chip !== undefined && (
+                <span className="kb-chip">[{s.chip}]</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export type KbDocAction = {
   key: string;
   label: string;
@@ -28,6 +101,10 @@ export function KbDocToolbar({
   onToggleFocus,
   expandLabel,
   minimizeLabel,
+  breadcrumb,
+  outline,
+  onJumpTo,
+  outlineLabel,
 }: {
   title: string;
   typeBadge?: string;
@@ -38,6 +115,12 @@ export function KbDocToolbar({
   onToggleFocus: () => void;
   expandLabel: string;
   minimizeLabel: string;
+  /** Container labels shown muted before the title (collection, folders). */
+  breadcrumb?: string[];
+  /** Doc sections for the intra-doc jump dropdown; chip = citation index. */
+  outline?: { slug: string; title: string; level: 2 | 3; chip?: number }[];
+  onJumpTo?: (slug: string) => void;
+  outlineLabel?: string;
 }) {
   return (
     <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4">
@@ -50,9 +133,25 @@ export function KbDocToolbar({
       >
         ‹ {backLabel}
       </button>
-      <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-primary)]">
-        {title}
-      </span>
+      <div className="relative flex min-w-0 flex-1 items-center gap-1">
+        {breadcrumb && breadcrumb.length > 0 && (
+          <span className="hidden shrink-0 truncate text-[11px] text-[var(--color-text-tertiary)] sm:inline">
+            {breadcrumb.join(" / ")}&nbsp;/
+          </span>
+        )}
+        {outline && outline.length > 0 && onJumpTo ? (
+          <OutlineTitle
+            title={title}
+            outline={outline}
+            onJumpTo={onJumpTo}
+            outlineLabel={outlineLabel ?? "Outline"}
+          />
+        ) : (
+          <span className="min-w-0 truncate text-[13px] text-[var(--color-text-primary)]">
+            {title}
+          </span>
+        )}
+      </div>
       {typeBadge && (
         <span
           className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-text-secondary)]"

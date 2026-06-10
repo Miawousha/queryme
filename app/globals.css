@@ -458,3 +458,13 @@ body {
     background-color: transparent;
   }
 }
+
+/* KB viewer — cited-section markers and the jump flash */
+.prose-chat .kb-cited-section {
+  border-left: 2px solid rgba(var(--color-accent-rgb), 0.5);
+  padding-left: 0.625rem;
+  margin-left: -0.75rem;
+}
+.kb-flash-target {
+  animation: kb-flash 1.4s ease-out;
+}
