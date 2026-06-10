@@ -4,7 +4,7 @@ export type Citation = {
   anchor: string | null;
 };
 
-const CITATION_RE = /\[\^kb:([a-zA-Z0-9._/-]+\.(?:md|yaml))(#[a-zA-Z0-9_-]+)?\]/g;
+const CITATION_RE = /\[\^kb:([a-zA-Z0-9._/-]+\.(?:md|yaml))(#[\p{L}\p{N}_-]+)?\]/gu;
 
 export function parseCitations(text: string): Citation[] {
   const out: Citation[] = [];

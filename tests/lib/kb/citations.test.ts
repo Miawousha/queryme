@@ -31,4 +31,15 @@ describe("parseCitations", () => {
     expect(parseCitations("[^kb:]")).toEqual([]);
     expect(parseCitations("[^kb:../escape.md]")).toEqual([]); // no `..` allowed
   });
+
+  it("accepts unicode anchors (accented heading slugs)", () => {
+    const out = parseCitations("Voir [^kb:experience/2025-altergo.md#équipe-télémétrie].");
+    expect(out).toEqual([
+      {
+        token: "[^kb:experience/2025-altergo.md#équipe-télémétrie]",
+        path: "experience/2025-altergo.md",
+        anchor: "équipe-télémétrie",
+      },
+    ]);
+  });
 });
