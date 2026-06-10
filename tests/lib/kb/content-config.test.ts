@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import path from "node:path";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import {
   loadContentConfig,
@@ -62,6 +62,31 @@ ${CORE}
     required: true
 `);
     expect(() => loadContentConfig(dir)).toThrow(/required/);
+  });
+
+  it("throws (not null) when content.config.yaml exists but is unreadable", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "content-config-"));
+    mkdirSync(path.join(dir, "content.config.yaml"));
+    expect(() => loadContentConfig(dir)).toThrow(/content\.config\.yaml/);
+  });
+
+  it("rejects collection names that are not kebab-case (path-segment safety)", () => {
+    for (const bad of ["../evil", "a/b", "..", "UPPER", "with space", "café"]) {
+      const dir = writeConfig(`
+collections:
+  - name: profile
+    kind: yaml
+    schema: profile
+    required: true
+  - name: public-contact
+    kind: yaml
+    schema: public-contact
+    required: true
+  - name: "${bad}"
+    kind: markdown
+`);
+      expect(() => loadContentConfig(dir), bad).toThrow();
+    }
   });
 });
 
@@ -140,6 +165,13 @@ describe("RESUME_PRESET", () => {
       "experience", "projects", "talks", "recommendations",
     ]);
     expect(RESUME_PRESET.locales).toEqual(["en", "fr"]);
+  });
+
+  it("resume preset is deeply frozen", () => {
+    expect(Object.isFrozen(RESUME_PRESET)).toBe(true);
+    expect(Object.isFrozen(RESUME_PRESET.collections)).toBe(true);
+    expect(Object.isFrozen(RESUME_PRESET.collections[0])).toBe(true);
+    expect(() => (RESUME_PRESET.collections as unknown as unknown[]).reverse()).toThrow();
   });
 });
 

@@ -93,19 +93,29 @@ const PRESET_DEFAULT_SORT: Partial<Record<SchemaKey, { field: string; order: "as
 
 /** The legacy resume layout, applied when a repo ships no content.config.yaml.
  * Collection order IS assembly order — do not reorder. */
-export const RESUME_PRESET: ResolvedContentConfig = {
-  locales: ["en", "fr"],
-  collections: [
-    { name: "profile", kind: "yaml", schemaKey: "profile", required: true },
-    { name: "skills", kind: "yaml", schemaKey: "skills", required: true },
-    { name: "education", kind: "yaml", schemaKey: "education", required: true },
-    { name: "public-contact", kind: "yaml", schemaKey: "public-contact", required: true },
-    { name: "experience", kind: "markdown", schemaKey: "experience", required: false, sort: PRESET_DEFAULT_SORT.experience },
-    { name: "projects", kind: "markdown", schemaKey: "project", required: false, sort: PRESET_DEFAULT_SORT.project },
-    { name: "talks", kind: "markdown", schemaKey: "talk", required: false, sort: PRESET_DEFAULT_SORT.talk },
-    { name: "recommendations", kind: "markdown", schemaKey: "recommendation", required: false, sort: PRESET_DEFAULT_SORT.recommendation },
-  ],
-};
+export const RESUME_PRESET: ResolvedContentConfig = (() => {
+  const preset: ResolvedContentConfig = {
+    locales: ["en", "fr"],
+    collections: [
+      { name: "profile", kind: "yaml", schemaKey: "profile", required: true },
+      { name: "skills", kind: "yaml", schemaKey: "skills", required: true },
+      { name: "education", kind: "yaml", schemaKey: "education", required: true },
+      { name: "public-contact", kind: "yaml", schemaKey: "public-contact", required: true },
+      { name: "experience", kind: "markdown", schemaKey: "experience", required: false, sort: PRESET_DEFAULT_SORT.experience },
+      { name: "projects", kind: "markdown", schemaKey: "project", required: false, sort: PRESET_DEFAULT_SORT.project },
+      { name: "talks", kind: "markdown", schemaKey: "talk", required: false, sort: PRESET_DEFAULT_SORT.talk },
+      { name: "recommendations", kind: "markdown", schemaKey: "recommendation", required: false, sort: PRESET_DEFAULT_SORT.recommendation },
+    ],
+  };
+  preset.collections.forEach((col) => {
+    if (col.sort) Object.freeze(col.sort);
+    Object.freeze(col);
+  });
+  Object.freeze(preset.collections);
+  Object.freeze(preset.locales);
+  Object.freeze(preset);
+  return preset;
+})();
 
 /**
  * Reads `content.config.yaml` at the persona root. Absent file → null (the
@@ -117,8 +127,9 @@ export function loadContentConfig(rootDir: string): ContentConfig | null {
   let raw: string;
   try {
     raw = fs.readFileSync(file, "utf8");
-  } catch {
-    return null;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw new Error(`content.config.yaml: ${(err as Error).message}`);
   }
   let parsed: unknown;
   try {
