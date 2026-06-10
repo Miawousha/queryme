@@ -15,6 +15,11 @@ import { and, desc, eq } from "drizzle-orm";
 import { resetKbCache } from "@/lib/kb/cache";
 import { _resetPromptCache } from "@/lib/prompts";
 import { _resetPersonaCache } from "@/lib/persona";
+import {
+  loadContentConfig,
+  resolveContentConfig,
+  type ResolvedContentConfig,
+} from "@/lib/kb/content-config";
 
 export type ParsedRepo = { owner: string; repo: string };
 
@@ -41,25 +46,38 @@ export function parseGitHubRepoUrl(input: string): ParsedRepo {
   return { owner, repo };
 }
 
-export const REQUIRED_PERSONA_FILES = [
-  "persona.yaml",
-  "prompts/system.md",
-  "kb/profile.yaml",
-  "kb/profile.fr.yaml",
-  "kb/public-contact.yaml",
-  "kb/public-contact.fr.yaml",
-  "kb/skills.yaml",
-  "kb/skills.fr.yaml",
-  "kb/education.yaml",
-  "kb/education.fr.yaml",
-] as const;
+/** Files every persona repo needs regardless of its content config. */
+export const BASE_REQUIRED_PERSONA_FILES = ["persona.yaml", "prompts/system.md"] as const;
 
 /**
- * Returns `null` if every required file exists in `root`. Otherwise returns
- * a single human-readable error message listing the missing relative paths.
+ * The sync gate's required-file list, derived from the content config:
+ * the base files plus, for every `required: true` yaml collection, the
+ * canonical file and one localized sibling per extra declared locale.
+ */
+export function requiredPersonaFiles(config: ResolvedContentConfig): string[] {
+  const files: string[] = [...BASE_REQUIRED_PERSONA_FILES];
+  const extraLocales = config.locales.slice(1); // first locale is canonical (bare filename)
+  for (const col of config.collections) {
+    if (col.kind !== "yaml" || !col.required) continue;
+    files.push(`kb/${col.name}.yaml`);
+    for (const locale of extraLocales) files.push(`kb/${col.name}.${locale}.yaml`);
+  }
+  return files;
+}
+
+/**
+ * Returns `null` if the tree is valid. Otherwise returns a single
+ * human-readable error: either an invalid `content.config.yaml` (when present)
+ * or the list of missing required files.
  */
 export function validatePersonaTree(root: string): string | null {
-  const missing = REQUIRED_PERSONA_FILES.filter(
+  let config: ResolvedContentConfig;
+  try {
+    config = resolveContentConfig(loadContentConfig(root));
+  } catch (err) {
+    return (err as Error).message;
+  }
+  const missing = requiredPersonaFiles(config).filter(
     (rel) => !fs.existsSync(path.join(root, rel)),
   );
   if (missing.length === 0) return null;
