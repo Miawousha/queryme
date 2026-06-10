@@ -40,6 +40,7 @@ export function useKbTreeState({
   const [lens, setLens] = useState(false);
   const [pulseId, setPulseId] = useState<string | null>(null);
   const seen = useRef<Set<string>>(new Set());
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persist = useCallback(
     (next: Record<string, boolean>) => {
@@ -78,7 +79,8 @@ export function useKbTreeState({
       if (!file) continue;
       for (const id of ancestorIdsFor(r.path, groupNames)) {
         if (next[id] === false) continue;
-        if (next[id] !== true) {
+        const defaultOpen = id.startsWith("col:");
+        if (next[id] !== true && !defaultOpen) {
           next[id] = true;
           changed = true;
         }
@@ -91,10 +93,18 @@ export function useKbTreeState({
     if (changed) persist(next);
     if (pulse !== null) {
       setPulseId(pulse);
-      const t = setTimeout(() => setPulseId(null), 1600);
-      return () => clearTimeout(t);
+      if (pulseTimer.current !== null) clearTimeout(pulseTimer.current);
+      pulseTimer.current = setTimeout(() => setPulseId(null), 1600);
     }
   }, [citedRefs, files, groupNames, overrides, persist]);
+
+  // Unmount-only: clear any pending pulse timer.
+  useEffect(
+    () => () => {
+      if (pulseTimer.current !== null) clearTimeout(pulseTimer.current);
+    },
+    [],
+  );
 
   return { isExpanded, toggle, filter, setFilter, lens, setLens, pulseId };
 }
