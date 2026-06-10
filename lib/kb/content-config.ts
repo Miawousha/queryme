@@ -61,7 +61,14 @@ const CollectionConfigSchema = z
 export const ContentConfigSchema = z
   .object({
     /** Declared content locales; the FIRST is canonical (bare filename). */
-    locales: z.array(z.enum(["en", "fr"])).min(1).default(["en", "fr"]),
+    locales: z
+      .array(z.enum(["en", "fr"]))
+      .min(1)
+      .refine(
+        (arr) => arr[0] === "en" && new Set(arr).size === arr.length,
+        { message: 'the first locale must be "en" (bare filenames are English) and locales must be unique' },
+      )
+      .default(["en", "fr"]),
     collections: z.array(CollectionConfigSchema).min(1),
   })
   .strict();

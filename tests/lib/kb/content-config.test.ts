@@ -88,6 +88,44 @@ collections:
       expect(() => loadContentConfig(dir), bad).toThrow();
     }
   });
+
+  it("rejects locales: [fr, en] — first locale must be en", () => {
+    const dir = writeConfig(`
+locales: [fr, en]
+collections:
+${CORE}
+`);
+    expect(() => loadContentConfig(dir)).toThrow(/first locale must be/);
+  });
+
+  it("rejects locales: [en, en] — locales must be unique", () => {
+    const dir = writeConfig(`
+locales: [en, en]
+collections:
+${CORE}
+`);
+    expect(() => loadContentConfig(dir)).toThrow(/locales must be unique/);
+  });
+
+  it("accepts locales: [en, fr]", () => {
+    const dir = writeConfig(`
+locales: [en, fr]
+collections:
+${CORE}
+`);
+    const config = loadContentConfig(dir);
+    expect(config!.locales).toEqual(["en", "fr"]);
+  });
+
+  it("accepts locales: [en] (single-locale)", () => {
+    const dir = writeConfig(`
+locales: [en]
+collections:
+${CORE}
+`);
+    const config = loadContentConfig(dir);
+    expect(config!.locales).toEqual(["en"]);
+  });
 });
 
 describe("resolveContentConfig", () => {

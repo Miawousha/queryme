@@ -75,7 +75,7 @@ export function validatePersonaTree(root: string): string | null {
   try {
     config = resolveContentConfig(loadContentConfig(root));
   } catch (err) {
-    return (err as Error).message;
+    return err instanceof Error ? err.message : String(err);
   }
   const missing = requiredPersonaFiles(config).filter(
     (rel) => !fs.existsSync(path.join(root, rel)),
