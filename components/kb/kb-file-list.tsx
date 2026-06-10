@@ -2,26 +2,20 @@
 
 import type { KbFile } from "@/lib/kb/manifest";
 import { useKb } from "@/components/kb/kb-context";
-import { metaSubtitle } from "@/lib/kb/meta-format";
+import { humanizeSlug, metaSubtitle, type KbGroup } from "@/lib/kb/meta-format";
 import { cn } from "@/lib/utils";
 
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
 const LABEL_STYLE = { letterSpacing: "0.24em" };
 
-/** Order in which directory groups appear under the "Referenced" section. */
-const GROUP_ORDER = ["experience", "projects", "talks", "recommendations", "other"] as const;
-type GroupKey = (typeof GROUP_ORDER)[number];
-
-/** Returns the directory group a file belongs to. Files at the kb/ root
- * (profile.yaml, skills.yaml, education.yaml, public-contact.yaml) and any
- * unknown subdirectory fall into "other". */
-function groupOf(file: KbFile): GroupKey {
-  const top = file.path.split("/")[0];
-  if (top === "experience" || top === "projects" || top === "talks" || top === "recommendations") {
-    return top;
-  }
-  return "other";
-}
+/** Fallback when the manifest fetch hasn't resolved (or an old API omits
+ * groups): the resume preset's directories. */
+const DEFAULT_GROUPS: KbGroup[] = [
+  { name: "experience" },
+  { name: "projects" },
+  { name: "talks" },
+  { name: "recommendations" },
+];
 
 function FileRow({
   file,
@@ -118,7 +112,7 @@ export function KbFileList({
   citedPaths: string[];
   onOpen: (path: string) => void;
 }) {
-  const { strings } = useKb();
+  const { strings, lang, groups: configGroups } = useKb();
   const citedSet = new Set(citedPaths);
 
   if (manifest.length === 0) {
@@ -126,6 +120,9 @@ export function KbFileList({
       <p className="px-1 text-xs text-[var(--color-text-tertiary)]">{strings.unavailable}</p>
     );
   }
+
+  const groups = configGroups.length > 0 ? configGroups : DEFAULT_GROUPS;
+  const known = new Set(groups.map((g) => g.name));
 
   // Cited files (any directory) come first, in citation order.
   const cited = citedPaths
@@ -137,18 +134,22 @@ export function KbFileList({
   const pinned = manifest.filter((f) => f.path.startsWith("_virtual/") && !citedSet.has(f.path));
 
   // Everything else, grouped by directory.
-  const grouped: Record<GroupKey, KbFile[]> = {
-    experience: [],
-    projects: [],
-    talks: [],
-    recommendations: [],
-    other: [],
-  };
+  const grouped = new Map<string, KbFile[]>();
+  for (const g of groups) grouped.set(g.name, []);
+  grouped.set("other", []);
   for (const f of manifest) {
     if (citedSet.has(f.path)) continue;
     if (f.path.startsWith("_virtual/")) continue;
-    grouped[groupOf(f)].push(f);
+    const top = f.path.split("/")[0];
+    const key = known.has(top) ? top : "other";
+    grouped.get(key)!.push(f);
   }
+
+  const labelOf = (g: KbGroup): string =>
+    (lang === "fr" ? g.label?.fr : undefined) ??
+    g.label?.en ??
+    (strings.sections as Record<string, string | undefined>)[g.name] ??
+    humanizeSlug(g.name);
 
   return (
     <div className="flex flex-col gap-4">
@@ -171,9 +172,10 @@ export function KbFileList({
         </div>
       )}
 
-      {GROUP_ORDER.map((key) => (
-        <Group key={key} label={strings.sections[key]} files={grouped[key]} onOpen={onOpen} />
+      {groups.map((g) => (
+        <Group key={g.name} label={labelOf(g)} files={grouped.get(g.name) ?? []} onOpen={onOpen} />
       ))}
+      <Group label={strings.sections.other} files={grouped.get("other") ?? []} onOpen={onOpen} />
     </div>
   );
 }

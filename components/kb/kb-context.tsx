@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
+import type { KbGroup } from "@/lib/kb/meta-format";
 import type { KbStrings, UiLang } from "@/lib/language";
 
 /** Reserved manifest path for the synthesized printable CV document. The
@@ -24,6 +25,8 @@ type KbContextValue = {
   strings: KbStrings;
   /** Every public KB file plus the synthesized CV entry pinned at the top. */
   manifest: KbFile[];
+  /** Markdown directory groups in display order (from the content config). */
+  groups: KbGroup[];
   /** Ordered KB paths the agent has cited so far this conversation. */
   citedPaths: string[];
   setCitedPaths: (paths: string[]) => void;
@@ -62,6 +65,7 @@ export function KbProvider({
 }) {
   const strings = kbStrings;
   const [manifest, setManifest] = useState<KbFile[]>([]);
+  const [groups, setGroups] = useState<KbGroup[]>([]);
   const [citedPaths, setCitedPaths] = useState<string[]>([]);
   const [openFilePath, setOpenFilePath] = useState<string | null>(null);
 
@@ -69,8 +73,11 @@ export function KbProvider({
     let cancelled = false;
     fetch(`${apiBasePath}/kb`)
       .then((r) => (r.ok ? r.json() : { files: [] }))
-      .then((data: { files?: KbFile[] }) => {
-        if (!cancelled) setManifest(data.files ?? []);
+      .then((data: { files?: KbFile[]; groups?: KbGroup[] }) => {
+        if (!cancelled) {
+          setManifest(data.files ?? []);
+          setGroups(data.groups ?? []);
+        }
       })
       .catch(() => {
         /* manifest stays empty — the panel shows an empty state */
@@ -99,6 +106,7 @@ export function KbProvider({
       lang,
       strings,
       manifest: manifestWithCv,
+      groups,
       citedPaths,
       setCitedPaths,
       openFilePath,
@@ -107,7 +115,7 @@ export function KbProvider({
       apiBasePath,
       cvPrintBase,
     }),
-    [lang, strings, manifestWithCv, citedPaths, openFilePath, openFile, closeFile, apiBasePath, cvPrintBase],
+    [lang, strings, manifestWithCv, groups, citedPaths, openFilePath, openFile, closeFile, apiBasePath, cvPrintBase],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;
