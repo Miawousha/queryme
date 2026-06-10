@@ -41,6 +41,17 @@ describe("loadKbManifest", () => {
     }
   });
 
+  it("derives titles from stems, not full paths", () => {
+    // yaml: stem of "profile.yaml" → "profile" → "Profile"
+    const profile = manifest.find((f) => f.path === "profile.yaml");
+    expect(profile?.title).toBe("Profile");
+
+    // markdown without # H1: stem of "experience/2024-fixture-co.md" →
+    // "2024-fixture-co" → "2024 fixture co"
+    const exp = manifest.find((f) => f.path === "experience/2024-fixture-co.md");
+    expect(exp?.title).toBe("2024 fixture co");
+  });
+
   it("returns files sorted by path", () => {
     const paths = manifest.map((f) => f.path);
     expect(paths).toEqual([...paths].sort());

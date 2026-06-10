@@ -92,7 +92,8 @@ async function readMarkdown(
   const raw = await fs.readFile(absPath, "utf8");
   const { data, content } = matter(raw);
   const heading = content.split("\n").find((line) => /^#\s+/.test(line));
-  const title = heading ? heading.replace(/^#\s+/, "").trim() : humanizeSlug(relPath);
+  const stem = path.basename(relPath, path.extname(relPath));
+  const title = heading ? heading.replace(/^#\s+/, "").trim() : humanizeSlug(stem);
   const meta = pickMeta(data as Record<string, unknown>);
   return meta ? { title, meta } : { title };
 }
@@ -121,7 +122,8 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
       const { title, meta } = await readMarkdown(abs, rel);
       out.push({ path: rel, title, type, ...(meta ? { meta } : {}) });
     } else {
-      out.push({ path: rel, title: humanizeSlug(rel), type });
+      const stem = path.basename(rel, path.extname(rel));
+      out.push({ path: rel, title: humanizeSlug(stem), type });
     }
   }
 }
