@@ -17,12 +17,14 @@ const mockCreateAccount = vi.fn();
 const mockGetAccountBySlug = vi.fn();
 const mockGetRootAccountId = vi.fn().mockResolvedValue("root-account-id");
 const mockSetAccountRole = vi.fn();
+const mockSetAccountStatus = vi.fn();
 
 vi.mock("@/lib/accounts/repo", () => ({
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   getAccountBySlug: (...args: unknown[]) => mockGetAccountBySlug(...args),
   getRootAccountId: (...args: unknown[]) => mockGetRootAccountId(...args),
   setAccountRole: (...args: unknown[]) => mockSetAccountRole(...args),
+  setAccountStatus: (...args: unknown[]) => mockSetAccountStatus(...args),
 }));
 
 const mockGetActivePersonaSourceRowForAccount = vi.fn().mockResolvedValue(null);
@@ -214,6 +216,46 @@ describe("run: account promote", () => {
       result: { ok: true, account: "alex", role: "admin" },
     });
     expect(mockSetAccountRole).toHaveBeenCalledWith(fakeDb, "alex", "admin");
+  });
+});
+
+describe("run: account approve/disable/waitlist", () => {
+  beforeEach(() => {
+    mockSetAccountStatus.mockReset();
+  });
+
+  it.each([
+    ["approve", "active"],
+    ["disable", "disabled"],
+    ["waitlist", "waitlisted"],
+  ] as const)("account %s sets status %s", async (sub, status) => {
+    mockSetAccountStatus.mockResolvedValue({
+      id: "acc-uuid-1",
+      username: "alex",
+      githubId: null,
+      role: "user",
+      status,
+      createdAt: new Date(),
+    });
+    const out = await run(["account", sub, "alex", "--json"], { env: { POSTGRES_URL: "x" }, isTTY: false });
+    expect(out.exitCode).toBe(0);
+    expect(JSON.parse(out.stdout)).toMatchObject({
+      ok: true,
+      result: { ok: true, account: "alex", status },
+    });
+    expect(mockSetAccountStatus).toHaveBeenCalledWith(fakeDb, "alex", status);
+  });
+
+  it("returns usage-error (exit 2) when no username is given", async () => {
+    const out = await run(["account", "approve"], { env: { POSTGRES_URL: "x" }, isTTY: false });
+    expect(out.exitCode).toBe(2);
+  });
+
+  it("maps an unknown account to exit 1", async () => {
+    mockSetAccountStatus.mockRejectedValue(new Error("no account 'ghost'"));
+    const out = await run(["account", "disable", "ghost", "--json"], { env: { POSTGRES_URL: "x" }, isTTY: false });
+    expect(out.exitCode).toBe(1);
+    expect(JSON.parse(out.stdout).error).toMatch(/no account 'ghost'/);
   });
 });
 

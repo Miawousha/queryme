@@ -1,6 +1,6 @@
-# Querying queryme over MCP
+# Querying Queritae over MCP
 
-queryme exposes a Streamable-HTTP Model Context Protocol endpoint so other
+Queritae exposes a Streamable-HTTP Model Context Protocol endpoint so other
 agents can ask about Alexandre directly — no scraping, no copy-pasting.
 
 ## Endpoint
@@ -24,7 +24,7 @@ Add to `claude_desktop_config.json`:
 
     {
       "mcpServers": {
-        "queryme": {
+        "queritae": {
           "command": "npx",
           "args": ["-y", "mcp-remote", "https://<your-deploy>/api/mcp"]
         }

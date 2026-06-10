@@ -82,7 +82,7 @@ function whitelist<T>(
  * Privacy invariant: the CV is a public surface, so a project may only expose
  * repos that are published (`visibility === "public"`) and linkable (have a
  * `url`). Applied to every project's `repos` regardless of any `cv-config.yaml`
- * — private repos must never reach the CV page, the `/api/cv` JSON, or the
+ * — private repos must never reach the CV page, the `/api/a/{username}/cv` JSON, or the
  * copy/download markdown, even for an account that ships no config.
  */
 function withPublicReposOnly(projects: ProjectEntry[]): ProjectEntry[] {

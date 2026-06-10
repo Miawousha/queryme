@@ -12,6 +12,9 @@ import { getKv } from "@/lib/kv/client";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
 import { requestIp } from "@/lib/request-ip";
 import { getPersonaStore } from "@/lib/persona/store";
+import { checkQuota } from "@/lib/usage/quota";
+import { recordUsage } from "@/lib/usage/repo";
+import { isUuid } from "@/lib/uuid";
 
 const MAX_TURNS = 50;
 const MAX_TOTAL_USER_CHARS = 20_000;
@@ -91,6 +94,18 @@ export async function handleChat(req: NextRequest, accountId: string): Promise<R
     return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
   }
 
+  // Account-wide limit on top of per-IP: requests spread across many IPs each
+  // pass the per-IP limit, so one persona could still be hammered from a
+  // distributed source without this ceiling.
+  const accountRate = await checkRateLimit(getKv(), {
+    key: `chat:${accountId}:account`,
+    limit: 120,
+    windowSeconds: 60,
+  });
+  if (!accountRate.allowed) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
+
   await getPersonaStore().ensureReady(accountId);
   if (!getPersonaStore().getRoot(accountId)) {
     return NextResponse.json({ error: "persona_not_configured" }, { status: 503 });
@@ -98,6 +113,26 @@ export async function handleChat(req: NextRequest, accountId: string): Promise<R
 
   const conversationId = parsed.data.conversationId ?? randomUUID();
   const db = getDb();
+
+  // Quota is checked (and usage recorded) only for real, UUID-keyed accounts:
+  // under PERSONA_LOCAL_OVERRIDE accountId is the non-UUID "local-override"
+  // sentinel, which has no account_usage rows to read or write.
+  const metered = isUuid(accountId);
+  if (metered) {
+    // Hard spend cap, enforced before any paid model call. The rate limits
+    // above bound burst traffic; this bounds total daily/monthly spend.
+    const quota = await checkQuota(db, accountId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: "quota_exceeded",
+          reason: quota.reason,
+          message: "This persona has reached its usage limit. Try again later.",
+        },
+        { status: 429 },
+      );
+    }
+  }
 
   // Determine the conversation's preferred language; default to English for
   // fresh conversations until something sets it. The `language` field on the
@@ -153,6 +188,24 @@ export async function handleChat(req: NextRequest, accountId: string): Promise<R
         }
       } catch (err) {
         console.error("chat: failed to persist assistant turn", err);
+      }
+
+      // Meter the completed call. `totalUsage` resolves once the stream has
+      // finished (guaranteed inside onFinish) and sums usage across all steps.
+      // Like the transcript write above, a metering failure must never surface
+      // — the response is already sent.
+      if (metered) {
+        try {
+          const usage = await result.totalUsage;
+          await recordUsage(db, {
+            accountId,
+            channel: "chat",
+            inputTokens: usage.inputTokens ?? 0,
+            outputTokens: usage.outputTokens ?? 0,
+          });
+        } catch (err) {
+          console.error("chat: failed to record usage", err);
+        }
       }
     },
   });

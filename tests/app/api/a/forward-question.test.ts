@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const loadAccountForSlug = vi.fn();
+const loadActiveAccountForSlug = vi.fn();
 const handleForward = vi.fn();
 const ensureReady = vi.fn(async () => {});
 const getRoot = vi.fn(() => "/persona/root" as string | null);
 const getCachedKb = vi.fn();
 
-vi.mock("@/lib/accounts/load", () => ({ loadAccountForSlug }));
-vi.mock("@/app/api/forward-question/handler", () => ({ handleForward }));
+vi.mock("@/lib/accounts/load", () => ({ loadActiveAccountForSlug }));
+vi.mock("@/lib/questions/handle-forward", () => ({ handleForward }));
 vi.mock("@/lib/persona/store", () => ({ getPersonaStore: () => ({ ensureReady, getRoot }) }));
 vi.mock("@/lib/kb/cache", () => ({ getCachedKb }));
 vi.mock("@/lib/notify/email", () => ({ resendTransport: () => ({ send: async () => ({ id: "x" }) }) }));
@@ -28,7 +28,7 @@ beforeEach(() => {
 
 describe("POST /api/a/[username]/forward-question", () => {
   it("404s when the account does not exist", async () => {
-    loadAccountForSlug.mockResolvedValue(null);
+    loadActiveAccountForSlug.mockResolvedValue(null);
     const { POST } = await import("@/app/api/a/[username]/forward-question/route");
     const res = await POST(req(), ctx("ghost"));
     expect(res.status).toBe(404);
@@ -36,7 +36,7 @@ describe("POST /api/a/[username]/forward-question", () => {
   });
 
   it("routes the notification to the account persona's public-contact email", async () => {
-    loadAccountForSlug.mockResolvedValue({ id: "acct-x", username: "dana" });
+    loadActiveAccountForSlug.mockResolvedValue({ id: "acct-x", username: "dana" });
     getCachedKb.mockResolvedValue({ publicContact: { email: "dana@studio.example" } });
     handleForward.mockResolvedValue(new Response(null, { status: 200 }));
     const { POST } = await import("@/app/api/a/[username]/forward-question/route");

@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const accounts = await listAllAccounts(getDb());
     const perAccount: MetadataRoute.Sitemap = accounts
-      .filter((a) => a.repoLinked)
+      .filter((a) => a.repoLinked && a.status === "active")
       .flatMap((a) => [
         { url: `${SITE}/${a.username}`, changeFrequency: "weekly", priority: 0.7 },
         { url: `${SITE}/${a.username}/cv`, changeFrequency: "weekly", priority: 0.6 },

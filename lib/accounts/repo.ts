@@ -4,6 +4,7 @@ import {
   conversations,
   personaSource,
   type Account,
+  type AccountStatus,
 } from "@/lib/db/schema";
 import { isValidUsername, isReservedSlug } from "@/lib/accounts/slug";
 import { ReservedLoginError, SlugConflictError } from "@/lib/accounts/errors";
@@ -13,7 +14,12 @@ type Db = ReturnType<typeof getDb>;
 
 export async function createAccount(
   db: Db,
-  input: { username: string; githubId?: string | null; role?: "user" | "admin" },
+  input: {
+    username: string;
+    githubId?: string | null;
+    role?: "user" | "admin";
+    status?: AccountStatus;
+  },
 ): Promise<Account> {
   if (!isValidUsername(input.username)) {
     throw new Error(`invalid username: ${JSON.stringify(input.username)}`);
@@ -24,6 +30,9 @@ export async function createAccount(
       username: input.username,
       githubId: input.githubId ?? null,
       role: input.role ?? "user",
+      // CLI/script provisioning is a deliberate operator action — active by
+      // default. Self-serve signups pass "waitlisted" explicitly.
+      status: input.status ?? "active",
     })
     .returning();
   return row;
@@ -99,7 +108,15 @@ export async function upsertAccountFromGitHub(
     return bySlug;
   }
 
-  return createAccount(db, { username: input.login, githubId: input.githubId, role: "user" });
+  // Self-serve signup: every brand-new GitHub identity starts waitlisted. A
+  // super-admin approves it from the console before any public surface (or
+  // paid model call) goes live for the account.
+  return createAccount(db, {
+    username: input.login,
+    githubId: input.githubId,
+    role: "user",
+    status: "waitlisted",
+  });
 }
 
 export async function setAccountRole(
@@ -116,11 +133,27 @@ export async function setAccountRole(
   return row;
 }
 
+/** Approve (active), waitlist, or kill-switch (disabled) an account. */
+export async function setAccountStatus(
+  db: Db,
+  username: string,
+  status: AccountStatus,
+): Promise<Account> {
+  const [row] = await db
+    .update(accounts)
+    .set({ status })
+    .where(eq(accounts.username, username))
+    .returning();
+  if (!row) throw new Error(`no account '${username}'`);
+  return row;
+}
+
 export type AccountSummary = {
   id: string;
   username: string;
   githubId: string | null;
   role: "user" | "admin";
+  status: AccountStatus;
   createdAt: Date;
   repoLinked: boolean;
   conversationCount: number;
@@ -147,6 +180,7 @@ export async function listAllAccounts(db: Db): Promise<AccountSummary[]> {
     username: a.username,
     githubId: a.githubId,
     role: a.role,
+    status: a.status,
     repoLinked: linkedSet.has(a.id),
     conversationCount: countByAccount.get(a.id) ?? 0,
     createdAt: a.createdAt,

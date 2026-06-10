@@ -31,7 +31,7 @@ describe("GET /api/auth/github/callback", () => {
     const state = createState(SECRET);
     exchangeCodeForToken.mockResolvedValue("tok");
     fetchGitHubUser.mockResolvedValue({ id: 42, login: "octocat" });
-    upsertAccountFromGitHub.mockResolvedValue({ id: "acct-1", username: "octocat" });
+    upsertAccountFromGitHub.mockResolvedValue({ id: "acct-1", username: "octocat", status: "active" });
 
     const { GET } = await import("@/app/api/auth/github/callback/route");
     const res = await GET(callbackReq({ code: "c", state }, state));
@@ -40,6 +40,32 @@ describe("GET /api/auth/github/callback", () => {
     expect(res.headers.get("location")).toContain("/octocat/admin");
     expect(res.headers.get("set-cookie")).toContain("queritae_session=");
     expect(upsertAccountFromGitHub).toHaveBeenCalledWith({}, { githubId: "42", login: "octocat" });
+  });
+
+  it("redirects waitlisted accounts to /waitlist, with a session cookie", async () => {
+    const state = createState(SECRET);
+    exchangeCodeForToken.mockResolvedValue("tok");
+    fetchGitHubUser.mockResolvedValue({ id: 43, login: "newbie" });
+    upsertAccountFromGitHub.mockResolvedValue({ id: "acct-2", username: "newbie", status: "waitlisted" });
+
+    const { GET } = await import("@/app/api/auth/github/callback/route");
+    const res = await GET(callbackReq({ code: "c", state }, state));
+
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/waitlist");
+    expect(res.headers.get("set-cookie")).toContain("queritae_session=");
+  });
+
+  it("redirects disabled accounts to /waitlist too", async () => {
+    const state = createState(SECRET);
+    exchangeCodeForToken.mockResolvedValue("tok");
+    fetchGitHubUser.mockResolvedValue({ id: 44, login: "banned" });
+    upsertAccountFromGitHub.mockResolvedValue({ id: "acct-3", username: "banned", status: "disabled" });
+
+    const { GET } = await import("@/app/api/auth/github/callback/route");
+    const res = await GET(callbackReq({ code: "c", state }, state));
+
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/waitlist");
   });
 
   it("redirects to the error page on state mismatch", async () => {

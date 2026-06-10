@@ -1,14 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { GET } from "@/app/api/kb/file/route";
+import { handleKbFile } from "@/lib/kb/handlers";
+
+// PERSONA_LOCAL_OVERRIDE (vitest.setup.ts) makes any accountId resolve to the
+// fixture persona, so the handler serves tests/fixtures/persona/kb/.
+const ACCOUNT_ID = "local-override";
 
 function get(pathParam: string | null): Promise<Response> {
-  const url = new URL("http://localhost/api/kb/file");
+  const url = new URL("http://localhost/api/a/fixture/kb/file");
   if (pathParam !== null) url.searchParams.set("path", pathParam);
-  // The route only reads `req.nextUrl`; a plain Request is structurally fine.
-  return GET(new Request(url) as never);
+  // The handler only reads `req.nextUrl`; a plain Request is structurally fine.
+  return handleKbFile(new Request(url) as never, ACCOUNT_ID);
 }
 
-describe("GET /api/kb/file", () => {
+describe("handleKbFile", () => {
   it("400s when no path is given", async () => {
     expect((await get(null)).status).toBe(400);
   });
@@ -23,7 +27,7 @@ describe("GET /api/kb/file", () => {
   });
 
   it("serves a real KB file with its content", async () => {
-    // profile.yaml exists in the real kb/ directory.
+    // profile.yaml exists in the fixture persona's kb/ directory.
     const res = await get("profile.yaml");
     expect(res.status).toBe(200);
     expect((await res.text()).length).toBeGreaterThan(0);

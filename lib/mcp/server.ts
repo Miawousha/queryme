@@ -6,6 +6,8 @@ import { getOrCreateConversation, appendTurn } from "@/lib/conversations/repo";
 import { forwardQuestion } from "@/lib/questions/repo";
 import { setInterviewer } from "@/lib/interviewer/repo";
 import { buildIdentifyTools } from "@/lib/interviewer/tool";
+import { checkQuota } from "@/lib/usage/quota";
+import { recordUsage } from "@/lib/usage/repo";
 import {
   handleAsk,
   handleForwardQuestion,
@@ -55,6 +57,7 @@ export function buildMcpServer(accountId: string): McpServer {
         const result = await handleAsk(
           {
             db: getDb(),
+            accountId,
             // Inject this account's id so MCP `ask` conversations are scoped
             // to it (the callback's input type omits accountId).
             getOrCreateConversation: (db, input) =>
@@ -72,8 +75,17 @@ export function buildMcpServer(accountId: string): McpServer {
                   ),
                 },
               });
-              return await streamed.text;
+              // Awaiting `text` consumes the stream to completion, after which
+              // `totalUsage` resolves with the sum across all steps.
+              const text = await streamed.text;
+              const usage = await streamed.totalUsage;
+              return {
+                text,
+                usage: { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens },
+              };
             },
+            checkQuota,
+            recordUsage,
           },
           args,
         );

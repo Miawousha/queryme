@@ -1,15 +1,15 @@
 # Queritae
 
-A queryable CV. The knowledge base about Alexandre Collet, the system prompt that drives the agent, and the code that serves both are all in this repo — nothing hidden, nothing puffed up.
+A queryable CV. Each account's knowledge base, system prompt, and persona config live in that account's own GitHub content repo — this app is a content-free shell that syncs and serves them. Nothing hidden, nothing puffed up.
 
 Live: _coming soon_
 
 ## How it works
 
-1. The KB lives in `/kb` as YAML files (structured facts) and Markdown files (narrative stories). One file per role and per project.
-2. The system prompt lives in `/prompts/system.md`. It's plain Markdown — read it.
-3. The Next.js app loads the KB at runtime, assembles it into a single text blob, and injects it into the system prompt with Anthropic prompt caching so every request after the first is cheap. Each project lists the repos that back it under a `### Repositories` subheading — see [docs/agent-context.md](docs/agent-context.md) for the full walkthrough.
-4. The web chat at `/` calls `/api/chat`, which calls a shared `answer()` function. The MCP server at `/api/mcp` calls the same `answer()` — see [MCP server](#mcp-server) below.
+1. Each account links a GitHub content repo (see [docs/content-repo-guide.md](docs/content-repo-guide.md)). Its `kb/` holds YAML files (structured facts) and Markdown files (narrative stories) — one file per role and per project; its `prompts/system.md` is the agent's system prompt, plain Markdown.
+2. The app syncs the content repo on demand (admin → Content tab), pins it to a commit, and caches it per account.
+3. At request time the app loads the KB, assembles it into a single text blob, and injects it into the system prompt with Anthropic prompt caching so every request after the first is cheap. Each project lists the repos that back it under a `### Repositories` subheading — see [docs/agent-context.md](docs/agent-context.md) for the full walkthrough.
+4. The web chat at `/{username}` calls `/api/a/{username}/chat`, which calls a shared `answer()` function. The MCP server at `/api/mcp` calls the same `answer()` — see [MCP server](#mcp-server) below.
 
 The agent can also recognize who it is talking to: when a visitor introduces
 themselves (e.g. a recruiter naming their company and the role they're
@@ -72,12 +72,36 @@ pnpm admin account create <username>
 pnpm admin account link <username> <public-github-repo-url>
 ```
 
-The account goes live immediately at `/{username}`.
+CLI-created accounts are active immediately at `/{username}` — creating one is
+a deliberate operator action.
+
+### Signups, the waitlist, and the kill switch
+
+Self-serve GitHub signups start **waitlisted**: the account exists and its
+owner can prepare content from `/{username}/admin`, but every public surface
+(persona page, chat, KB, CV, forward) 404s and no paid model call can be
+reached until a super-admin approves it — from the `/admin` console or the
+CLI:
+
+```bash
+pnpm admin account approve <username>    # waitlisted → active
+pnpm admin account disable <username>    # kill switch (any status → disabled)
+pnpm admin account waitlist <username>   # back to pending
+```
+
+### Quotas and spend alerting
+
+Every chat / MCP answer is metered per account per UTC day (messages +
+tokens, `account_usage` table). Requests beyond the per-account caps —
+`QUOTA_DAILY_MESSAGES_PER_ACCOUNT` (default 200) and
+`QUOTA_MONTHLY_TOKENS_PER_ACCOUNT` (default 10M) — get a 429 before the
+Anthropic call. A daily Vercel cron (`/api/cron/usage-alert`, guarded by
+`CRON_SECRET`) emails a digest when platform-wide daily tokens cross
+`USAGE_ALERT_DAILY_TOKENS`.
 
 ### Not yet implemented (future plans)
 
-- Per-account email / custom-domain config
-- Per-account MCP endpoints
+- Per-account MCP endpoints (`/api/mcp` serves the house account only)
 - `account_id` NOT NULL hardening — the MCP `ask` path creates conversations without an account, so a NOT NULL constraint would be a runtime landmine until that path is threaded through account resolution
 
 ## Sign in / accounts
@@ -129,7 +153,7 @@ login for `admin sync/status --remote`.
 > step-by-step guide to the repo layout, every file's schema, validation, and
 > connecting it from your admin.
 
-The KB is just files. Edit them and commit; the agent picks up the new content on the next build.
+The KB is just files in your content repo. Edit them, commit, and re-sync from the admin Content tab; the agent picks up the new content on the next sync.
 
 - `kb/profile.yaml` — name, headline, location, links
 - `kb/skills.yaml` — skills with self-rated level (1–5) and years
@@ -142,7 +166,7 @@ Validation runs at build time (via Zod schemas in `lib/kb/schemas.ts`); a malfor
 
 ## Editing the agent's behavior
 
-Open `prompts/system.md`. Edit. Commit. The build picks it up. The point of having this in the public repo is that anyone can audit exactly how the agent is instructed.
+Open `prompts/system.md` in your content repo. Edit, commit, re-sync. The point of keeping it in a public content repo is that anyone can audit exactly how the agent is instructed.
 
 ## Testing
 
@@ -195,33 +219,6 @@ Requests are rate-limited per client IP.
 ## Deployment
 
 Push to a Vercel project linked to this repo. Set `ANTHROPIC_API_KEY` and (optionally) override `NEXT_PUBLIC_REPO_URL` / `NEXT_PUBLIC_REPO_BRANCH` if you've forked.
-
-## Self-host with Docker
-
-A `docker-compose.yml` ships Postgres, Redis, and a multi-stage Next.js
-container so the whole stack stands up locally.
-
-```bash
-cp .env.example .env
-# At minimum, set ANTHROPIC_API_KEY in .env
-docker compose up --build
-```
-
-Then open [http://localhost:3000](http://localhost:3000). The web container's
-compose `command` override runs `pnpm db:migrate` before `pnpm start` on every
-boot, so a fresh database is initialized automatically.
-
-Browser sign-in uses GitHub OAuth: set `GITHUB_OAUTH_CLIENT_ID`,
-`GITHUB_OAUTH_CLIENT_SECRET`, and `SESSION_SECRET` (which signs session +
-OAuth-state cookies) in `.env`. The compose file defaults `SESSION_SECRET` to a
-placeholder for one-command bring-up — **change it before exposing the
-container.** `ADMIN_PASSWORD` is the CLI-only machine login for
-`admin sync/status --remote`; compose defaults it to `admin`, so **change it in
-`.env` before exposing the container to any network you don't fully trust.**
-
-The compose stack uses the TCP-Postgres driver path (added in
-`lib/db/client.ts`) and the generic Redis driver via `REDIS_URL`. Vercel-deployed
-prod continues to use Neon over HTTP and Upstash KV.
 
 ## What's in this version
 

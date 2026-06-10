@@ -5,7 +5,7 @@ import { buildUiStrings } from "@/lib/language";
 import { HomePageClient } from "@/components/home-page-client";
 import { NotConfiguredScreen } from "@/components/not-configured-screen";
 import { getActivePersonaSourceRowForAccount } from "@/lib/persona-source";
-import { loadAccountForSlug } from "@/lib/accounts/load";
+import { loadActiveAccountForSlug } from "@/lib/accounts/load";
 
 export default async function AccountHome({
   params,
@@ -13,7 +13,7 @@ export default async function AccountHome({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const account = await loadAccountForSlug(username);
+  const account = await loadActiveAccountForSlug(username);
   if (!account) notFound();
 
   const store = getPersonaStore();

@@ -52,7 +52,11 @@ export async function GET(req: NextRequest) {
     return fail("server");
   }
 
-  const res = NextResponse.redirect(new URL(`/${account.username}/admin`, origin));
+  // Only approved accounts land in their admin; waitlisted and disabled ones
+  // get the holding page. Checking !== "active" fails closed for any future
+  // status value.
+  const dest = account.status === "active" ? `/${account.username}/admin` : "/waitlist";
+  const res = NextResponse.redirect(new URL(dest, origin));
   res.cookies.set(
     SESSION_COOKIE,
     createSessionToken(account.id, Date.now() + SESSION_TTL_MS, secret),

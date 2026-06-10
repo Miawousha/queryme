@@ -47,6 +47,44 @@ export async function sendForwardNotification(
   }
 }
 
+export type UsageAlert = {
+  to: string;
+  from: string;
+  /** UTC calendar day ("YYYY-MM-DD") the alert covers. */
+  day: string;
+  totals: { messages: number; tokens: number };
+  topAccounts: { username: string; messages: number; tokens: number }[];
+};
+
+export async function sendUsageAlert(
+  transport: EmailTransport,
+  input: UsageAlert,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const lines = [
+    `Platform usage for ${input.day} (UTC) crossed the daily alert threshold.`,
+    ``,
+    `Totals: ${input.totals.messages} messages, ${input.totals.tokens} tokens`,
+  ];
+  if (input.topAccounts.length > 0) {
+    lines.push(``, `Top accounts:`);
+    for (const a of input.topAccounts) {
+      lines.push(`- ${a.username}: ${a.messages} messages, ${a.tokens} tokens`);
+    }
+  }
+  const subject = `[queritae] daily usage alert — ${input.day}`;
+  try {
+    const r = await transport.send({
+      to: input.to,
+      from: input.from,
+      subject,
+      text: lines.join("\n"),
+    });
+    return { ok: true, id: r.id };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /**
  * Resend transport. Reads `RESEND_API_KEY` lazily so unit tests can swap a
  * fake transport without setting env. Throws at first use if the key is

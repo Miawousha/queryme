@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-const loadAccountForSlug = vi.fn();
+const loadActiveAccountForSlug = vi.fn();
 const loadCvKb = vi.fn();
 
-vi.mock("@/lib/accounts/load", () => ({ loadAccountForSlug }));
+vi.mock("@/lib/accounts/load", () => ({ loadActiveAccountForSlug }));
 vi.mock("@/lib/cv/load", () => ({
   loadCvKb,
   parseCvLang: (value: string | string[] | null | undefined) =>
@@ -16,7 +16,7 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("GET /api/a/[username]/cv", () => {
   it("404s for an unknown account slug", async () => {
-    loadAccountForSlug.mockResolvedValue(null);
+    loadActiveAccountForSlug.mockResolvedValue(null);
     const { GET } = await import("@/app/api/a/[username]/cv/route");
     const res = await GET(new NextRequest("http://x/api/a/nope/cv"), ctx("nope"));
     expect(res.status).toBe(404);
@@ -24,7 +24,7 @@ describe("GET /api/a/[username]/cv", () => {
   });
 
   it("returns the account-scoped cvKb for a known slug", async () => {
-    loadAccountForSlug.mockResolvedValue({ id: "acc-1", username: "alex" });
+    loadActiveAccountForSlug.mockResolvedValue({ id: "acc-1", username: "alex" });
     loadCvKb.mockResolvedValue({ root: "/x", cvKb: { projects: [] } });
     const { GET } = await import("@/app/api/a/[username]/cv/route");
     const res = await GET(new NextRequest("http://x/api/a/alex/cv?lang=fr"), ctx("alex"));
@@ -36,7 +36,7 @@ describe("GET /api/a/[username]/cv", () => {
   });
 
   it("503s when the account has no configured content", async () => {
-    loadAccountForSlug.mockResolvedValue({ id: "acc-1", username: "alex" });
+    loadActiveAccountForSlug.mockResolvedValue({ id: "acc-1", username: "alex" });
     loadCvKb.mockResolvedValue(null);
     const { GET } = await import("@/app/api/a/[username]/cv/route");
     const res = await GET(new NextRequest("http://x/api/a/alex/cv"), ctx("alex"));

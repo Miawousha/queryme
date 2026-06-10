@@ -4,7 +4,7 @@
  * segment also rejects these as defence in depth.
  */
 export const RESERVED_SLUGS = new Set<string>([
-  "about", "cv", "admin", "api", "auth", "login", "signup",
+  "about", "cv", "admin", "api", "auth", "login", "signup", "waitlist",
   "_next", "sitemap.xml", "favicon.ico", "robots.txt",
 ]);
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loadAccountForSlug } from "@/lib/accounts/load";
+import { loadActiveAccountForSlug } from "@/lib/accounts/load";
 import { getPersonaStore } from "@/lib/persona/store";
 import { getCachedKb } from "@/lib/kb/cache";
 import { resendTransport } from "@/lib/notify/email";
-import { handleForward } from "@/app/api/forward-question/handler";
+import { handleForward } from "@/lib/questions/handle-forward";
 
 export const runtime = "nodejs";
 
@@ -31,7 +31,7 @@ export async function POST(
   { params }: { params: Promise<{ username: string }> },
 ) {
   const { username } = await params;
-  const account = await loadAccountForSlug(username);
+  const account = await loadActiveAccountForSlug(username);
   if (!account) return NextResponse.json({ error: "account_not_found" }, { status: 404 });
 
   return handleForward(req, {

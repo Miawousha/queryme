@@ -6,7 +6,7 @@ import { loadPersona } from "@/lib/persona";
 
 /**
  * Assemble the CV-filtered KB for an account. This is the single place every CV
- * surface (the /cv and /{username}/cv pages, /api/cv, /api/a/{username}/cv, and
+ * surface (the /cv and /{username}/cv pages, /api/a/{username}/cv, and
  * the panel copy/download) goes through, so the privacy filter in
  * `filterKbForCv` (public repos only) runs exactly once and cannot be bypassed.
  * Returns null when the account has no configured content root.

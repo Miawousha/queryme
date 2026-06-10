@@ -1,11 +1,11 @@
 # Building Your Content Repo (Knowledge Base)
 
 This guide walks you through building the **content repo** that powers your
-queryme page — the public GitHub repository that holds everything the agent
+Queritae page — the public GitHub repository that holds everything the agent
 knows and says about you: your identity, your system prompt, and your knowledge
 base (KB).
 
-queryme itself is a generic shell. It doesn't ship with your content baked in —
+Queritae itself is a generic shell. It doesn't ship with your content baked in —
 it loads it at runtime from a GitHub repo you point it at. Editing your page is
 just: **edit a file → commit → push → click Resync.** No app code, no redeploy.
 
@@ -20,7 +20,7 @@ just: **edit a file → commit → push → click Resync.** No app code, no rede
 ## 1. The big picture
 
 ```
-your content repo (public GitHub)          queryme app
+your content repo (public GitHub)          Queritae app
 ┌───────────────────────────┐              ┌──────────────────────┐
 │ persona.yaml              │   Sync       │  fetches the repo     │
 │ prompts/system.md         │ ───────────► │  tarball, validates,  │
@@ -30,7 +30,7 @@ your content repo (public GitHub)          queryme app
         edit → commit → push  ──────────── click "Resync" ─────────►
 ```
 
-- The repo must be **public** (queryme fetches it unauthenticated).
+- The repo must be **public** (Queritae fetches it unauthenticated).
 - A sync always pulls the **latest commit of the configured branch** (default
   `main`).
 - The agent answers in the **third person about you** ("Jordan worked at…"),
@@ -71,7 +71,7 @@ and `recommendations/` may be empty or absent — a persona doesn't need
 entries in every category. The Markdown `.fr.md` sidecars are also optional
 (see [Localization](#9-localization)).
 
-> **Why French is required:** queryme ships English and French UI out of the
+> **Why French is required:** Queritae ships English and French UI out of the
 > box, and the four core YAML files back UI strings in both languages, so both
 > variants must be present. If you only have English content, the simplest path
 > today is to copy each `*.yaml` to `*.fr.yaml` and translate later.
@@ -110,7 +110,7 @@ i18n:
 ## 4. `prompts/system.md` — the agent's instructions
 
 Plain Markdown, read **verbatim** — there is no templating or `{{placeholder}}`
-substitution. Write your name and pronouns as literal text. At runtime queryme
+substitution. Write your name and pronouns as literal text. At runtime Queritae
 appends your assembled knowledge base to the end of this file under a
 `## Knowledge base` heading, so your prompt should reference it as the
 authoritative source.
@@ -175,7 +175,7 @@ authoritative; the `[ref: <path>]` markers tell you which file to cite.
 ```
 
 (For a complete, real-world example, see `tests/fixtures/persona/prompts/system.md`
-in the queryme repo.)
+in the Queritae repo.)
 
 ---
 
@@ -398,7 +398,7 @@ Unknown identifiers are warned, not fatal.
 
 ## 9. Localization
 
-queryme is bilingual (English + French). For any file, add a sibling with a
+Queritae is bilingual (English + French). For any file, add a sibling with a
 language code before the extension:
 
 - `kb/profile.yaml` → `kb/profile.fr.yaml`
@@ -416,7 +416,7 @@ canonical path, so citation tokens stay stable across languages.
 
 ## 10. Citations & how the KB feeds the agent
 
-At request time queryme assembles your entire KB into one text block and appends
+At request time Queritae assembles your entire KB into one text block and appends
 it to `prompts/system.md` under `## Knowledge base`. Each entry is introduced by
 a `[ref: <path>]` marker telling the agent which path to cite. The agent must
 then cite that path in its answers:
@@ -440,11 +440,11 @@ parent project file that hosts it (e.g. `[^kb:projects/<slug>.md]`).
 
 ## 11. Validate locally before you sync
 
-Point queryme's validator at a local checkout of your repo. It loads `kb/`,
+Point Queritae's validator at a local checkout of your repo. It loads `kb/`,
 runs every schema, and assembles the KB — failing loudly on the first problem:
 
 ```bash
-# from a queryme checkout, with your content repo checked out next to it:
+# from a Queritae checkout, with your content repo checked out next to it:
 PERSONA_LOCAL_OVERRIDE=../your-content-repo pnpm validate:kb
 ```
 
@@ -467,7 +467,7 @@ You can also run your repo against your own copy by setting
 
 ---
 
-## 12. Connect it to queryme
+## 12. Connect it to Queritae
 
 Once your repo is on public GitHub:
 
@@ -477,7 +477,7 @@ Once your repo is on public GitHub:
 2. Go to **Settings → Content source**.
 3. Paste your repo URL (`https://github.com/<owner>/<repo>`) and the branch
    (defaults to `main`), then click **Sync**.
-4. queryme fetches the latest commit, validates, and goes live. The active
+4. Queritae fetches the latest commit, validates, and goes live. The active
    commit, last-synced time, and a status badge appear; failures show the error
    inline, and the **Sync history** lists past attempts.
 
@@ -535,6 +535,6 @@ active and the error is recorded in Sync history.
 - [ ] Commit, push.
 - [ ] Connect at **`/{username}/admin` → Settings → Content source** → Sync.
 
-For a complete working example, browse `tests/fixtures/persona/` in the queryme
+For a complete working example, browse `tests/fixtures/persona/` in the Queritae
 repository — it's a minimal, valid content tree.
 ```

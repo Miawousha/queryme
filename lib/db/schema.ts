@@ -1,5 +1,15 @@
-import { pgTable, uuid, text, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, index, uniqueIndex, date, integer } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+
+/**
+ * Account lifecycle. New GitHub-OAuth signups start `waitlisted` (no public
+ * surfaces, no paid model calls) until a super-admin approves them; `disabled`
+ * is the kill switch — same effect as waitlisted, but signals an explicit
+ * revocation rather than a pending approval. The DB default is `waitlisted` so
+ * any insert path that forgets to set a status fails closed, not open.
+ */
+export const ACCOUNT_STATUSES = ["active", "waitlisted", "disabled"] as const;
+export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
 export const accounts = pgTable(
   "accounts",
@@ -8,6 +18,7 @@ export const accounts = pgTable(
     githubId: text("github_id"), // unique-when-present (see index below)
     username: text("username").notNull().unique(),
     role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
+    status: text("status", { enum: ACCOUNT_STATUSES }).notNull().default("waitlisted"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
@@ -134,3 +145,35 @@ export const domains = pgTable(
 
 export type Domain = typeof domains.$inferSelect;
 export type NewDomain = typeof domains.$inferInsert;
+
+/**
+ * Per-account, per-UTC-day usage counters, split by channel. Every paid model
+ * call increments exactly one row (upsert on the unique key), so quota checks
+ * are a cheap aggregate over a handful of rows rather than a transcript scan.
+ * Token counts are what the model API reports (input includes cache reads).
+ */
+export const accountUsage = pgTable(
+  "account_usage",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    accountId: uuid("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    day: date("day").notNull(), // UTC calendar day, "YYYY-MM-DD"
+    channel: text("channel", { enum: ["chat", "mcp"] }).notNull(),
+    messages: integer("messages").notNull().default(0),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    accountDayChannelUnique: uniqueIndex("account_usage_account_day_channel_unique").on(
+      table.accountId,
+      table.day,
+      table.channel,
+    ),
+    accountDayIdx: index("account_usage_account_day_idx").on(table.accountId, table.day),
+  }),
+);
+
+export type AccountUsage = typeof accountUsage.$inferSelect;

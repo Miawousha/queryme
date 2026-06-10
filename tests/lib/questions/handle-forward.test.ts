@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { POST } from "@/app/api/forward-question/route";
-import { handleForward } from "@/app/api/forward-question/handler";
+import { handleForward, type ForwardDeps } from "@/lib/questions/handle-forward";
 import { forwardQuestion } from "@/lib/questions/repo";
 import type { NextRequest } from "next/server";
 
@@ -21,40 +20,12 @@ vi.mock("@/lib/questions/repo", () => ({
 }));
 
 function makeReq(body: unknown) {
-  return new Request("http://test/api/forward-question", {
+  return new Request("http://test/api/a/fixture/forward-question", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  }) as any;
+  }) as unknown as NextRequest;
 }
-
-describe("/api/forward-question POST validation", () => {
-  it("rejects empty body", async () => {
-    const res = await POST(new Request("http://test", { method: "POST", body: "" }) as any);
-    expect(res.status).toBe(400);
-  });
-
-  it("rejects missing question", async () => {
-    const res = await POST(makeReq({ conversationId: "00000000-0000-4000-8000-000000000000" }));
-    expect(res.status).toBe(400);
-  });
-
-  it("rejects empty question", async () => {
-    const res = await POST(makeReq({
-      conversationId: "00000000-0000-4000-8000-000000000000",
-      question: "",
-    }));
-    expect(res.status).toBe(400);
-  });
-
-  it("rejects oversized question", async () => {
-    const res = await POST(makeReq({
-      conversationId: "00000000-0000-4000-8000-000000000000",
-      question: "x".repeat(2001),
-    }));
-    expect(res.status).toBe(400);
-  });
-});
 
 function fakeTransport() {
   const sent: { to: string; subject: string; text: string }[] = [];
@@ -67,15 +38,48 @@ function fakeTransport() {
   };
 }
 
+function deps(transport: ForwardDeps["transport"] = fakeTransport()): ForwardDeps {
+  return {
+    transport,
+    notifyTo: "alex@example.com",
+    notifyFrom: "queritae@example.com",
+  };
+}
+
+describe("handleForward validation", () => {
+  it("rejects empty body", async () => {
+    const req = new Request("http://test", { method: "POST", body: "" }) as unknown as NextRequest;
+    const res = await handleForward(req, deps());
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects missing question", async () => {
+    const res = await handleForward(makeReq({ conversationId: "00000000-0000-4000-8000-000000000000" }), deps());
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects empty question", async () => {
+    const res = await handleForward(makeReq({
+      conversationId: "00000000-0000-4000-8000-000000000000",
+      question: "",
+    }), deps());
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects oversized question", async () => {
+    const res = await handleForward(makeReq({
+      conversationId: "00000000-0000-4000-8000-000000000000",
+      question: "x".repeat(2001),
+    }), deps());
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("handleForward — notification side-effect", () => {
   it("fires the email notifier with the question and contact", async () => {
     const t = fakeTransport();
     const req = makeReq({ question: "How does the cache work?", contact: "sarah@acme.example" });
-    const res = await handleForward(req as unknown as NextRequest, {
-      transport: t,
-      notifyTo: "alex@example.com",
-      notifyFrom: "queryme@example.com",
-    });
+    const res = await handleForward(req, deps(t));
     expect(res.status).toBe(200);
     expect(t.sent).toHaveLength(1);
     expect(t.sent[0].to).toBe("alex@example.com");
@@ -100,11 +104,7 @@ describe("handleForward — notification side-effect", () => {
       } as never);
 
     const req = makeReq({ conversationId: "00000000-0000-4000-8000-000000000000", question: "q" });
-    const res = await handleForward(req as unknown as NextRequest, {
-      transport: t,
-      notifyTo: "alex@example.com",
-      notifyFrom: "queryme@example.com",
-    });
+    const res = await handleForward(req, deps(t));
 
     expect(res.status).toBe(200);
     const calls = vi.mocked(forwardQuestion).mock.calls;
@@ -122,11 +122,7 @@ describe("handleForward — notification side-effect", () => {
       },
     };
     const req = makeReq({ question: "q" });
-    const res = await handleForward(req as unknown as NextRequest, {
-      transport: failing,
-      notifyTo: "alex@example.com",
-      notifyFrom: "queryme@example.com",
-    });
+    const res = await handleForward(req, deps(failing));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);

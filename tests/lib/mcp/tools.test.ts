@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { handleAsk, handleForwardQuestion } from "@/lib/mcp/tools";
 import type { AskDeps, ForwardQuestionDeps } from "@/lib/mcp/tools";
 
@@ -31,15 +31,27 @@ function makeConversationStore() {
   };
 }
 
+// Metering stubs for tests that aren't about quota: the non-UUID sentinel
+// accountId makes handleAsk skip checkQuota/recordUsage entirely (the
+// PERSONA_LOCAL_OVERRIDE dev/test flow).
+function meteringStubs() {
+  return {
+    accountId: "local-override",
+    checkQuota: vi.fn(async () => ({ allowed: true as const })),
+    recordUsage: vi.fn(async () => {}),
+  };
+}
+
 describe("handleAsk", () => {
   it("generates a conversationId when omitted and returns it", async () => {
     const store = makeConversationStore();
     const deps: AskDeps = {
       db: {} as never,
+      ...meteringStubs(),
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
       loadPublicKbText: async () => "PUBLIC KB",
-      produceAnswer: async () => "the answer",
+      produceAnswer: async () => ({ text: "the answer", usage: { inputTokens: 1, outputTokens: 2 } }),
     };
 
     const result = await handleAsk(deps, { question: "What is your experience?" });
@@ -64,12 +76,13 @@ describe("handleAsk", () => {
     let seenMessages: { role: string; content: string }[] = [];
     const deps: AskDeps = {
       db: {} as never,
+      ...meteringStubs(),
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
       loadPublicKbText: async () => "PUBLIC KB",
       produceAnswer: async ({ messages }) => {
         seenMessages = messages.map((m) => ({ role: m.role, content: String(m.content) }));
-        return "fresh answer";
+        return { text: "fresh answer", usage: { inputTokens: 1, outputTokens: 2 } };
       },
     };
 
@@ -107,12 +120,13 @@ describe("handleAsk", () => {
     let seenMessages: { role: string; content: string }[] = [];
     const deps: AskDeps = {
       db: {} as never,
+      ...meteringStubs(),
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
       loadPublicKbText: async () => "PUBLIC KB",
       produceAnswer: async ({ messages }) => {
         seenMessages = messages.map((m) => ({ role: m.role, content: String(m.content) }));
-        return "answer";
+        return { text: "answer", usage: { inputTokens: 1, outputTokens: 2 } };
       },
     };
 
@@ -133,10 +147,11 @@ describe("handleAsk", () => {
     const store = makeConversationStore();
     const deps: AskDeps = {
       db: {} as never,
+      ...meteringStubs(),
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
       loadPublicKbText: async () => "PUBLIC KB",
-      produceAnswer: async () => "x",
+      produceAnswer: async () => ({ text: "x", usage: { inputTokens: 1, outputTokens: 2 } }),
     };
 
     await expect(handleAsk(deps, { question: "" })).rejects.toThrow();
@@ -148,18 +163,111 @@ describe("handleAsk", () => {
     let seenConversationId: string | undefined;
     const deps: AskDeps = {
       db: {} as never,
+      ...meteringStubs(),
       getOrCreateConversation: store.getOrCreateConversation,
       appendTurn: store.appendTurn,
       loadPublicKbText: async () => "PUBLIC KB",
       produceAnswer: async ({ conversationId }) => {
         seenConversationId = conversationId;
-        return "answer";
+        return { text: "answer", usage: { inputTokens: 1, outputTokens: 2 } };
       },
     };
 
     await handleAsk(deps, { question: "who built this?", conversationId: convId });
 
     expect(seenConversationId).toBe(convId);
+  });
+});
+
+describe("handleAsk quota + metering", () => {
+  const UUID_ACCOUNT = "44444444-4444-4444-8444-444444444444";
+
+  function quotaDeps(overrides: Partial<AskDeps> = {}): AskDeps {
+    const store = makeConversationStore();
+    return {
+      db: {} as never,
+      accountId: UUID_ACCOUNT,
+      getOrCreateConversation: store.getOrCreateConversation,
+      appendTurn: store.appendTurn,
+      loadPublicKbText: async () => "PUBLIC KB",
+      produceAnswer: async () => ({ text: "the answer", usage: { inputTokens: 123, outputTokens: 45 } }),
+      checkQuota: vi.fn(async () => ({ allowed: true as const })),
+      recordUsage: vi.fn(async () => {}),
+      ...overrides,
+    };
+  }
+
+  it("rejects an over-quota account before producing an answer", async () => {
+    const produceAnswer = vi.fn(async () => ({
+      text: "x",
+      usage: { inputTokens: 1, outputTokens: 2 },
+    }));
+    const deps = quotaDeps({
+      produceAnswer,
+      checkQuota: vi.fn(async () => ({
+        allowed: false as const,
+        reason: "daily_messages" as const,
+      })),
+    });
+
+    await expect(handleAsk(deps, { question: "q" })).rejects.toThrow(/quota_exceeded/);
+    // No paid model call — the cap is enforced before produceAnswer.
+    expect(produceAnswer).not.toHaveBeenCalled();
+    expect(deps.recordUsage).not.toHaveBeenCalled();
+  });
+
+  it("records usage with channel mcp and the produced token counts", async () => {
+    const deps = quotaDeps();
+
+    const result = await handleAsk(deps, { question: "q" });
+
+    expect(result.answer).toBe("the answer");
+    expect(deps.recordUsage).toHaveBeenCalledWith(deps.db, {
+      accountId: UUID_ACCOUNT,
+      channel: "mcp",
+      inputTokens: 123,
+      outputTokens: 45,
+    });
+  });
+
+  it("zeroes token counts the provider did not report", async () => {
+    const deps = quotaDeps({
+      produceAnswer: async () => ({
+        text: "answer",
+        usage: { inputTokens: undefined, outputTokens: undefined },
+      }),
+    });
+
+    await handleAsk(deps, { question: "q" });
+
+    expect(deps.recordUsage).toHaveBeenCalledWith(deps.db, {
+      accountId: UUID_ACCOUNT,
+      channel: "mcp",
+      inputTokens: 0,
+      outputTokens: 0,
+    });
+  });
+
+  it("skips quota and metering for the non-UUID local-override sentinel", async () => {
+    const deps = quotaDeps({ accountId: "local-override" });
+
+    const result = await handleAsk(deps, { question: "q" });
+
+    expect(result.answer).toBe("the answer");
+    expect(deps.checkQuota).not.toHaveBeenCalled();
+    expect(deps.recordUsage).not.toHaveBeenCalled();
+  });
+
+  it("still returns the answer when recordUsage fails", async () => {
+    const deps = quotaDeps({
+      recordUsage: vi.fn(async () => {
+        throw new Error("db down");
+      }),
+    });
+
+    const result = await handleAsk(deps, { question: "q" });
+
+    expect(result.answer).toBe("the answer");
   });
 });
 

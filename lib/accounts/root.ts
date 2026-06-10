@@ -2,7 +2,7 @@ import { getDb } from "@/lib/db/client";
 import { getRootAccountId } from "@/lib/accounts/repo";
 
 /**
- * The account id whose content the root surfaces (/, /api/chat, /api/mcp, ...)
+ * The account id whose content the root surfaces (/, /cv, /api/mcp, ...)
  * render. With PERSONA_LOCAL_OVERRIDE set (dev/test) the override fixture is
  * served for any id, so we skip the DB lookup and return a sentinel.
  */

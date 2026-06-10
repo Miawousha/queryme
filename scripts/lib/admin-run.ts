@@ -10,7 +10,14 @@ import {
 } from "@/lib/persona-source";
 import { runMigrations, listPendingMigrations } from "@/lib/db/migrate";
 import { getDb } from "@/lib/db/client";
-import { createAccount, getAccountBySlug, getRootAccountId, setAccountRole } from "@/lib/accounts/repo";
+import {
+  createAccount,
+  getAccountBySlug,
+  getRootAccountId,
+  setAccountRole,
+  setAccountStatus,
+} from "@/lib/accounts/repo";
+import type { AccountStatus } from "@/lib/db/schema";
 
 export type RunContext = { env: Record<string, string | undefined>; isTTY: boolean };
 type HandlerOutput = { result: unknown; pretty: string };
@@ -26,8 +33,10 @@ export const MANIFEST = {
     },
     {
       name: "account",
-      summary: "Manage accounts: create, link a content repo, or set super-admin role.",
-      usage: "admin account <create|link|promote|demote> <username> [repoUrl] [--branch <name>] [--json|--pretty]",
+      summary:
+        "Manage accounts: create, link a content repo, set super-admin role, or set status (approve/disable/waitlist).",
+      usage:
+        "admin account <create|link|promote|demote|approve|disable|waitlist> <username> [repoUrl] [--branch <name>] [--json|--pretty]",
       flags: ["--branch", "--json", "--pretty"],
     },
     {
@@ -223,6 +232,15 @@ async function handleAccount(
     return {
       result: { ok: true, account: acct.username, role: acct.role },
       pretty: `${cmd.sub}d ${acct.username} -> ${acct.role}`,
+    };
+  }
+  if (cmd.sub === "approve" || cmd.sub === "disable" || cmd.sub === "waitlist") {
+    const status: AccountStatus =
+      cmd.sub === "approve" ? "active" : cmd.sub === "disable" ? "disabled" : "waitlisted";
+    const acct = await setAccountStatus(db, cmd.username, status);
+    return {
+      result: { ok: true, account: acct.username, status: acct.status },
+      pretty: `${cmd.sub}: ${acct.username} -> ${acct.status}`,
     };
   }
   if (cmd.sub === "create") {

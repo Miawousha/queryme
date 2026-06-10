@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadCvKb, cvPersonaName, parseCvLang } from "@/lib/cv/load";
-import { loadAccountForSlug } from "@/lib/accounts/load";
+import { loadActiveAccountForSlug } from "@/lib/accounts/load";
 import { CvStandalone } from "@/components/cv/cv-standalone";
 import { NotConfiguredScreen } from "@/components/not-configured-screen";
 
@@ -13,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const account = await loadAccountForSlug(username);
+  const account = await loadActiveAccountForSlug(username);
   if (!account) return { title: "CV" };
   const name = await cvPersonaName(account.id);
   if (!name) return { title: "CV" };
@@ -27,7 +27,7 @@ type Props = {
 
 export default async function AccountCvPage({ params, searchParams }: Props) {
   const { username } = await params;
-  const account = await loadAccountForSlug(username);
+  const account = await loadActiveAccountForSlug(username);
   if (!account) notFound();
   const { lang: langParam } = await searchParams;
   const lang = parseCvLang(langParam);
