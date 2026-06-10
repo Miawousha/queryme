@@ -9,6 +9,7 @@ import {
 import { assembleContentText } from "@/lib/kb/assembler";
 import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
 import { getPersonaStore } from "@/lib/persona/store";
+import type { KbLocale } from "@/lib/kb/file-type";
 
 /**
  * Per-account, LRU-bounded caches for the knowledge base. Keyed by accountId;
@@ -38,7 +39,7 @@ function kbDir(accountId: string): string { return path.join(rootFor(accountId),
 
 const contentByAccount = new Map<string, Map<KbLang, LoadedContent>>();
 const publicKbTextByAccount = new Map<string, Map<KbLang, string>>();
-const manifestByAccount = new Map<string, KbFile[]>();
+const manifestByAccount = new Map<string, Map<KbLocale, KbFile[]>>();
 
 export function resetKbCache(accountId?: string): void {
   if (accountId === undefined) {
@@ -80,11 +81,16 @@ export async function getCachedPublicKbText(accountId: string, lang: KbLang = "e
   return text;
 }
 
-/** The public KB file manifest for an account. */
-export async function getCachedKbManifest(accountId: string): Promise<KbFile[]> {
-  const cached = lruGet(manifestByAccount, accountId);
+/** The public KB file manifest for an account, locale-resolved. */
+export async function getCachedKbManifest(
+  accountId: string,
+  lang: KbLocale = "en",
+): Promise<KbFile[]> {
+  let byLang = lruGet(manifestByAccount, accountId);
+  if (byLang === undefined) { byLang = new Map(); lruSet(manifestByAccount, accountId, byLang); }
+  const cached = byLang.get(lang);
   if (cached !== undefined) return cached;
-  const manifest = await loadKbManifest(kbDir(accountId));
-  lruSet(manifestByAccount, accountId, manifest);
+  const manifest = await loadKbManifest(kbDir(accountId), lang);
+  byLang.set(lang, manifest);
   return manifest;
 }

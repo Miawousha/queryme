@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import { fileTypeFromPath, isLocaleSidecar, type KbFileType, type KbLocale } from "@/lib/kb/file-type";
 import { humanizeSlug } from "@/lib/kb/meta-format";
 import { extractSections, type KbSection } from "@/lib/kb/sections";
+import { realpathWithin } from "@/lib/kb/safe-path";
 
 /**
  * Frontmatter fields surfaced to the UI. A loose superset of the experience
@@ -111,15 +112,17 @@ async function readMarkdown(
 
 /** Resolves the localized sidecar (foo.fr.md) when it exists; canonical otherwise.
  * Mirrors the read-time resolution in handleKbFile so tree labels and section
- * slugs always match what the viewer renders. */
-async function localizedVariant(abs: string, lang: KbLocale): Promise<string> {
+ * slugs always match what the viewer renders. The realpath check keeps a
+ * symlinked sidecar in an untrusted synced repo from leaking outside content
+ * into manifest titles/sections. */
+async function localizedVariant(abs: string, baseDir: string, lang: KbLocale): Promise<string> {
   if (lang === "en") return abs;
   const dot = abs.lastIndexOf(".");
   if (dot <= 0) return abs;
   const candidate = `${abs.slice(0, dot)}.${lang}${abs.slice(dot)}`;
   try {
     await fs.access(candidate);
-    return candidate;
+    return await realpathWithin(baseDir, candidate);
   } catch {
     return abs;
   }
@@ -146,7 +149,7 @@ async function walk(dir: string, baseDir: string, out: KbFile[], lang: KbLocale)
     // read time via `?lang=`.
     if (isLocaleSidecar(rel)) continue;
     if (type === "md") {
-      const source = await localizedVariant(abs, lang);
+      const source = await localizedVariant(abs, baseDir, lang);
       const { title, meta, sections } = await readMarkdown(source, rel);
       out.push({
         path: rel,

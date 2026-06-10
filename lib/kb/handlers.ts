@@ -5,7 +5,7 @@ import { getCachedContent, getCachedKbManifest } from "@/lib/kb/cache";
 import { kbGroups } from "@/lib/kb/content-config";
 import { realpathWithin } from "@/lib/kb/safe-path";
 import { getPersonaStore } from "@/lib/persona/store";
-import type { KbFileType } from "@/lib/kb/file-type";
+import type { KbFileType, KbLocale } from "@/lib/kb/file-type";
 import type { KbGroup } from "@/lib/kb/meta-format";
 
 /** `cv` is a synthesized type that never appears in the on-disk manifest, so
@@ -18,14 +18,14 @@ const CONTENT_TYPE: Record<Exclude<KbFileType, "cv">, string> = {
   pdf: "application/pdf",
 };
 
-export async function handleKbManifest(accountId: string): Promise<Response> {
+export async function handleKbManifest(accountId: string, lang: KbLocale = "en"): Promise<Response> {
   await getPersonaStore().ensureReady(accountId);
   const root = getPersonaStore().getRoot(accountId);
   if (!root) {
     return NextResponse.json({ error: "persona_not_configured" }, { status: 503 });
   }
   try {
-    const manifest = await getCachedKbManifest(accountId);
+    const manifest = await getCachedKbManifest(accountId, lang);
     let groups: KbGroup[] = [];
     try {
       groups = kbGroups((await getCachedContent(accountId)).config);

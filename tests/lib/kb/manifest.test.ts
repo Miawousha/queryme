@@ -139,6 +139,22 @@ describe("loadKbManifest — sections", () => {
   });
 });
 
+describe("loadKbManifest — symlinked sidecar safety", () => {
+  it("ignores a symlinked locale sidecar and falls back to the canonical file", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-lang-sym-"));
+    try {
+      await fs.writeFile(path.join(dir, "note.md"), "# Safe title\n\n## Safe section\n");
+      await fs.symlink("/etc/hosts", path.join(dir, "note.fr.md"));
+
+      const fr = await loadKbManifest(dir, "fr");
+      expect(fr[0].title).toBe("Safe title");
+      expect(fr[0].sections?.[0].slug).toBe("safe-section");
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("loadKbManifest — locale-resolved titles and sections", () => {
   it("reads the .fr sidecar for title/sections when lang=fr, keeping canonical paths", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-lang-"));
