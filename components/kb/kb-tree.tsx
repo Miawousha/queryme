@@ -314,7 +314,12 @@ export function KbTree({
           placeholder={strings.filterPlaceholder}
           aria-label={strings.filterPlaceholder}
           onKeyDown={(e) => {
-            if (e.key === "Escape") setFilter("");
+            // Consume Escape only when it clears an active filter, so a
+            // second Escape still closes the mobile drawer dialog.
+            if (e.key === "Escape" && filter !== "") {
+              e.stopPropagation();
+              setFilter("");
+            }
           }}
           className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-1 text-[12px] text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-border-hover)] focus:outline-none"
         />

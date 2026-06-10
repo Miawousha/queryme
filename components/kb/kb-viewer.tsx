@@ -123,9 +123,11 @@ export function KbViewer({
     if (!anchor || file.type !== "md" || text === null) return;
     const target = file.sections?.find((s) => anchorMatches(anchor, s.slug));
     if (!target) return;
-    // Next frame: ReactMarkdown has committed the headings by then.
-    const raf = requestAnimationFrame(() => jumpTo(target.slug));
-    return () => cancelAnimationFrame(raf);
+    // One-tick defer so ReactMarkdown's headings are committed. setTimeout
+    // (not requestAnimationFrame): rAF never fires in hidden documents, which
+    // would silently skip the jump for background tabs.
+    const timer = setTimeout(() => jumpTo(target.slug), 0);
+    return () => clearTimeout(timer);
   }, [anchor, file, text, jumpTo]);
 
   // Heading renderers with ids + persistent cited markers.
