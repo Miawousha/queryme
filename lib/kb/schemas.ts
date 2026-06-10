@@ -121,3 +121,11 @@ export const RecommendationFrontmatterSchema = z.object({
   url: z.url().optional(),
 });
 export type RecommendationFrontmatter = z.infer<typeof RecommendationFrontmatterSchema>;
+
+/**
+ * Permissive shape for config-declared generic collections: any YAML mapping /
+ * markdown frontmatter object. Views render only scalar keys; validation here
+ * just guarantees "it is an object".
+ */
+export const GenericRecordSchema = z.record(z.string(), z.unknown());
+export type GenericRecord = z.infer<typeof GenericRecordSchema>;

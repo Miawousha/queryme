@@ -1,0 +1,166 @@
+import { describe, it, expect } from "vitest";
+import path from "node:path";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import {
+  loadContentConfig,
+  resolveContentConfig,
+  RESUME_PRESET,
+  kbGroups,
+} from "@/lib/kb/content-config";
+
+function writeConfig(yaml: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "content-config-"));
+  writeFileSync(path.join(dir, "content.config.yaml"), yaml);
+  return dir;
+}
+
+const CORE = `
+  - name: profile
+    kind: yaml
+    schema: profile
+    required: true
+  - name: public-contact
+    kind: yaml
+    schema: public-contact
+    required: true
+`;
+
+describe("loadContentConfig", () => {
+  it("returns null when content.config.yaml is absent", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "content-config-"));
+    expect(loadContentConfig(dir)).toBeNull();
+  });
+
+  it("parses a valid config", () => {
+    const dir = writeConfig(`
+locales: [en]
+collections:
+${CORE}
+  - name: notes
+    kind: markdown
+    label: { en: Notes }
+    sort: { field: date, order: desc }
+`);
+    const config = loadContentConfig(dir);
+    expect(config).not.toBeNull();
+    expect(config!.locales).toEqual(["en"]);
+    expect(config!.collections).toHaveLength(3);
+  });
+
+  it("throws a clear error on invalid YAML", () => {
+    const dir = writeConfig("collections: [unclosed");
+    expect(() => loadContentConfig(dir)).toThrow(/content\.config\.yaml/);
+  });
+
+  it("rejects required: true on a markdown collection", () => {
+    const dir = writeConfig(`
+collections:
+${CORE}
+  - name: notes
+    kind: markdown
+    required: true
+`);
+    expect(() => loadContentConfig(dir)).toThrow(/required/);
+  });
+});
+
+describe("resolveContentConfig", () => {
+  it("returns the resume preset for a null config", () => {
+    expect(resolveContentConfig(null)).toBe(RESUME_PRESET);
+  });
+
+  it("defaults locales to [en, fr] and schema to generic", () => {
+    const dir = writeConfig(`
+collections:
+${CORE}
+  - name: notes
+    kind: markdown
+`);
+    const resolved = resolveContentConfig(loadContentConfig(dir));
+    expect(resolved.locales).toEqual(["en", "fr"]);
+    const notes = resolved.collections.find((c) => c.name === "notes")!;
+    expect(notes.schemaKey).toBe("generic");
+  });
+
+  it("applies the preset default sort when a preset schema is reused", () => {
+    const dir = writeConfig(`
+collections:
+${CORE}
+  - name: gigs
+    kind: markdown
+    schema: experience
+`);
+    const resolved = resolveContentConfig(loadContentConfig(dir));
+    const gigs = resolved.collections.find((c) => c.name === "gigs")!;
+    expect(gigs.sort).toEqual({ field: "start", order: "desc" });
+  });
+
+  it("rejects a config without the profile collection", () => {
+    const dir = writeConfig(`
+collections:
+  - name: public-contact
+    kind: yaml
+    schema: public-contact
+    required: true
+  - name: notes
+    kind: markdown
+`);
+    expect(() => resolveContentConfig(loadContentConfig(dir))).toThrow(/profile/);
+  });
+
+  it("rejects a yaml collection with a markdown-only schema", () => {
+    const dir = writeConfig(`
+collections:
+${CORE}
+  - name: jobs
+    kind: yaml
+    schema: experience
+`);
+    expect(() => resolveContentConfig(loadContentConfig(dir))).toThrow(/schema/);
+  });
+
+  it("rejects duplicate collection names", () => {
+    const dir = writeConfig(`
+collections:
+${CORE}
+  - name: notes
+    kind: markdown
+  - name: notes
+    kind: markdown
+`);
+    expect(() => resolveContentConfig(loadContentConfig(dir))).toThrow(/duplicate/);
+  });
+});
+
+describe("RESUME_PRESET", () => {
+  it("declares the 8 legacy collections in assembly order", () => {
+    expect(RESUME_PRESET.collections.map((c) => c.name)).toEqual([
+      "profile", "skills", "education", "public-contact",
+      "experience", "projects", "talks", "recommendations",
+    ]);
+    expect(RESUME_PRESET.locales).toEqual(["en", "fr"]);
+  });
+});
+
+describe("kbGroups", () => {
+  it("returns markdown collections in order, with labels when configured", () => {
+    const dir = writeConfig(`
+collections:
+${CORE}
+  - name: notes
+    kind: markdown
+    label: { en: Notes, fr: Notes }
+  - name: glossary
+    kind: yaml
+`);
+    const groups = kbGroups(resolveContentConfig(loadContentConfig(dir)));
+    expect(groups).toEqual([{ name: "notes", label: { en: "Notes", fr: "Notes" } }]);
+  });
+
+  it("matches the legacy GROUP_ORDER for the resume preset", () => {
+    expect(kbGroups(RESUME_PRESET).map((g) => g.name)).toEqual([
+      "experience", "projects", "talks", "recommendations",
+    ]);
+  });
+});

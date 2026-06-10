@@ -27,3 +27,16 @@ export function metaSubtitle(meta?: KbFileMeta): string | null {
   if (meta.year !== undefined) return String(meta.year);
   return null;
 }
+
+/** A directory group of the KB panel, in display order. Derived server-side
+ * from the content config's markdown collections. */
+export type KbGroup = {
+  name: string;
+  label?: { en: string; fr?: string };
+};
+
+/** Humanizes a kebab/snake slug into a display label ("public-notes" → "Public notes"). */
+export function humanizeSlug(slug: string): string {
+  const words = slug.replace(/[-_]+/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
