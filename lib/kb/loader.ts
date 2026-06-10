@@ -88,7 +88,7 @@ async function readYamlCollection(
   try {
     raw = await fs.readFile(file, "utf8");
   } catch (err) {
-    if (!col.required) return null;
+    if (!col.required && (err as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw new Error(`KB: failed to read ${col.name}.yaml (${file}): ${(err as Error).message}`);
   }
   let parsed: unknown;
@@ -121,7 +121,7 @@ async function readMarkdownDir(
   // Filter out localized sidecars at directory listing — we resolve them via
   // pickFile per canonical entry below.
   const md = files
-    .filter((f) => f.endsWith(".md") && !/\.[a-z]{2}\.md$/.test(f))
+    .filter((f) => f.endsWith(".md") && !/\.(en|fr)\.md$/.test(f))
     .sort();
   const out: GenericEntry[] = [];
   for (const file of md) {
@@ -169,6 +169,9 @@ function compareEntries(field: string, order: "asc" | "desc") {
     if (av === undefined && bv === undefined) return 0;
     if (av === undefined) return 1; // missing sorts last either way
     if (bv === undefined) return -1;
+    // Cross-type: numbers rank before strings regardless of sort direction.
+    // Applied before the dir multiplier so the type rank is stable in both asc and desc.
+    if (typeof av !== typeof bv) return typeof av === "number" ? -1 : 1;
     if (av < bv) return -1 * dir;
     if (av > bv) return 1 * dir;
     return 0;

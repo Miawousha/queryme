@@ -181,6 +181,10 @@ export function resolveContentConfig(config: ContentConfig | null): ResolvedCont
         `content.config.yaml: a yaml collection "${must}" with schema "${must}" is required (the app shell depends on it)`,
       );
     }
+    // Force required regardless of what the config declared — Task 5 sync gate
+    // derives the mandatory-file set from these flags, and the app shell
+    // unconditionally depends on both collections.
+    col.required = true;
   }
   return { locales: config.locales, collections };
 }

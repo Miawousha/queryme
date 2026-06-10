@@ -156,6 +156,27 @@ ${CORE}
 `);
     expect(() => resolveContentConfig(loadContentConfig(dir))).toThrow(/duplicate/);
   });
+
+  // Fix 4: profile and public-contact must always be required:true in the resolved
+  // config, regardless of what the raw YAML declared.  The Task-5 sync gate and
+  // the app shell both depend on this guarantee.
+  it("forces required:true on profile and public-contact regardless of config declaration", () => {
+    // Declare both WITHOUT required: true (the schema default is false).
+    const dir = writeConfig(`
+collections:
+  - name: profile
+    kind: yaml
+    schema: profile
+  - name: public-contact
+    kind: yaml
+    schema: public-contact
+`);
+    const resolved = resolveContentConfig(loadContentConfig(dir));
+    const prof = resolved.collections.find((c) => c.name === "profile")!;
+    const pc = resolved.collections.find((c) => c.name === "public-contact")!;
+    expect(prof.required).toBe(true);
+    expect(pc.required).toBe(true);
+  });
 });
 
 describe("RESUME_PRESET", () => {
