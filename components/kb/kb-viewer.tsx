@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -59,6 +59,7 @@ export function KbViewer({
   onBack: () => void;
 }) {
   const { strings, apiBasePath } = useKb();
+  const contentRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [focus, setFocus] = useState(false);
@@ -109,8 +110,8 @@ export function KbViewer({
   // Stable jump helper — used both by the toolbar outline dropdown and the
   // open-at-anchor effect below.
   const jumpTo = useCallback((slug: string) => {
-    const el = document.getElementById(slug);
-    if (!el) return;
+    const el = contentRef.current?.querySelector(`[id="${CSS.escape(slug)}"]`);
+    if (!(el instanceof HTMLElement)) return;
     el.scrollIntoView({ block: "start" });
     el.classList.add("kb-flash-target");
     setTimeout(() => el.classList.remove("kb-flash-target"), 1600);
@@ -245,7 +246,7 @@ export function KbViewer({
         outlineLabel={strings.outline}
       />
 
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div ref={contentRef} className="min-h-0 flex-1 overflow-auto p-4">
         {showMeta && file.meta && <KbMetaCard meta={file.meta} />}
 
         {error && <p className="text-xs text-red-500">{strings.loadError}</p>}

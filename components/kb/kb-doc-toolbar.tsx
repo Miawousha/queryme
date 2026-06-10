@@ -22,6 +22,9 @@ function OutlineTitle({
       onKeyDown={(e) => {
         if (e.key === "Escape") setOpen(false);
       }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
     >
       <button
         type="button"
@@ -135,7 +138,7 @@ export function KbDocToolbar({
       </button>
       <div className="relative flex min-w-0 flex-1 items-center gap-1">
         {breadcrumb && breadcrumb.length > 0 && (
-          <span className="hidden shrink-0 truncate text-[11px] text-[var(--color-text-tertiary)] sm:inline">
+          <span className="hidden min-w-0 shrink truncate text-[11px] text-[var(--color-text-tertiary)] sm:inline max-w-[50%]">
             {breadcrumb.join(" / ")}&nbsp;/
           </span>
         )}
