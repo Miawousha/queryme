@@ -47,9 +47,10 @@ Node kinds:
 
 - Pinned virtual entries (CV) stay above the tree, as today.
 - Docs without headings get no chevron.
-- Default state: collections expanded, docs collapsed. Expansion state and
-  list scroll position persist in `sessionStorage` under
-  `queritae:kbTree:<username>`; back from the viewer restores both.
+- Default state: collections expanded, docs collapsed. Expansion state
+  persists in `sessionStorage` under `queritae:kbTree:<apiBasePath>`; scroll
+  position under `queritae:kbTreeScroll:<apiBasePath>`; back from the viewer
+  restores both.
 - Counts: collections and folders show child doc counts.
 
 ### Reference layer

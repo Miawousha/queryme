@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { CV_VIRTUAL_PATH, useKb } from "@/components/kb/kb-context";
 import { CvPanelView } from "@/components/cv/cv-panel-view";
 import { KbTree } from "@/components/kb/kb-tree";
@@ -21,6 +21,7 @@ export function KbPanel({ onLangChange }: { onLangChange: (next: UiLang) => void
     openTarget,
     openFile,
     closeFile,
+    apiBasePath,
   } = useKb();
 
   const groups = useMemo(
@@ -33,6 +34,21 @@ export function KbPanel({ onLangChange }: { onLangChange: (next: UiLang) => void
       ),
     [configGroups, lang, strings],
   );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollKey = `queritae:kbTreeScroll:${apiBasePath}`;
+
+  // Restore the tree's scroll position when returning from the viewer.
+  useLayoutEffect(() => {
+    if (openTarget !== null) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    try {
+      el.scrollTop = Number(window.sessionStorage.getItem(scrollKey) ?? 0);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [openTarget, scrollKey]);
 
   // The synthesized CV doc isn't a real file — render the dedicated view.
   if (openTarget?.path === CV_VIRTUAL_PATH) {
@@ -75,7 +91,17 @@ export function KbPanel({ onLangChange }: { onLangChange: (next: UiLang) => void
         </span>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-auto p-4"
+        onScroll={(e) => {
+          try {
+            window.sessionStorage.setItem(scrollKey, String(Math.round(e.currentTarget.scrollTop)));
+          } catch {
+            /* storage unavailable */
+          }
+        }}
+      >
         {openTarget ? (
           <p className="text-xs text-[var(--color-text-tertiary)]">{strings.notInKb}</p>
         ) : (

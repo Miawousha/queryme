@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef } from "react";
+import type { ReactNode } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
 import type { CitedRef } from "@/lib/kb/cited-paths";
 import { useKb } from "@/components/kb/kb-context";
@@ -33,6 +34,22 @@ function Dot() {
   );
 }
 
+/** Wraps the first case-insensitive occurrence of needle in a highlight span. */
+function highlightMatch(label: string, needle: string): ReactNode {
+  if (!needle) return label;
+  const i = label.toLowerCase().indexOf(needle);
+  if (i === -1) return label;
+  return (
+    <>
+      {label.slice(0, i)}
+      <span className="rounded-[2px] bg-[rgba(var(--color-accent-rgb),0.28)]">
+        {label.slice(i, i + needle.length)}
+      </span>
+      {label.slice(i + needle.length)}
+    </>
+  );
+}
+
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -60,6 +77,8 @@ type RowCtx = {
   onOpen: (path: string, anchor?: string | null) => void;
   expandLabel: string;
   collapseLabel: string;
+  /** Trimmed, lowercased filter text; empty string when filter is off. */
+  needle: string;
 };
 
 function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCtx }) {
@@ -99,7 +118,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
         >
           <Chevron open={open} />
           <span className={LABEL} style={LABEL_STYLE}>
-            {node.label}
+            {highlightMatch(node.label, ctx.needle)}
           </span>
           {node.count !== undefined && node.count > 0 && (
             <span className={LABEL} style={LABEL_STYLE}>
@@ -161,11 +180,11 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
                     : "text-[var(--color-text-secondary)]",
                 )}
               >
-                {node.label}
+                {highlightMatch(node.label, ctx.needle)}
               </span>
               {node.subtitle && (
                 <span className="truncate text-[11px] text-[var(--color-text-tertiary)]">
-                  {node.subtitle}
+                  {highlightMatch(node.subtitle, ctx.needle)}
                 </span>
               )}
             </span>
@@ -215,7 +234,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
             : "text-[var(--color-text-secondary)]",
         )}
       >
-        {node.label}
+        {highlightMatch(node.label, ctx.needle)}
       </span>
       <Chips chips={node.chips} />
     </button>
@@ -273,6 +292,13 @@ export function KbTree({
   // are visible without clicks. Normal mode uses the expansion overrides.
   const searchMode = filter.trim() !== "" || lens;
 
+  // Only count refs whose path exists in the manifest — refs to unknown paths
+  // are not browseable and shouldn't count toward the lens enable condition.
+  const lensCount = useMemo(
+    () => citedRefs.filter((r) => files.some((f) => f.path === r.path)).length,
+    [citedRefs, files],
+  );
+
   const ctx: RowCtx = {
     searchMode,
     isExpanded,
@@ -281,6 +307,7 @@ export function KbTree({
     onOpen,
     expandLabel: strings.expandGroup,
     collapseLabel: strings.collapseGroup,
+    needle: filter.trim().toLowerCase(),
   };
 
   const containerKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -327,7 +354,7 @@ export function KbTree({
           type="button"
           aria-pressed={lens}
           aria-label={strings.referencedLensAria}
-          disabled={citedRefs.length === 0}
+          disabled={lensCount === 0}
           onClick={() => setLens(!lens)}
           className={cn(
             "shrink-0 rounded border px-2 py-1 font-mono text-[10px] transition-colors",
@@ -335,11 +362,11 @@ export function KbTree({
             lens
               ? "border-[rgba(var(--color-accent-rgb),0.6)] bg-[rgba(var(--color-accent-rgb),0.1)] text-[var(--color-accent)]"
               : "border-[var(--color-border)] hover:border-[var(--color-border-hover)]",
-            citedRefs.length === 0 && "cursor-not-allowed opacity-40",
+            lensCount === 0 && "cursor-not-allowed opacity-40",
           )}
           style={LABEL_STYLE}
         >
-          {strings.referencedLens} · {citedRefs.length}
+          {strings.referencedLens} · {lensCount}
         </button>
       </div>
 

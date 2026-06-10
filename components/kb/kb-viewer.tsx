@@ -28,8 +28,8 @@ function stripFrontmatter(text: string): string {
   return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
 }
 
-function fileUrl(apiBasePath: string, path: string): string {
-  return `${apiBasePath}/kb/file?path=${encodeURIComponent(path)}`;
+function fileUrl(apiBasePath: string, path: string, lang: string): string {
+  return `${apiBasePath}/kb/file?path=${encodeURIComponent(path)}&lang=${lang}`;
 }
 
 /** Recursively extract text content from a React node tree. */
@@ -50,15 +50,15 @@ export function KbViewer({
   onBack,
 }: {
   file: KbFile;
-  /** Scroll target section slug — wired in Task 9. */
+  /** Scroll target section slug — jump to a heading on open. */
   anchor?: string | null;
-  /** Citation refs for this doc — wired in Task 9. */
+  /** Citation refs for this doc — cited sections get persistent markers. */
   citedRefs?: CitedRef[];
-  /** Breadcrumb path labels for the viewer header — wired in Task 9. */
+  /** Breadcrumb path labels shown muted before the doc title. */
   breadcrumb?: string[];
   onBack: () => void;
 }) {
-  const { strings, apiBasePath } = useKb();
+  const { strings, apiBasePath, lang } = useKb();
   const contentRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -79,7 +79,7 @@ export function KbViewer({
     let cancelled = false;
     setText(null);
     setError(false);
-    fetch(fileUrl(apiBasePath, file.path))
+    fetch(fileUrl(apiBasePath, file.path, lang))
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error("load failed"))))
       .then((t) => {
         if (!cancelled) setText(t);
@@ -90,7 +90,7 @@ export function KbViewer({
     return () => {
       cancelled = true;
     };
-  }, [file.path, needsText]);
+  }, [file.path, needsText, lang]);
 
   // In focus mode the viewer is a full-screen overlay — treat it as a modal
   // dialog (focus trap + restore + Escape). Inert when focus is false.
@@ -177,7 +177,7 @@ export function KbViewer({
       icon: <DownloadIcon />,
       onClick: () => {
         const a = document.createElement("a");
-        a.href = fileUrl(apiBasePath, file.path);
+        a.href = fileUrl(apiBasePath, file.path, lang);
         a.download = file.path.split("/").pop() ?? "document";
         document.body.appendChild(a);
         a.click();
@@ -246,6 +246,7 @@ export function KbViewer({
         outline={file.sections?.map((s) => ({ ...s, chip: sectionChips.get(s.slug) }))}
         onJumpTo={jumpTo}
         outlineLabel={strings.outline}
+        outlineAria={strings.outlineAria}
       />
 
       <div ref={contentRef} className="min-h-0 flex-1 overflow-auto p-4">
@@ -278,7 +279,7 @@ export function KbViewer({
         {file.type === "html" && (
           <iframe
             title={file.title}
-            src={fileUrl(apiBasePath, file.path)}
+            src={fileUrl(apiBasePath, file.path, lang)}
             sandbox=""
             className="h-full min-h-[60vh] w-full rounded-lg border border-[var(--color-border)] bg-white"
           />
@@ -287,7 +288,7 @@ export function KbViewer({
         {file.type === "pdf" && (
           <iframe
             title={file.title}
-            src={fileUrl(apiBasePath, file.path)}
+            src={fileUrl(apiBasePath, file.path, lang)}
             className="h-full min-h-[60vh] w-full rounded-lg border border-[var(--color-border)]"
           />
         )}

@@ -8,11 +8,13 @@ function OutlineTitle({
   outline,
   onJumpTo,
   outlineLabel,
+  outlineAria,
 }: {
   title: string;
   outline: { slug: string; title: string; level: 2 | 3; chip?: number }[];
   onJumpTo: (slug: string) => void;
   outlineLabel: string;
+  outlineAria?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -31,7 +33,7 @@ function OutlineTitle({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={outlineLabel}
+        aria-label={outlineAria ?? outlineLabel}
         className="flex min-w-0 items-center gap-1 text-[13px] text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
       >
         <span className="min-w-0 truncate">{title}</span>
@@ -108,6 +110,7 @@ export function KbDocToolbar({
   outline,
   onJumpTo,
   outlineLabel,
+  outlineAria,
 }: {
   title: string;
   typeBadge?: string;
@@ -124,6 +127,8 @@ export function KbDocToolbar({
   outline?: { slug: string; title: string; level: 2 | 3; chip?: number }[];
   onJumpTo?: (slug: string) => void;
   outlineLabel?: string;
+  /** Accessible aria-label for the outline trigger button (from strings.outlineAria). */
+  outlineAria?: string;
 }) {
   return (
     <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4">
@@ -148,6 +153,7 @@ export function KbDocToolbar({
             outline={outline}
             onJumpTo={onJumpTo}
             outlineLabel={outlineLabel ?? "Outline"}
+            outlineAria={outlineAria}
           />
         ) : (
           <span className="min-w-0 truncate text-[13px] text-[var(--color-text-primary)]">
