@@ -46,7 +46,12 @@ const SortSchema = z.object({
 
 const CollectionConfigSchema = z
   .object({
-    name: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, "collection name must be kebab-case"),
+    name: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9-]*$/, "collection name must be kebab-case")
+      .refine((n) => n !== "other", {
+        message: '"other" is a reserved collection name (the KB panel uses it as the catch-all group)',
+      }),
     kind: z.enum(["yaml", "markdown"]),
     label: LabelSchema.optional(),
     schema: z.enum(SCHEMA_KEYS).optional(),

@@ -70,6 +70,16 @@ ${CORE}
     expect(() => loadContentConfig(dir)).toThrow(/content\.config\.yaml/);
   });
 
+  it('rejects a markdown collection named "other" (reserved catch-all name)', () => {
+    const dir = writeConfig(`
+collections:
+${CORE}
+  - name: other
+    kind: markdown
+`);
+    expect(() => loadContentConfig(dir)).toThrow(/reserved/);
+  });
+
   it("rejects collection names that are not kebab-case (path-segment safety)", () => {
     for (const bad of ["../evil", "a/b", "..", "UPPER", "with space", "café"]) {
       const dir = writeConfig(`

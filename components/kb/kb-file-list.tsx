@@ -175,7 +175,9 @@ export function KbFileList({
       {groups.map((g) => (
         <Group key={g.name} label={labelOf(g)} files={grouped.get(g.name) ?? []} onOpen={onOpen} />
       ))}
-      <Group label={strings.sections.other} files={grouped.get("other") ?? []} onOpen={onOpen} />
+      {!groups.some((g) => g.name === "other") && (
+        <Group label={strings.sections.other} files={grouped.get("other") ?? []} onOpen={onOpen} />
+      )}
     </div>
   );
 }
