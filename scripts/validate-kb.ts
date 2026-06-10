@@ -1,8 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
-import { loadKb } from "../lib/kb/loader";
-import { allRepos } from "../lib/kb/repos";
-import { assemblePublicKbText } from "../lib/kb/assembler";
+import { loadContent } from "../lib/kb/loader";
+import { assembleContentText } from "../lib/kb/assembler";
 
 /**
  * Resolve the content root. Queritae is now a content-free shell — the KB lives
@@ -19,20 +18,28 @@ function contentRoot(): string {
 }
 
 async function main() {
-  const root = contentRoot();
-  const dir = path.resolve(root, "kb");
-  if (!fs.existsSync(dir)) {
-    throw new Error(`No kb/ directory at ${dir}`);
+  const root = path.resolve(contentRoot());
+  if (!fs.existsSync(path.join(root, "kb"))) {
+    throw new Error(`No kb/ directory at ${path.join(root, "kb")}`);
   }
-  const kb = await loadKb(dir);
-  const text = assemblePublicKbText(kb);
-  const repoCount = allRepos(kb).length;
+  const content = await loadContent(root);
+  const text = assembleContentText(content);
   console.log(`OK — KB validates and assembles to ${text.length} chars.`);
-  console.log(`  experience:      ${kb.experience.length} entries`);
-  console.log(`  projects:        ${kb.projects.length} entries (${repoCount} repos)`);
-  console.log(`  talks:           ${kb.talks.length} entries`);
-  console.log(`  recommendations: ${kb.recommendations.length} entries`);
-  console.log(`  skills:          ${kb.skills.skills.length} entries`);
+  for (const col of content.config.collections) {
+    const loaded = content.collections.get(col.name);
+    if (!loaded) {
+      console.log(`  ${col.name}: (absent)`);
+    } else if (loaded.kind === "yaml") {
+      console.log(`  ${col.name}: ok`);
+    } else {
+      const repoCount = loaded.entries.reduce((n, e) => {
+        const repos = (e.frontmatter as { repos?: unknown[] }).repos;
+        return n + (Array.isArray(repos) ? repos.length : 0);
+      }, 0);
+      const extra = repoCount > 0 ? ` (${repoCount} repos)` : "";
+      console.log(`  ${col.name}: ${loaded.entries.length} entries${extra}`);
+    }
+  }
 }
 
 main().catch((err) => {

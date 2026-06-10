@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import path from "node:path";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { loadKb } from "@/lib/kb/loader";
-import { assemblePublicKbText } from "@/lib/kb/assembler";
+import { loadContent, toResumeKb } from "@/lib/kb/loader";
+import { assembleContentText } from "@/lib/kb/assembler";
 import "./print.css";
 
 // Persona content is resolved at request time from the active sync, so this
@@ -39,8 +38,9 @@ export default async function About() {
   await getPersonaStore().ensureReady(accountId);
   const root = getPersonaStore().getRoot(accountId);
   if (!root) return <NotConfiguredScreen />;
-  const kb = await loadKb(path.join(root, "kb"));
-  const text = assemblePublicKbText(kb);
+  const content = await loadContent(root);
+  const kb = toResumeKb(content);
+  const text = assembleContentText(content);
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <article className="prose prose-neutral dark:prose-invert">

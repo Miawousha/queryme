@@ -4,10 +4,11 @@ import type { Repo } from "@/lib/kb/schemas";
 
 const ensureReady = vi.fn();
 const getRoot = vi.fn();
-const loadKb = vi.fn();
+const loadContent = vi.fn();
+const toResumeKb = vi.fn();
 
 vi.mock("@/lib/persona/store", () => ({ getPersonaStore: () => ({ ensureReady, getRoot }) }));
-vi.mock("@/lib/kb/loader", () => ({ loadKb }));
+vi.mock("@/lib/kb/loader", () => ({ loadContent, toResumeKb }));
 vi.mock("@/lib/persona", () => ({ loadPersona: () => ({ fullName: "Ada Lovelace" }) }));
 
 function kbWithRepos(repos: Repo[]): Kb {
@@ -37,12 +38,12 @@ describe("loadCvKb", () => {
     ensureReady.mockResolvedValue(undefined);
     // A dir with no cv-config.yaml → loadCvConfig returns null → unconditional repo filter still runs.
     getRoot.mockReturnValue("/tmp/per-account-cv-no-config");
-    loadKb.mockResolvedValue(
-      kbWithRepos([
-        { name: "pub", role: "author", visibility: "public", url: "https://x/pub" },
-        { name: "secret", role: "author", visibility: "private", url: "https://x/secret" },
-      ]),
-    );
+    const kb = kbWithRepos([
+      { name: "pub", role: "author", visibility: "public", url: "https://x/pub" },
+      { name: "secret", role: "author", visibility: "private", url: "https://x/secret" },
+    ]);
+    loadContent.mockResolvedValue({});
+    toResumeKb.mockReturnValue(kb);
     const { loadCvKb } = await import("@/lib/cv/load");
     const result = await loadCvKb("acc", "en");
     expect(result).not.toBeNull();

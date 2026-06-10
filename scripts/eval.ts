@@ -2,8 +2,8 @@
  * real model. Requires ANTHROPIC_API_KEY. Exits non-zero if any eval fails. */
 import fs from "node:fs";
 import path from "node:path";
-import { loadKb } from "@/lib/kb/loader";
-import { assemblePublicKbText } from "@/lib/kb/assembler";
+import { loadContent } from "@/lib/kb/loader";
+import { assembleContentText } from "@/lib/kb/assembler";
 import { answer } from "@/lib/answerer";
 import { loadEvals } from "@/evals/index";
 import { evaluateAnswer, type EvalResult } from "@/evals/run";
@@ -38,8 +38,8 @@ async function main() {
     );
     process.exit(2);
   }
-  const kb = await loadKb(path.join(contentRoot, "kb"));
-  const kbText = assemblePublicKbText(kb);
+  const content = await loadContent(contentRoot);
+  const kbText = assembleContentText(content);
   const questions = await loadEvals(path.join(root, "evals/questions"));
 
   const results: EvalResult[] = [];

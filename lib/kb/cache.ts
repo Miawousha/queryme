@@ -1,6 +1,12 @@
 import path from "node:path";
-import { loadKb, type Kb, type KbLang } from "@/lib/kb/loader";
-import { assemblePublicKbText } from "@/lib/kb/assembler";
+import {
+  loadContent,
+  toResumeKb,
+  type Kb,
+  type KbLang,
+  type LoadedContent,
+} from "@/lib/kb/loader";
+import { assembleContentText } from "@/lib/kb/assembler";
 import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
 import { getPersonaStore } from "@/lib/persona/store";
 
@@ -30,31 +36,36 @@ function rootFor(accountId: string): string {
 }
 function kbDir(accountId: string): string { return path.join(rootFor(accountId), "kb"); }
 
-const parsedKbByAccount = new Map<string, Map<KbLang, Kb>>();
+const contentByAccount = new Map<string, Map<KbLang, LoadedContent>>();
 const publicKbTextByAccount = new Map<string, Map<KbLang, string>>();
 const manifestByAccount = new Map<string, KbFile[]>();
 
 export function resetKbCache(accountId?: string): void {
   if (accountId === undefined) {
-    parsedKbByAccount.clear();
+    contentByAccount.clear();
     publicKbTextByAccount.clear();
     manifestByAccount.clear();
     return;
   }
-  parsedKbByAccount.delete(accountId);
+  contentByAccount.delete(accountId);
   publicKbTextByAccount.delete(accountId);
   manifestByAccount.delete(accountId);
 }
 
-/** The parsed KB graph for an account. */
-export async function getCachedKb(accountId: string, lang: KbLang = "en"): Promise<Kb> {
-  let byLang = lruGet(parsedKbByAccount, accountId);
-  if (byLang === undefined) { byLang = new Map(); lruSet(parsedKbByAccount, accountId, byLang); }
+/** The loaded content engine output for an account (config + collections). */
+export async function getCachedContent(accountId: string, lang: KbLang = "en"): Promise<LoadedContent> {
+  let byLang = lruGet(contentByAccount, accountId);
+  if (byLang === undefined) { byLang = new Map(); lruSet(contentByAccount, accountId, byLang); }
   const cached = byLang.get(lang);
   if (cached !== undefined) return cached;
-  const kb = await loadKb(kbDir(accountId), lang);
-  byLang.set(lang, kb);
-  return kb;
+  const content = await loadContent(rootFor(accountId), lang);
+  byLang.set(lang, content);
+  return content;
+}
+
+/** The typed resume projection for an account (CV, forward-question email). */
+export async function getCachedKb(accountId: string, lang: KbLang = "en"): Promise<Kb> {
+  return toResumeKb(await getCachedContent(accountId, lang));
 }
 
 /** The assembled public KB text for an account. */
@@ -63,8 +74,8 @@ export async function getCachedPublicKbText(accountId: string, lang: KbLang = "e
   if (byLang === undefined) { byLang = new Map(); lruSet(publicKbTextByAccount, accountId, byLang); }
   const cached = byLang.get(lang);
   if (cached !== undefined) return cached;
-  const kb = await getCachedKb(accountId, lang);
-  const text = assemblePublicKbText(kb);
+  const content = await getCachedContent(accountId, lang);
+  const text = assembleContentText(content);
   byLang.set(lang, text);
   return text;
 }

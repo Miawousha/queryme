@@ -1,5 +1,4 @@
-import path from "node:path";
-import { loadKb, type KbLang, type Kb } from "@/lib/kb/loader";
+import { loadContent, toResumeKb, type KbLang, type Kb } from "@/lib/kb/loader";
 import { filterKbForCv, loadCvConfig } from "@/lib/kb/cv-config";
 import { getPersonaStore } from "@/lib/persona/store";
 import { loadPersona } from "@/lib/persona";
@@ -19,10 +18,11 @@ export async function loadCvKb(
   await store.ensureReady(accountId);
   const root = store.getRoot(accountId);
   if (!root) return null;
-  const [kb, config] = await Promise.all([
-    loadKb(path.join(root, "kb"), lang),
+  const [content, config] = await Promise.all([
+    loadContent(root, lang),
     loadCvConfig(root),
   ]);
+  const kb = toResumeKb(content);
   return { root, cvKb: filterKbForCv(kb, config) };
 }
 
