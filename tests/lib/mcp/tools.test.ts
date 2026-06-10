@@ -164,7 +164,7 @@ describe("handleAsk", () => {
 });
 
 describe("handleForwardQuestion", () => {
-  it("forwards a question and returns ok + id, generating a conversationId when omitted", async () => {
+  it("forwards a question with no conversationId when omitted (no synthesized FK-violating id)", async () => {
     let forwarded: { question: string; conversationId?: string } | null = null;
     const deps: ForwardQuestionDeps = {
       db: {} as never,
@@ -178,7 +178,9 @@ describe("handleForwardQuestion", () => {
 
     expect(result).toEqual({ ok: true, id: "q-123" });
     expect(forwarded!.question).toBe("Are you open to relocation?");
-    expect(forwarded!.conversationId).toMatch(/^[0-9a-f-]{36}$/);
+    // A random UUID here would violate the conversation_id FK (no such
+    // conversation row exists). Omitting it stores the question with NULL.
+    expect(forwarded!.conversationId).toBeUndefined();
   });
 
   it("passes through a provided conversationId", async () => {

@@ -8,6 +8,11 @@ const handleReply = vi.fn();
 vi.mock("@/app/[username]/admin/resolve", () => ({ resolveAccountAdmin }));
 vi.mock("@/lib/questions/account", () => ({ getQuestionAccountId }));
 vi.mock("@/app/api/admin/questions/[id]/reply/handler", () => ({ handleReply }));
+// The route resolves the persona's name for the reply email; stub the store so
+// this routing test stays free of persona/DB infra.
+vi.mock("@/lib/persona/store", () => ({
+  getPersonaStore: () => ({ ensureReady: async () => {}, getRoot: () => null }),
+}));
 
 const ctx = (username: string, id: string) => ({
   params: Promise.resolve({ username, id }),

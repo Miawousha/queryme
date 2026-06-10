@@ -17,6 +17,13 @@ export type AnswerInput = {
 
 const DEFAULT_MODEL_ID = "claude-sonnet-4-6";
 
+// Hard ceiling on output tokens per answer. The chat endpoint is public and
+// paid; input is already bounded (char caps, MAX_TURNS, rate limit), but
+// without this a crafted prompt could maximize billed output per request.
+// Generous for a CV Q&A answer (~1500 words) while well under any single
+// client-echoed message part cap.
+const MAX_OUTPUT_TOKENS = 2048;
+
 // Pin the Anthropic base URL so we ignore stray shell-exported `ANTHROPIC_BASE_URL`
 // values (e.g. Claude Desktop exports one without the `/v1` suffix, which 404s
 // the SDK's request path). Override via `ANTHROPIC_BASE_URL` in `.env.local` if
@@ -52,6 +59,7 @@ export async function answer(input: AnswerInput) {
     model,
     messages: [...systemMessages, ...input.messages],
     temperature: 0.3,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     ...(input.tools
       ? { tools: input.tools, stopWhen: stepCountIs(5) }
       : {}),

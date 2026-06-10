@@ -138,7 +138,9 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
   async function handleForward(question: string, contact: string) {
     try {
       const trimmedContact = contact.trim();
-      const res = await fetch("/api/forward-question", {
+      // Use the per-account API base (mirrors the chat endpoint above) so a
+      // forwarded question notifies that account, not always the root one.
+      const res = await fetch(`${apiBasePath}/forward-question`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

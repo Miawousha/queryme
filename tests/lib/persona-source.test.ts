@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readlinkSync, existsSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHubForAccount, getPersonaRootForAccount, ensurePersonaCacheReadyForAccount, resolveLatestSha } from "@/lib/persona-source";
+import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHubForAccount, getPersonaRootForAccount, ensurePersonaCacheReadyForAccount, resolveLatestSha, refreshPersonaIfStale } from "@/lib/persona-source";
 
 const TEST_ACCOUNT_ID = "test-account-id";
 import { getDb } from "@/lib/db/client";
@@ -14,6 +14,52 @@ import { FAKE_SHA, happyPathHandlers, makeTarball } from "./__mocks__/github-han
 // DB-integration blocks opt in via RUN_DB_TESTS so the default `pnpm test` run
 // (no test database, dev DB may lack the latest migration) stays green.
 const describeDb = process.env.RUN_DB_TESTS ? describe : describe.skip;
+
+describe("refreshPersonaIfStale", () => {
+  const active = { repoUrl: "https://github.com/o/r", branch: "main", commitSha: "sha-new" };
+
+  it("does nothing when there is no active source", async () => {
+    let refetched = false;
+    let reset = false;
+    const r = await refreshPersonaIfStale({
+      readCurrentSha: () => "sha-old",
+      getActive: async () => null,
+      refetch: async () => { refetched = true; },
+      resetCaches: () => { reset = true; },
+    });
+    expect(r).toBe("no-active");
+    expect(refetched).toBe(false);
+    expect(reset).toBe(false);
+  });
+
+  it("does nothing when the on-disk SHA already matches the active SHA", async () => {
+    let refetched = false;
+    let reset = false;
+    const r = await refreshPersonaIfStale({
+      readCurrentSha: () => "sha-new",
+      getActive: async () => active,
+      refetch: async () => { refetched = true; },
+      resetCaches: () => { reset = true; },
+    });
+    expect(r).toBe("fresh");
+    expect(refetched).toBe(false);
+    expect(reset).toBe(false);
+  });
+
+  it("refetches the active SHA and resets caches when the on-disk SHA is stale", async () => {
+    let refetchedWith: typeof active | null = null;
+    let reset = false;
+    const r = await refreshPersonaIfStale({
+      readCurrentSha: () => "sha-old",
+      getActive: async () => active,
+      refetch: async (a) => { refetchedWith = a; },
+      resetCaches: () => { reset = true; },
+    });
+    expect(r).toBe("refreshed");
+    expect(refetchedWith).toEqual(active);
+    expect(reset).toBe(true);
+  });
+});
 
 describe("parseGitHubRepoUrl", () => {
   it("parses https://github.com/owner/repo", () => {

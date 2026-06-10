@@ -28,4 +28,23 @@ d("two-account isolation (integration)", () => {
     expect(row.accountId).toBe(a.id);
     expect(row.accountId).not.toBe(b.id);
   });
+
+  it("refuses to hand another account's conversation to a different account", async () => {
+    const a = await createAccount(db, { username: `iso-c-${Date.now()}` }); ids.push(a.id);
+    const b = await createAccount(db, { username: `iso-d-${Date.now()}` }); ids.push(b.id);
+    const cid = randomUUID(); convIds.push(cid);
+
+    // A owns the conversation.
+    await getOrCreateConversation(db, { id: cid, channel: "chat", accountId: a.id });
+
+    // B presents A's conversationId — it must NOT receive A's conversation
+    // (the id collides on the PK, so no new row is created either).
+    await expect(
+      getOrCreateConversation(db, { id: cid, channel: "chat", accountId: b.id }),
+    ).rejects.toThrow();
+
+    // A still reaches its own conversation, and no turn leaked into it.
+    const own = await getOrCreateConversation(db, { id: cid, channel: "chat", accountId: a.id });
+    expect(own.accountId).toBe(a.id);
+  });
 });

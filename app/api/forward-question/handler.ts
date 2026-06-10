@@ -19,6 +19,15 @@ export type ForwardDeps = {
   notifyFrom: string;
 };
 
+/** Postgres `foreign_key_violation` SQLSTATE. */
+function isForeignKeyViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    (err as { code?: string }).code === "23503"
+  );
+}
+
 export async function handleForward(
   req: NextRequest,
   deps: ForwardDeps,
@@ -43,7 +52,20 @@ export async function handleForward(
     return NextResponse.json({ error: "Too many forwarded questions" }, { status: 429 });
   }
   const db = getDb();
-  const row = await forwardQuestion(db, parsed.data);
+  let row;
+  try {
+    row = await forwardQuestion(db, parsed.data);
+  } catch (err) {
+    // A client-supplied conversationId that references no conversation row
+    // (e.g. forwarding from the intro bubble before the first chat message)
+    // trips the conversation_id FK. Don't lose the question — retry without
+    // the link so it's still saved (unattributed).
+    if (isForeignKeyViolation(err) && parsed.data.conversationId) {
+      row = await forwardQuestion(db, { ...parsed.data, conversationId: undefined });
+    } else {
+      throw err;
+    }
+  }
 
   // Best-effort notification. A transport failure must never fail the request:
   // the question is already persisted and the admin can still see it.

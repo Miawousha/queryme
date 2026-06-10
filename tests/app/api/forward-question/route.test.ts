@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { POST } from "@/app/api/forward-question/route";
 import { handleForward } from "@/app/api/forward-question/handler";
+import { forwardQuestion } from "@/lib/questions/repo";
 import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/db/client", () => ({ getDb: vi.fn(() => ({})) }));
@@ -82,6 +83,36 @@ describe("handleForward — notification side-effect", () => {
     expect(t.sent[0].text).toContain("sarah@acme.example");
     const body = await res.json();
     expect(body.notified).toBe(true);
+  });
+
+  it("still saves the question when the conversationId references no conversation (FK violation)", async () => {
+    const t = fakeTransport();
+    // The first insert (carrying a valid-but-orphan conversationId) trips the
+    // conversation_id FK; the handler must retry without the link, not 500.
+    // (mockClear zeroes the call count accumulated by earlier tests in this
+    // file, which share the module mock.)
+    vi.mocked(forwardQuestion)
+      .mockClear()
+      .mockRejectedValueOnce(Object.assign(new Error("fk"), { code: "23503" }))
+      .mockResolvedValueOnce({
+        id: "row-2", conversationId: null, question: "q", contact: null,
+        answeredAt: null, createdAt: new Date(),
+      } as never);
+
+    const req = makeReq({ conversationId: "00000000-0000-4000-8000-000000000000", question: "q" });
+    const res = await handleForward(req as unknown as NextRequest, {
+      transport: t,
+      notifyTo: "alex@example.com",
+      notifyFrom: "queryme@example.com",
+    });
+
+    expect(res.status).toBe(200);
+    const calls = vi.mocked(forwardQuestion).mock.calls;
+    expect(calls).toHaveLength(2);
+    // The retry dropped the orphan conversationId.
+    expect((calls[1][1] as { conversationId?: string }).conversationId).toBeUndefined();
+    const body = await res.json();
+    expect(body.ok).toBe(true);
   });
 
   it("returns ok:true even when the transport fails", async () => {

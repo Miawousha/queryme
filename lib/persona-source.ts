@@ -95,8 +95,18 @@ function cacheRoot(): string {
   return process.env.PERSONA_CACHE_ROOT ?? "/tmp/queritae/persona-cache";
 }
 
-async function extractTarball(buf: Buffer, targetDir: string): Promise<void> {
-  const extractor = tar.x({ cwd: targetDir, strip: 1 });
+export async function extractTarball(buf: Buffer, targetDir: string): Promise<void> {
+  const extractor = tar.x({
+    cwd: targetDir,
+    strip: 1,
+    // The tarball comes from an untrusted, tenant-controlled GitHub repo.
+    // node-tar already strips leading `/` and `..` from entry paths, but it
+    // does NOT sanitize symlink/hardlink targets — a `leak.md -> /etc/passwd`
+    // entry would otherwise be created and later read through the KB-file
+    // route. Drop every link entry; persona content is only plain files/dirs.
+    filter: (_path, entry) =>
+      !("type" in entry) || (entry.type !== "SymbolicLink" && entry.type !== "Link"),
+  });
   await new Promise<void>((resolve, reject) => {
     extractor.once("finish", () => resolve());
     extractor.once("error", reject);
@@ -171,15 +181,99 @@ export async function syncFromGitHubForAccount(
   return promise;
 }
 
+// Throttle how often a warm instance re-checks the DB for a newer active SHA.
+// Without this, every request would issue a freshness query; with it, at most
+// one query per account per window.
+const FRESHNESS_TTL_MS = 30_000;
+const lastFreshnessCheckByAccount = new Map<string, number>();
+
+// Dedupe concurrent refetches of the same account so two requests can't run
+// rm/extract against the same target directory at once.
+const refetchInFlightByAccount = new Map<string, Promise<void>>();
+function dedupedRefetch(
+  accountId: string,
+  repoUrl: string,
+  branch: string,
+  sha: string,
+): Promise<void> {
+  const existing = refetchInFlightByAccount.get(accountId);
+  if (existing) return existing;
+  const p = refetchFromRecordedForAccount(accountId, repoUrl, branch, sha).finally(() => {
+    refetchInFlightByAccount.delete(accountId);
+  });
+  refetchInFlightByAccount.set(accountId, p);
+  return p;
+}
+
+type ActiveSource = { repoUrl: string; branch: string; commitSha: string };
+
+export type PersonaFreshnessDeps = {
+  readCurrentSha: () => string | null;
+  getActive: () => Promise<ActiveSource | null>;
+  refetch: (active: ActiveSource) => Promise<void>;
+  resetCaches: () => void;
+};
+
+/**
+ * Decides whether the locally-cached persona is stale relative to the active
+ * source row (which another serverless instance may have advanced) and, if so,
+ * refetches it and clears this instance's in-memory caches. Pure orchestration
+ * over injected effects, so it is unit-testable without a DB or filesystem.
+ */
+export async function refreshPersonaIfStale(
+  deps: PersonaFreshnessDeps,
+): Promise<"no-active" | "fresh" | "refreshed"> {
+  const active = await deps.getActive();
+  if (!active) return "no-active";
+  if (deps.readCurrentSha() === active.commitSha) return "fresh";
+  await deps.refetch(active);
+  deps.resetCaches();
+  return "refreshed";
+}
+
 export async function ensurePersonaCacheReadyForAccount(accountId: string): Promise<void> {
   if (process.env.PERSONA_LOCAL_OVERRIDE) return;
   const linkPath = path.join(accountCacheRoot(accountId), "current");
-  if (fs.existsSync(linkPath)) return;
 
-  const active = await getActivePersonaSourceRowForAccount(accountId);
-  if (!active) return; // no persona configured for this account
+  // Cold start: no local cache yet — materialize the active source.
+  if (!fs.existsSync(linkPath)) {
+    const active = await getActivePersonaSourceRowForAccount(accountId);
+    if (!active) return; // no persona configured for this account
+    await dedupedRefetch(accountId, active.repoUrl, active.branch, active.commitSha);
+    return;
+  }
 
-  await refetchFromRecordedForAccount(accountId, active.repoUrl, active.branch, active.commitSha);
+  // Warm: throttled freshness check. Another instance may have synced newer
+  // content; without this, this instance serves the old persona until it is
+  // recycled. Stamp the check time before the await so concurrent requests
+  // within the window don't all query.
+  const now = Date.now();
+  if (now - (lastFreshnessCheckByAccount.get(accountId) ?? 0) < FRESHNESS_TTL_MS) return;
+  lastFreshnessCheckByAccount.set(accountId, now);
+
+  try {
+    await refreshPersonaIfStale({
+      readCurrentSha: () => {
+        try {
+          return path.basename(fs.readlinkSync(linkPath));
+        } catch {
+          return null;
+        }
+      },
+      getActive: () => getActivePersonaSourceRowForAccount(accountId),
+      refetch: (active) =>
+        dedupedRefetch(accountId, active.repoUrl, active.branch, active.commitSha),
+      resetCaches: () => {
+        resetKbCache(accountId);
+        _resetPromptCache(accountId);
+        _resetPersonaCache();
+      },
+    });
+  } catch (err) {
+    // A failed freshness refresh must never break serving — keep the current
+    // (possibly stale) cache and try again after the throttle window.
+    console.error(`persona freshness refresh failed for account ${accountId}`, err);
+  }
 }
 
 async function refetchFromRecordedForAccount(

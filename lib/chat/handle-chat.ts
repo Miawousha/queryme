@@ -15,6 +15,12 @@ import { getPersonaStore } from "@/lib/persona/store";
 
 const MAX_TURNS = 50;
 const MAX_TOTAL_USER_CHARS = 20_000;
+// Per-part and all-roles ceilings. `messages` is fully client-supplied, so a
+// caller can fabricate `assistant` turns of arbitrary size that flow straight
+// into the paid model call. MAX_TOTAL_USER_CHARS only bounds user intent; these
+// two bound the whole payload so fabricated history can't amplify token spend.
+const MAX_PART_CHARS = 24_000;
+const MAX_TOTAL_CHARS = 200_000;
 
 // A UI message part. Text parts carry `text`; the AI SDK also produces
 // non-text parts (e.g. `step-start`, reasoning) that get echoed back as
@@ -22,12 +28,14 @@ const MAX_TOTAL_USER_CHARS = 20_000;
 // rejected. `.loose()` keeps any extra fields (e.g. `state`) intact for
 // convertToModelMessages.
 const UIMessagePartSchema = z
-  .object({ type: z.string(), text: z.string().optional() })
+  .object({ type: z.string(), text: z.string().max(MAX_PART_CHARS).optional() })
   .loose();
 
 const UIMessageSchema = z.object({
   id: z.string().optional(),
-  role: z.enum(["user", "assistant", "system"]),
+  // user/assistant only — the system prompt is server-assembled; accepting a
+  // client `system` turn would let a visitor rewrite the agent's instructions.
+  role: z.enum(["user", "assistant"]),
   parts: z.array(UIMessagePartSchema).min(1),
 });
 
@@ -53,12 +61,20 @@ export async function handleChat(req: NextRequest, accountId: string): Promise<R
     return NextResponse.json({ error: "Invalid request shape" }, { status: 400 });
   }
 
-  const userCharCount = parsed.data.messages
-    .filter((m) => m.role === "user")
-    .reduce((n, m) => n + m.parts.reduce((p, part) => p + (part.text?.length ?? 0), 0), 0);
-  if (userCharCount > MAX_TOTAL_USER_CHARS) {
+  const charsFor = (roles: ReadonlyArray<"user" | "assistant">) =>
+    parsed.data.messages
+      .filter((m) => roles.includes(m.role))
+      .reduce((n, m) => n + m.parts.reduce((p, part) => p + (part.text?.length ?? 0), 0), 0);
+
+  if (charsFor(["user"]) > MAX_TOTAL_USER_CHARS) {
     return NextResponse.json(
       { error: `Conversation too long (max ${MAX_TOTAL_USER_CHARS} characters of user text)` },
+      { status: 400 },
+    );
+  }
+  if (charsFor(["user", "assistant"]) > MAX_TOTAL_CHARS) {
+    return NextResponse.json(
+      { error: `Conversation too long (max ${MAX_TOTAL_CHARS} characters total)` },
       { status: 400 },
     );
   }

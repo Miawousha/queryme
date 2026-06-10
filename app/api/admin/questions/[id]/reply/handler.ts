@@ -9,6 +9,9 @@ const Body = z.object({ reply: z.string().min(1).max(20000) });
 export type ReplyDeps = {
   transport: EmailTransport;
   from: string;
+  /** Display name of the persona replying — used in the email so a tenant's
+   * reply isn't attributed to a hardcoded name. */
+  replierName: string;
 };
 
 export async function handleReply(
@@ -43,10 +46,10 @@ export async function handleReply(
       await deps.transport.send({
         to: existing.contact,
         from: deps.from,
-        subject: "Alexandre replied to your forwarded question",
+        subject: `${deps.replierName} replied to your forwarded question`,
         text:
           `You asked:\n\n${existing.question}\n\n` +
-          `Alexandre replied:\n\n${updated.reply}\n`,
+          `${deps.replierName} replied:\n\n${updated.reply}\n`,
       });
       emailed = true;
     } catch (err) {

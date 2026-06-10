@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import path from "node:path";
+import os from "node:os";
+import { promises as fs } from "node:fs";
 import { loadKbManifest, type KbFile } from "@/lib/kb/manifest";
 
 const FIXTURE_DIR = path.resolve(__dirname, "../../fixtures/kb");
@@ -42,5 +44,26 @@ describe("loadKbManifest", () => {
   it("returns files sorted by path", () => {
     const paths = manifest.map((f) => f.path);
     expect(paths).toEqual([...paths].sort());
+  });
+});
+
+describe("loadKbManifest — symlink safety", () => {
+  it("excludes symlinks even when their name looks like a public artifact", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-symlink-"));
+    try {
+      // A legitimate file plus a symlink whose name ends in .md — a malicious
+      // synced repo could ship `leak.md -> /etc/passwd`. The manifest must not
+      // list it, or the KB-file route's whitelist would happily read it.
+      await fs.writeFile(path.join(dir, "profile.yaml"), "name: ok\n");
+      await fs.symlink("/etc/hosts", path.join(dir, "leak.md"));
+
+      const manifest = await loadKbManifest(dir);
+      const paths = manifest.map((f) => f.path);
+
+      expect(paths).toContain("profile.yaml");
+      expect(paths).not.toContain("leak.md");
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
   });
 });

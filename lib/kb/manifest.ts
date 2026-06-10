@@ -102,6 +102,10 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
   const entries = await fs.readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name.startsWith(".")) continue;
+    // Never follow symlinks. A synced persona repo is untrusted; a symlink
+    // (e.g. `leak.md -> /etc/passwd`) must not enter the manifest, or the
+    // KB-file route's whitelist would treat it as a readable artifact.
+    if (entry.isSymbolicLink()) continue;
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       await walk(abs, baseDir, out);

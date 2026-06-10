@@ -109,11 +109,14 @@ export async function handleForwardQuestion(
   rawInput: unknown,
 ): Promise<ForwardQuestionResult> {
   const input = ForwardQuestionInputSchema.parse(rawInput);
-  const conversationId = input.conversationId ?? randomUUID();
 
+  // Pass the client-supplied conversationId through as-is. When omitted the
+  // column is left NULL — synthesizing a random UUID here would violate the
+  // conversation_id FK, since no matching conversation row exists. (Mirrors
+  // the web handler in app/api/forward-question/handler.ts.)
   const inserted = await deps.forwardQuestion(deps.db, {
     question: input.question,
-    conversationId,
+    conversationId: input.conversationId,
   });
 
   return { ok: true, id: inserted.id };

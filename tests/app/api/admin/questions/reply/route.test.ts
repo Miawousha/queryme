@@ -40,6 +40,7 @@ describe("POST /api/admin/questions/[id]/reply", () => {
     const res = await handleReply(req({ reply: "" }), { params: Promise.resolve({ id: "q1" }) }, {
       transport: fakeTransport(),
       from: "queryme@example.com",
+      replierName: "Alexandre",
     });
     expect(res.status).toBe(400);
   });
@@ -67,6 +68,7 @@ describe("POST /api/admin/questions/[id]/reply", () => {
     const res = await handleReply(req({ reply: "A" }), { params: Promise.resolve({ id: "q1" }) }, {
       transport: t,
       from: "queryme@example.com",
+      replierName: "Alexandre",
     });
     expect(res.status).toBe(200);
     expect(recordReply).toHaveBeenCalledWith({}, "q1", "A");
@@ -75,6 +77,27 @@ describe("POST /api/admin/questions/[id]/reply", () => {
     expect(t.sent[0].text).toContain("A");
     const body = await res.json();
     expect(body.emailed).toBe(true);
+  });
+
+  it("attributes the email to the persona's name, not a hardcoded one", async () => {
+    vi.mocked(getQuestion).mockResolvedValue({
+      id: "q1", question: "Q", contact: "x@y.example", reply: null, answeredAt: null,
+      conversationId: null, createdAt: new Date(),
+    });
+    vi.mocked(recordReply).mockResolvedValue({
+      id: "q1", question: "Q", contact: "x@y.example", reply: "A", answeredAt: new Date(),
+      conversationId: null, createdAt: new Date(),
+    });
+    const t = fakeTransport();
+    await handleReply(req({ reply: "A" }), { params: Promise.resolve({ id: "q1" }) }, {
+      transport: t,
+      from: "no-reply@example.com",
+      replierName: "Dana",
+    });
+    expect(t.sent[0].subject).toContain("Dana");
+    expect(t.sent[0].text).toContain("Dana");
+    expect(t.sent[0].subject).not.toContain("Alexandre");
+    expect(t.sent[0].text).not.toContain("Alexandre");
   });
 
   it("does not email when there is no contact", async () => {
@@ -90,6 +113,7 @@ describe("POST /api/admin/questions/[id]/reply", () => {
     const res = await handleReply(req({ reply: "A" }), { params: Promise.resolve({ id: "q1" }) }, {
       transport: t,
       from: "queryme@example.com",
+      replierName: "Alexandre",
     });
     expect(res.status).toBe(200);
     expect(t.sent).toHaveLength(0);

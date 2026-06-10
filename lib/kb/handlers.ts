@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { getCachedKbManifest } from "@/lib/kb/cache";
+import { realpathWithin } from "@/lib/kb/safe-path";
 import { getPersonaStore } from "@/lib/persona/store";
 import type { KbFileType } from "@/lib/kb/file-type";
 
@@ -78,7 +79,11 @@ export async function handleKbFile(req: NextRequest, accountId: string): Promise
 
   try {
     const filePath = await resolveFile();
-    const buffer = await fs.readFile(filePath);
+    // Final-layer guard: confirm the resolved file really sits inside KB_DIR
+    // (a symlink escaping the tree throws here → caught below as a 500, never
+    // leaking the target's contents).
+    const safePath = await realpathWithin(KB_DIR, filePath);
+    const buffer = await fs.readFile(safePath);
     return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {

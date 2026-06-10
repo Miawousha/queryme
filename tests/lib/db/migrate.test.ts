@@ -26,6 +26,20 @@ describe("readJournal", () => {
     expect(entries[0]).toHaveProperty("tag");
     expect(entries[0]).toHaveProperty("when");
   });
+
+  it("has strictly increasing `when` timestamps", () => {
+    // Drizzle applies a migration iff its `when` (folderMillis) is greater than
+    // the max already-applied timestamp. A backdated entry is silently skipped
+    // on any DB that already advanced past it — so the journal MUST be
+    // monotonic. (This is exactly how migration 0007 went missing.)
+    const entries = readJournal();
+    for (let i = 1; i < entries.length; i++) {
+      expect(
+        entries[i].when,
+        `entry ${entries[i].tag} (${entries[i].when}) must be after ${entries[i - 1].tag} (${entries[i - 1].when})`,
+      ).toBeGreaterThan(entries[i - 1].when);
+    }
+  });
 });
 
 describe("pendingFromJournal", () => {

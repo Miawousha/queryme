@@ -133,6 +133,32 @@ describe("answer", () => {
     expect(systemMessages).toHaveLength(2);
   });
 
+  it("caps the model's output length (maxOutputTokens) for cost control", async () => {
+    let captured: any = null;
+    const model = new MockLanguageModelV2({
+      doStream: async (options) => {
+        captured = options;
+        return {
+          stream: simulateReadableStream({
+            chunks: [
+              { type: "stream-start", warnings: [] },
+              { type: "response-metadata", id: "id-1", timestamp: new Date(0), modelId: "mock" },
+              { type: "text-start", id: "1" },
+              { type: "text-delta", id: "1", delta: "ok" },
+              { type: "text-end", id: "1" },
+              { type: "finish", finishReason: "stop", usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } },
+            ],
+          }),
+        };
+      },
+    });
+
+    await answer({ accountId: "local-override", messages: [{ role: "user", content: "Hi" }], kbText: "KB", model }).then((r) => r.text);
+
+    expect(typeof captured.maxOutputTokens).toBe("number");
+    expect(captured.maxOutputTokens).toBeGreaterThan(0);
+  });
+
   it("forwards tools to the model when provided", async () => {
     let captured: any = null;
     const model = new MockLanguageModelV2({
