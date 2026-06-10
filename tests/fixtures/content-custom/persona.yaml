@@ -1,0 +1,14 @@
+id: custom-subject
+fullName: "Custom Subject"
+givenName: "Custom"
+defaultLocale: en
+i18n:
+  en:
+    possessive: "their"
+    objectPronoun: "them"
+    subjectPronoun: "they"
+  fr:
+    possessive: "son"
+    objectPronoun: "le"
+    subjectPronoun: "il"
+    givenWithApostrophe: "de Custom"

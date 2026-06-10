@@ -1,0 +1,17 @@
+locales: [en]
+collections:
+  - name: profile
+    kind: yaml
+    schema: profile
+    required: true
+  - name: public-contact
+    kind: yaml
+    schema: public-contact
+    required: true
+  - name: notes
+    kind: markdown
+    label: { en: Notes, fr: Notes }
+    sort: { field: date, order: desc }
+  - name: glossary
+    kind: yaml
+    label: { en: Glossary }

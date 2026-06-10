@@ -1,0 +1,5 @@
+terms:
+  - term: widget
+    definition: A reusable unit of interface.
+  - term: gadget
+    definition: A widget with opinions.
