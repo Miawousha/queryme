@@ -9,7 +9,7 @@ import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
 import { useKb } from "@/components/kb/kb-context";
-import { extractCitedPaths } from "@/lib/kb/cited-paths";
+import { citedRefKey, extractCitations } from "@/lib/kb/cited-paths";
 import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +60,7 @@ function latestIdentity(
 }
 
 export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
-  const { setCitedPaths, openFile } = useKb();
+  const { setCitedRefs, citedRefs, openFile } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
   useEffect(() => {
@@ -179,11 +179,17 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
   const thinkingLabel = t.thinking.generic;
 
   useEffect(() => {
-    const assistantTexts = messages
+    const assistantMessages = messages
       .filter((m) => m.role !== "user")
-      .map((m) => messageText(m));
-    setCitedPaths(extractCitedPaths(assistantTexts));
-  }, [messages, setCitedPaths]);
+      .map((m) => ({ id: m.id, text: messageText(m) }));
+    setCitedRefs(extractCitations(assistantMessages));
+  }, [messages, setCitedRefs]);
+
+  const citationIndices = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const r of citedRefs) map[citedRefKey(r.path, r.anchor)] = r.index;
+    return map;
+  }, [citedRefs]);
 
   return (
     <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-card)]/20">
@@ -271,6 +277,7 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
                 forwardStrings={t.forward}
                 onForward={handleForward}
                 onOpenArtifact={openFile}
+                citationIndices={citationIndices}
               />
             );
           })}

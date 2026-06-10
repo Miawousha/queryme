@@ -34,7 +34,7 @@ describe("ChatMessage", () => {
     expect(btn.tagName).toBe("BUTTON");
     expect(btn.closest("sup")).not.toBeNull();
     await user.click(btn);
-    expect(onOpenArtifact).toHaveBeenCalledWith("experience/2022-matrice.md");
+    expect(onOpenArtifact).toHaveBeenCalledWith("experience/2022-matrice.md", null);
   });
 
   it("opens the cited file for an anchored citation token", async () => {
@@ -49,7 +49,25 @@ describe("ChatMessage", () => {
       />,
     );
     await user.click(screen.getByRole("button"));
-    expect(onOpenArtifact).toHaveBeenCalledWith("experience/2022-matrice.md");
+    expect(onOpenArtifact).toHaveBeenCalledWith("experience/2022-matrice.md", "highlights");
+  });
+
+  it("passes the anchor through and numbers from citationIndices", async () => {
+    const onOpenArtifact = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChatMessage
+        role="assistant"
+        text="Built it [^kb:experience/2022-matrice.md#telemetry]."
+        agentLabel="agent"
+        forwardLabel="forward"
+        onOpenArtifact={onOpenArtifact}
+        citationIndices={{ "experience/2022-matrice.md#telemetry": 4 }}
+      />,
+    );
+    const btn = await screen.findByRole("button", { name: "[4]" });
+    await user.click(btn);
+    expect(onOpenArtifact).toHaveBeenCalledWith("experience/2022-matrice.md", "telemetry");
   });
 
   it("strips dangerous HTML emitted by the model", () => {

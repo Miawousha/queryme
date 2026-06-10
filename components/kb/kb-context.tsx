@@ -12,11 +12,15 @@ import {
 import type { KbFile } from "@/lib/kb/manifest";
 import type { KbGroup } from "@/lib/kb/meta-format";
 import type { KbStrings, UiLang } from "@/lib/language";
+import type { CitedRef } from "@/lib/kb/cited-paths";
 
 /** Reserved manifest path for the synthesized printable CV document. The
  * panel viewer special-cases this path and renders the CV component instead
  * of fetching `/api/kb/file`. */
 export const CV_VIRTUAL_PATH = "_virtual/cv";
+
+/** The document + optional section the viewer should show. */
+export type KbOpenTarget = { path: string; anchor: string | null };
 
 type KbContextValue = {
   /** Active UI language — used by the CV viewer to fetch the right locale. */
@@ -27,12 +31,12 @@ type KbContextValue = {
   manifest: KbFile[];
   /** Markdown directory groups in display order (from the content config). */
   groups: KbGroup[];
-  /** Ordered KB paths the agent has cited so far this conversation. */
-  citedPaths: string[];
-  setCitedPaths: (paths: string[]) => void;
-  /** The file currently shown in the viewer, or null for the file list. */
-  openFilePath: string | null;
-  openFile: (path: string) => void;
+  /** Ordered (path, anchor) citation pairs from this conversation. */
+  citedRefs: CitedRef[];
+  setCitedRefs: (refs: CitedRef[]) => void;
+  /** The doc (and optional section) shown in the viewer; null = tree. */
+  openTarget: KbOpenTarget | null;
+  openFile: (path: string, anchor?: string | null) => void;
   closeFile: () => void;
   /** Base path for KB API calls (e.g. "/api" or "/api/a/username"). */
   apiBasePath: string;
@@ -66,12 +70,12 @@ export function KbProvider({
   const strings = kbStrings;
   const [manifest, setManifest] = useState<KbFile[]>([]);
   const [groups, setGroups] = useState<KbGroup[]>([]);
-  const [citedPaths, setCitedPaths] = useState<string[]>([]);
-  const [openFilePath, setOpenFilePath] = useState<string | null>(null);
+  const [citedRefs, setCitedRefs] = useState<CitedRef[]>([]);
+  const [openTarget, setOpenTarget] = useState<KbOpenTarget | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${apiBasePath}/kb`)
+    fetch(`${apiBasePath}/kb?lang=${lang}`)
       .then((r) => (r.ok ? r.json() : { files: [] }))
       .then((data: { files?: KbFile[]; groups?: KbGroup[] }) => {
         if (!cancelled) {
@@ -85,10 +89,13 @@ export function KbProvider({
     return () => {
       cancelled = true;
     };
-  }, [apiBasePath]);
+  }, [apiBasePath, lang]);
 
-  const openFile = useCallback((path: string) => setOpenFilePath(path), []);
-  const closeFile = useCallback(() => setOpenFilePath(null), []);
+  const openFile = useCallback(
+    (path: string, anchor: string | null = null) => setOpenTarget({ path, anchor }),
+    [],
+  );
+  const closeFile = useCallback(() => setOpenTarget(null), []);
 
   // Synthetic CV entry, pinned to the top of the file list. Title flips with
   // language so the entry reads naturally in either locale.
@@ -107,15 +114,15 @@ export function KbProvider({
       strings,
       manifest: manifestWithCv,
       groups,
-      citedPaths,
-      setCitedPaths,
-      openFilePath,
+      citedRefs,
+      setCitedRefs,
+      openTarget,
       openFile,
       closeFile,
       apiBasePath,
       cvPrintBase,
     }),
-    [lang, strings, manifestWithCv, groups, citedPaths, openFilePath, openFile, closeFile, apiBasePath, cvPrintBase],
+    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, apiBasePath, cvPrintBase],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;
