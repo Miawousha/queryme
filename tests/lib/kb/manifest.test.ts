@@ -113,3 +113,61 @@ describe("loadKbManifest — symlink safety", () => {
     }
   });
 });
+
+describe("loadKbManifest — sections", () => {
+  it("extracts h2/h3 sections for markdown files and omits the key otherwise", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-sections-"));
+    try {
+      await fs.writeFile(
+        path.join(dir, "doc.md"),
+        "---\ntitle: Doc\n---\n# Doc\n\n## Overview\n\n### Detail\n",
+      );
+      await fs.writeFile(path.join(dir, "plain.md"), "no headings here\n");
+      await fs.writeFile(path.join(dir, "data.yaml"), "k: v\n");
+
+      const manifest = await loadKbManifest(dir);
+      const doc = manifest.find((f) => f.path === "doc.md");
+      expect(doc?.sections).toEqual([
+        { slug: "overview", title: "Overview", level: 2 },
+        { slug: "detail", title: "Detail", level: 3 },
+      ]);
+      expect(manifest.find((f) => f.path === "plain.md")?.sections).toBeUndefined();
+      expect(manifest.find((f) => f.path === "data.yaml")?.sections).toBeUndefined();
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("loadKbManifest — locale-resolved titles and sections", () => {
+  it("reads the .fr sidecar for title/sections when lang=fr, keeping canonical paths", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-lang-"));
+    try {
+      await fs.writeFile(path.join(dir, "note.md"), "# English note\n\n## Setup\n");
+      await fs.writeFile(path.join(dir, "note.fr.md"), "# Note française\n\n## Mise en place\n");
+
+      const en = await loadKbManifest(dir, "en");
+      const fr = await loadKbManifest(dir, "fr");
+
+      expect(en.map((f) => f.path)).toEqual(["note.md"]);
+      expect(fr.map((f) => f.path)).toEqual(["note.md"]);
+      expect(en[0].title).toBe("English note");
+      expect(fr[0].title).toBe("Note française");
+      expect(fr[0].sections).toEqual([{ slug: "mise-en-place", title: "Mise en place", level: 2 }]);
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("falls back to the canonical file when no sidecar exists for the lang", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-lang-fb-"));
+    try {
+      await fs.writeFile(path.join(dir, "only-en.md"), "# Only english\n\n## Part\n");
+      const fr = await loadKbManifest(dir, "fr");
+      expect(fr[0].title).toBe("Only english");
+      expect(fr[0].sections?.[0].slug).toBe("part");
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+});
