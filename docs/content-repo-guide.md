@@ -55,6 +55,8 @@ kb/
   recommendations/<slug>.md (+ <slug>.fr.md)     [optional]
 ```
 
+(This is the default **resume preset** — see [Custom collections](#custom-collections-contentconfigyaml--optional) to declare your own layout.)
+
 ### Required vs optional
 
 A sync is **rejected with a clear error** unless all of these exist:
@@ -75,6 +77,57 @@ entries in every category. The Markdown `.fr.md` sidecars are also optional
 > box, and the four core YAML files back UI strings in both languages, so both
 > variants must be present. If you only have English content, the simplest path
 > today is to copy each `*.yaml` to `*.fr.yaml` and translate later.
+
+---
+
+## Custom collections (`content.config.yaml`) — optional
+
+Queritae's KB is not hardwired to a resume. Without any config, the layout in
+§2 applies (the **resume preset**). To change it, add a `content.config.yaml`
+at the repo root declaring your own collections:
+
+```yaml
+locales: [en]              # declared content locales; the first MUST be "en"
+                           # (bare filenames are English). Default: [en, fr] —
+                           # required yaml files then need a .fr.yaml sibling.
+collections:
+  - name: profile          # profile + public-contact are always required —
+    kind: yaml             # the app shell renders the page from them.
+    schema: profile
+    required: true
+  - name: public-contact
+    kind: yaml
+    schema: public-contact
+    required: true
+  - name: notes            # a custom markdown collection: kb/notes/<slug>.md
+    kind: markdown
+    label: { en: Notes, fr: Notes }
+    sort: { field: date, order: desc }
+  - name: glossary         # a custom yaml collection: kb/glossary.yaml
+    kind: yaml
+    label: { en: Glossary }
+```
+
+- `kind: markdown` → a `kb/<name>/` folder of `<slug>.md` files (front-matter +
+  body, like §6). `kind: yaml` → a single `kb/<name>.yaml` file.
+- `schema` is optional: a preset name (`profile`, `skills`, `education`,
+  `public-contact`, `experience`, `project`, `talk`, `recommendation`) reuses
+  that validation and prompt rendering; omitted → `generic` (any front-matter /
+  any YAML mapping, rendered structurally with the same `[ref:]` citation
+  markers — generic markdown entries are titled from `title`, then `name`,
+  then the humanized slug).
+- `required: true` (yaml only) adds the file — plus a localized sibling per
+  extra declared locale — to the sync gate. `profile` and `public-contact`
+  are treated as required regardless.
+- Collection order is assembly order in the agent's prompt and display order
+  in the KB panel; `label` localizes the panel group heading. The name
+  `other` is reserved (the panel's catch-all group).
+- The agent's behavior for your domain lives in `prompts/system.md` as always —
+  the config only declares structure.
+
+Declaring a config replaces the preset entirely: list every collection you
+want, including the resume ones you keep. CV curation (§8) only applies to
+collections using the resume preset schemas.
 
 ---
 
