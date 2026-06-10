@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { handleKbFile } from "@/lib/kb/handlers";
+import { handleKbFile, handleKbManifest } from "@/lib/kb/handlers";
 
 // PERSONA_LOCAL_OVERRIDE (vitest.setup.ts) makes any accountId resolve to the
 // fixture persona, so the handler serves tests/fixtures/persona/kb/.
@@ -11,6 +11,19 @@ function get(pathParam: string | null): Promise<Response> {
   // The handler only reads `req.nextUrl`; a plain Request is structurally fine.
   return handleKbFile(new Request(url) as never, ACCOUNT_ID);
 }
+
+describe("handleKbManifest", () => {
+  it("returns the resume groups for a no-config persona", async () => {
+    const res = await handleKbManifest(ACCOUNT_ID);
+    const body = await res.json();
+    expect(body.groups).toEqual([
+      { name: "experience" },
+      { name: "projects" },
+      { name: "talks" },
+      { name: "recommendations" },
+    ]);
+  });
+});
 
 describe("handleKbFile", () => {
   it("400s when no path is given", async () => {

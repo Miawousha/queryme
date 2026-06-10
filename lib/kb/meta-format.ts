@@ -25,6 +25,7 @@ export function metaSubtitle(meta?: KbFileMeta): string | null {
   if (meta.role) return period ? `${meta.role} · ${period}` : meta.role;
   if (period) return period;
   if (meta.year !== undefined) return String(meta.year);
+  if (meta.date) return meta.date;
   return null;
 }
 

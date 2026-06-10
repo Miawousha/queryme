@@ -47,6 +47,16 @@ describe("loadKbManifest", () => {
   });
 });
 
+describe("loadKbManifest — generic date frontmatter", () => {
+  it("picks a generic date into meta", async () => {
+    const files = await loadKbManifest(
+      path.join(__dirname, "../../fixtures/content-custom/kb"),
+    );
+    const note = files.find((f) => f.path === "notes/2026-01-first-note.md");
+    expect(note?.meta?.date).toBe("2026-01");
+  });
+});
+
 describe("loadKbManifest — symlink safety", () => {
   it("excludes symlinks even when their name looks like a public artifact", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-symlink-"));

@@ -2,9 +2,11 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { getCachedKbManifest } from "@/lib/kb/cache";
+import { kbGroups, loadContentConfig, resolveContentConfig } from "@/lib/kb/content-config";
 import { realpathWithin } from "@/lib/kb/safe-path";
 import { getPersonaStore } from "@/lib/persona/store";
 import type { KbFileType } from "@/lib/kb/file-type";
+import type { KbGroup } from "@/lib/kb/meta-format";
 
 /** `cv` is a synthesized type that never appears in the on-disk manifest, so
  * its absence from this map is safe — the panel renders the CV from
@@ -24,7 +26,14 @@ export async function handleKbManifest(accountId: string): Promise<Response> {
   }
   try {
     const manifest = await getCachedKbManifest(accountId);
-    return NextResponse.json({ files: manifest });
+    let groups: KbGroup[] = [];
+    try {
+      groups = kbGroups(resolveContentConfig(loadContentConfig(root)));
+    } catch {
+      // A malformed config never blocks the panel — the client falls back to
+      // its default groups. (Sync rejects bad configs; this guards local overrides.)
+    }
+    return NextResponse.json({ files: manifest, groups });
   } catch {
     return NextResponse.json({ error: "Failed to load the knowledge base." }, { status: 500 });
   }

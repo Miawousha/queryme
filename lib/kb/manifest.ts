@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { fileTypeFromPath, type KbFileType } from "@/lib/kb/file-type";
+import { humanizeSlug } from "@/lib/kb/meta-format";
 
 /**
  * Frontmatter fields surfaced to the UI. A loose superset of the experience
@@ -13,6 +14,7 @@ export type KbFileMeta = {
   role?: string;
   start?: string;
   end?: string;
+  date?: string;
   location?: string;
   year?: number;
   url?: string;
@@ -36,16 +38,12 @@ export type KbFile = {
   meta?: KbFileMeta;
 };
 
-/** Humanizes a path's basename into a fallback title. */
-function humanize(relPath: string): string {
-  const base = relPath.split("/").pop() ?? relPath;
-  const stem = base.replace(/\.[^.]+$/, "");
-  const words = stem.replace(/[-_]+/g, " ").trim();
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
 function asString(v: unknown): string | undefined {
   return typeof v === "string" && v.trim() ? v : undefined;
+}
+function asDateString(v: unknown): string | undefined {
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return asString(v);
 }
 function asNumber(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) ? v : undefined;
@@ -67,6 +65,7 @@ function pickMeta(data: Record<string, unknown>): KbFileMeta | null {
     role: asString(data.role),
     start: asString(data.start),
     end: asString(data.end),
+    date: asDateString(data.date),
     location: asString(data.location),
     year: asNumber(data.year),
     url: asString(data.url),
@@ -93,7 +92,7 @@ async function readMarkdown(
   const raw = await fs.readFile(absPath, "utf8");
   const { data, content } = matter(raw);
   const heading = content.split("\n").find((line) => /^#\s+/.test(line));
-  const title = heading ? heading.replace(/^#\s+/, "").trim() : humanize(relPath);
+  const title = heading ? heading.replace(/^#\s+/, "").trim() : humanizeSlug(relPath);
   const meta = pickMeta(data as Record<string, unknown>);
   return meta ? { title, meta } : { title };
 }
@@ -122,7 +121,7 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
       const { title, meta } = await readMarkdown(abs, rel);
       out.push({ path: rel, title, type, ...(meta ? { meta } : {}) });
     } else {
-      out.push({ path: rel, title: humanize(rel), type });
+      out.push({ path: rel, title: humanizeSlug(rel), type });
     }
   }
 }
