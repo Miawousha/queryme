@@ -15,14 +15,14 @@ import { humanizeSlug } from "./meta-format";
 export function assemblePublicKbText(kb: Kb): string {
   const sections: string[] = [];
 
-  sections.push(renderProfile(kb.profile));
-  sections.push(renderSkills(kb.skills));
-  sections.push(renderEducation(kb.education));
-  sections.push(renderPublicContact(kb.publicContact));
-  sections.push(renderExperience(kb.experience));
-  sections.push(renderProjects(kb.projects));
-  if (kb.talks.length) sections.push(renderTalks(kb.talks));
-  if (kb.recommendations.length) sections.push(renderRecommendations(kb.recommendations));
+  sections.push(renderProfile(kb.profile, "Profile", "profile.yaml"));
+  sections.push(renderSkills(kb.skills, "Skills", "skills.yaml"));
+  sections.push(renderEducation(kb.education, "Education", "education.yaml"));
+  sections.push(renderPublicContact(kb.publicContact, "Public contact", "public-contact.yaml"));
+  sections.push(renderExperience(kb.experience, "Experience"));
+  sections.push(renderProjects(kb.projects, "Projects"));
+  if (kb.talks.length) sections.push(renderTalks(kb.talks, "Talks"));
+  if (kb.recommendations.length) sections.push(renderRecommendations(kb.recommendations, "Recommendations"));
 
   return sections.join("\n\n");
 }
@@ -45,29 +45,32 @@ export function assembleContentText(content: LoadedContent): string {
 
 function renderCollection(loaded: LoadedCollection, lang: KbLang): string | null {
   if (loaded.kind === "yaml") {
+    const heading = labelFor(loaded, lang);
+    const refPath = loaded.relativePath;
     switch (loaded.config.schemaKey) {
       case "profile":
-        return renderProfile(loaded.data as Profile);
+        return renderProfile(loaded.data as Profile, heading, refPath);
       case "skills":
-        return renderSkills(loaded.data as Skills);
+        return renderSkills(loaded.data as Skills, heading, refPath);
       case "education":
-        return renderEducation(loaded.data as Education);
+        return renderEducation(loaded.data as Education, heading, refPath);
       case "public-contact":
-        return renderPublicContact(loaded.data as PublicContact);
+        return renderPublicContact(loaded.data as PublicContact, heading, refPath);
       default:
         return renderGenericYaml(loaded, lang);
     }
   }
+  const heading = labelFor(loaded, lang);
   switch (loaded.config.schemaKey) {
     case "experience":
-      return renderExperience(loaded.entries as ExperienceEntry[]);
+      return renderExperience(loaded.entries as ExperienceEntry[], heading);
     case "project":
-      return renderProjects(loaded.entries as ProjectEntry[]);
+      return renderProjects(loaded.entries as ProjectEntry[], heading);
     case "talk":
-      return loaded.entries.length ? renderTalks(loaded.entries as TalkEntry[]) : null;
+      return loaded.entries.length ? renderTalks(loaded.entries as TalkEntry[], heading) : null;
     case "recommendation":
       return loaded.entries.length
-        ? renderRecommendations(loaded.entries as RecommendationEntry[])
+        ? renderRecommendations(loaded.entries as RecommendationEntry[], heading)
         : null;
     default:
       return loaded.entries.length ? renderGenericMarkdown(loaded, lang) : null;
@@ -79,24 +82,38 @@ function labelFor(loaded: LoadedCollection, lang: KbLang): string {
   return (lang === "fr" ? label?.fr : undefined) ?? label?.en ?? humanizeSlug(loaded.config.name);
 }
 
-/** Generic yaml: the raw file IS the structured content — emit it verbatim
+/** Generic yaml: the raw file IS the structured content — emit it fenced
  * under a heading + ref so the agent can read and cite it. */
 function renderGenericYaml(
   loaded: Extract<LoadedCollection, { kind: "yaml" }>,
   lang: KbLang,
 ): string {
-  return [`# ${labelFor(loaded, lang)}`, `[ref: ${loaded.relativePath}]`, ``, loaded.raw.trim()].join("\n");
+  return [
+    `# ${labelFor(loaded, lang)}`,
+    `[ref: ${loaded.relativePath}]`,
+    ``,
+    "```yaml",
+    loaded.raw.trim(),
+    "```",
+  ].join("\n");
 }
 
 /** Scalars and scalar arrays render on the entry's metadata lines; nested
  * objects are skipped — the body carries the narrative. */
 function scalarOrList(v: unknown): string | null {
-  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return String(v);
-  if (
-    Array.isArray(v) &&
-    v.every((x) => typeof x === "string" || typeof x === "number" || typeof x === "boolean")
-  ) {
-    return v.join(", ");
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === "boolean" || typeof v === "number") return String(v);
+  if (typeof v === "string") return v === "" ? null : v.replace(/\s*\n\s*/g, " ");
+  if (Array.isArray(v)) {
+    const items = v
+      .map((x): string | null => {
+        if (x instanceof Date) return x.toISOString().slice(0, 10);
+        if (typeof x === "string" && x !== "") return x;
+        if (typeof x === "number" || typeof x === "boolean") return String(x);
+        return null;
+      })
+      .filter((x): x is string => x !== null);
+    return items.length === 0 ? null : items.join(", ");
   }
   return null;
 }
@@ -108,10 +125,11 @@ function renderGenericMarkdown(
   const lines = [`# ${labelFor(loaded, lang)}`, ``];
   for (const e of loaded.entries) {
     const fm = e.frontmatter;
-    const title =
+    const rawTitle =
       (typeof fm.title === "string" && fm.title) ||
       (typeof fm.name === "string" && fm.name) ||
       humanizeSlug(e.slug);
+    const title = rawTitle.replace(/\s*\n\s*/g, " ");
     lines.push(`## ${title}`);
     lines.push(`[ref: ${e.relativePath}]`);
     for (const [k, v] of Object.entries(fm)) {
@@ -124,10 +142,10 @@ function renderGenericMarkdown(
   return lines.join("\n");
 }
 
-function renderProfile(profile: Profile): string {
+function renderProfile(profile: Profile, heading: string, refPath: string): string {
   const lines = [
-    `# Profile`,
-    `[ref: profile.yaml]`,
+    `# ${heading}`,
+    `[ref: ${refPath}]`,
     ``,
     `Name: ${profile.name}`,
     `Headline: ${profile.headline}`,
@@ -142,8 +160,8 @@ function renderProfile(profile: Profile): string {
   return lines.join("\n");
 }
 
-function renderSkills(skills: Skills): string {
-  const lines = [`# Skills`, `[ref: skills.yaml]`, ``];
+function renderSkills(skills: Skills, heading: string, refPath: string): string {
+  const lines = [`# ${heading}`, `[ref: ${refPath}]`, ``];
   for (const skill of skills.skills) {
     const tags = skill.tags?.length ? ` (tags: ${skill.tags.join(", ")})` : "";
     lines.push(`- ${skill.name} — level: ${skill.level}/5, years: ${skill.years}${tags}`);
@@ -151,8 +169,8 @@ function renderSkills(skills: Skills): string {
   return lines.join("\n");
 }
 
-function renderEducation(education: Education): string {
-  const lines = [`# Education`, `[ref: education.yaml]`, ``];
+function renderEducation(education: Education, heading: string, refPath: string): string {
+  const lines = [`# ${heading}`, `[ref: ${refPath}]`, ``];
   for (const e of education.entries) {
     const notes = e.notes ? ` — ${e.notes}` : "";
     lines.push(`- ${e.institution}, ${e.degree} (${e.start} → ${e.end})${notes}`);
@@ -160,8 +178,8 @@ function renderEducation(education: Education): string {
   return lines.join("\n");
 }
 
-function renderPublicContact(publicContact: PublicContact): string {
-  const lines = [`# Public contact`, `[ref: public-contact.yaml]`, ``];
+function renderPublicContact(publicContact: PublicContact, heading: string, refPath: string): string {
+  const lines = [`# ${heading}`, `[ref: ${refPath}]`, ``];
   if (publicContact.email) lines.push(`Email: ${publicContact.email}`);
   if (publicContact.links) {
     for (const [k, v] of Object.entries(publicContact.links)) {
@@ -171,8 +189,8 @@ function renderPublicContact(publicContact: PublicContact): string {
   return lines.join("\n");
 }
 
-function renderExperience(entries: ExperienceEntry[]): string {
-  const lines = [`# Experience`, ``];
+function renderExperience(entries: ExperienceEntry[], heading: string): string {
+  const lines = [`# ${heading}`, ``];
   for (const e of entries) {
     const { company, role, start, end, location, stack, tags } = e.frontmatter;
     lines.push(`## ${company} — ${role} (${start} → ${end})`);
@@ -187,8 +205,8 @@ function renderExperience(entries: ExperienceEntry[]): string {
   return lines.join("\n");
 }
 
-function renderProjects(entries: ProjectEntry[]): string {
-  const lines = [`# Projects`, ``];
+function renderProjects(entries: ProjectEntry[], heading: string): string {
+  const lines = [`# ${heading}`, ``];
   for (const p of entries) {
     const year = p.frontmatter.year ? ` (${p.frontmatter.year})` : "";
     lines.push(`## ${p.frontmatter.name}${year}`);
@@ -222,8 +240,8 @@ function renderRepoLine(r: Repo): string {
   return `- ${r.name}${desc} (${meta.join(", ")})`;
 }
 
-function renderTalks(entries: TalkEntry[]): string {
-  const lines = [`# Talks`, ``];
+function renderTalks(entries: TalkEntry[], heading: string): string {
+  const lines = [`# ${heading}`, ``];
   for (const t of entries) {
     const where = t.frontmatter.location ? ` — ${t.frontmatter.location}` : "";
     lines.push(`## ${t.frontmatter.title} (${t.frontmatter.year})`);
@@ -236,8 +254,8 @@ function renderTalks(entries: TalkEntry[]): string {
   return lines.join("\n");
 }
 
-function renderRecommendations(entries: RecommendationEntry[]): string {
-  const lines = [`# Recommendations`, ``];
+function renderRecommendations(entries: RecommendationEntry[], heading: string): string {
+  const lines = [`# ${heading}`, ``];
   for (const r of entries) {
     lines.push(`## ${r.frontmatter.from} — ${r.frontmatter.title} (${r.frontmatter.date})`);
     lines.push(`[ref: ${r.relativePath}]`);

@@ -157,6 +157,7 @@ async function readMarkdownDir(
  * under desc (matches the legacy experience sort). */
 function sortValue(v: unknown): string | number | undefined {
   if (v === "present") return "9999-99";
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
   if (typeof v === "string" || typeof v === "number") return v;
   return undefined;
 }

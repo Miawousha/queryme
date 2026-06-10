@@ -207,3 +207,25 @@ describe("Also — collection presence edge cases", () => {
     expect(docs.entries).toEqual([]);
   });
 });
+
+// ─── Fix 5: sortValue handles Date from unquoted YAML dates ───────────────────
+
+describe("Fix 5 — sortValue handles Date fields from unquoted YAML dates", () => {
+  it("sorts an unquoted YAML date (→ Date) and a quoted date (→ string) correctly in desc order", async () => {
+    const root = await makeTempRoot(
+      BASE_CONFIG + "  - name: notes\n    kind: markdown\n    sort: { field: date, order: desc }\n",
+      {
+        // gray-matter parses unquoted 2026-01-04 as a JS Date object
+        "kb/notes/a.md": "---\ndate: 2026-01-04\n---\n",
+        // quoted → stays a string "2026-02-01"
+        "kb/notes/b.md": '---\ndate: "2026-02-01"\n---\n',
+      },
+    );
+    const content = await loadContent(root);
+    const notes = content.collections.get("notes");
+    expect(notes?.kind).toBe("markdown");
+    if (notes?.kind !== "markdown") return;
+    // desc order: "2026-02-01" > "2026-01-04" → b first
+    expect(notes.entries.map((e) => e.slug)).toEqual(["b", "a"]);
+  });
+});
