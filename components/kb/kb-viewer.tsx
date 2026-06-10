@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { KbFile } from "@/lib/kb/manifest";
+import type { CitedRef } from "@/lib/kb/cited-paths";
 import { KbMetaCard } from "@/components/kb/kb-meta-card";
 import { useKb } from "@/components/kb/kb-context";
 import {
@@ -29,7 +30,26 @@ function fileUrl(apiBasePath: string, path: string): string {
   return `${apiBasePath}/kb/file?path=${encodeURIComponent(path)}`;
 }
 
-export function KbViewer({ file, onBack }: { file: KbFile; onBack: () => void }) {
+export function KbViewer({
+  file,
+  anchor = null,
+  citedRefs = [],
+  breadcrumb = [],
+  onBack,
+}: {
+  file: KbFile;
+  /** Scroll target section slug — wired in Task 9. */
+  anchor?: string | null;
+  /** Citation refs for this doc — wired in Task 9. */
+  citedRefs?: CitedRef[];
+  /** Breadcrumb path labels for the viewer header — wired in Task 9. */
+  breadcrumb?: string[];
+  onBack: () => void;
+}) {
+  // anchor, citedRefs, and breadcrumb are intentionally unused until Task 9.
+  void anchor;
+  void citedRefs;
+  void breadcrumb;
   const { strings, apiBasePath } = useKb();
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
