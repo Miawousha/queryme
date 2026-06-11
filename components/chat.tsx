@@ -185,11 +185,25 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
     setCitedRefs(extractCitations(assistantMessages));
   }, [messages, setCitedRefs]);
 
+  // Derive citationIndices synchronously from messages, not from citedRefs
+  // context. citedRefs is set by the effect below — reading from it would leave
+  // a one-frame window on each new message where superscripts fall back to
+  // per-message numbering. Using messages directly (same input as the effect)
+  // closes the window entirely.  The setCitedRefs effect below remains the KB
+  // panel's sole source of truth and is kept unchanged.
   const citationIndices = useMemo(() => {
+    const assistantMessages = messages
+      .filter((m) => m.role !== "user")
+      .map((m) => ({ id: m.id, text: messageText(m) }));
     const map: Record<string, number> = {};
-    for (const r of citedRefs) map[citedRefKey(r.path, r.anchor)] = r.index;
+    for (const r of extractCitations(assistantMessages)) {
+      map[citedRefKey(r.path, r.anchor)] = r.index;
+    }
     return map;
-  }, [citedRefs]);
+    // messageText is a stable local helper that closes over no state; it is
+    // intentionally omitted from deps (same pattern as the setCitedRefs effect).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   return (
     <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-card)]/20">
