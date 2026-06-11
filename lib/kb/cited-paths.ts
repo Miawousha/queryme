@@ -34,3 +34,15 @@ export function extractCitations(messages: { id: string; text: string }[]): Cite
   }
   return out;
 }
+
+/**
+ * Builds a key→index lookup from a CitedRef list.
+ * Keys are produced by `citedRefKey`; values are 1-based first-appearance indices.
+ */
+export function citationIndexMap(refs: CitedRef[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const r of refs) {
+    map[citedRefKey(r.path, r.anchor)] = r.index;
+  }
+  return map;
+}

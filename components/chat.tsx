@@ -9,7 +9,7 @@ import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
 import { useKb } from "@/components/kb/kb-context";
-import { citedRefKey, extractCitations } from "@/lib/kb/cited-paths";
+import { citationIndexMap, extractCitations } from "@/lib/kb/cited-paths";
 import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +60,7 @@ function latestIdentity(
 }
 
 export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
-  const { setCitedRefs, citedRefs, openFile } = useKb();
+  const { setCitedRefs, openFile } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
   useEffect(() => {
@@ -178,32 +178,20 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
   const showThinking = isBusy && (!lastIsAssistant || !lastHasText);
   const thinkingLabel = t.thinking.generic;
 
-  useEffect(() => {
+  // Single extraction pass — both the KB panel context and the superscripts
+  // are built from this one memo so messages are never traversed twice.
+  const extractedRefs = useMemo(() => {
     const assistantMessages = messages
       .filter((m) => m.role !== "user")
       .map((m) => ({ id: m.id, text: messageText(m) }));
-    setCitedRefs(extractCitations(assistantMessages));
-  }, [messages, setCitedRefs]);
-
-  // Derive citationIndices synchronously from messages, not from citedRefs
-  // context. citedRefs is set by the effect below — reading from it would leave
-  // a one-frame window on each new message where superscripts fall back to
-  // per-message numbering. Using messages directly (same input as the effect)
-  // closes the window entirely.  The setCitedRefs effect below remains the KB
-  // panel's sole source of truth and is kept unchanged.
-  const citationIndices = useMemo(() => {
-    const assistantMessages = messages
-      .filter((m) => m.role !== "user")
-      .map((m) => ({ id: m.id, text: messageText(m) }));
-    const map: Record<string, number> = {};
-    for (const r of extractCitations(assistantMessages)) {
-      map[citedRefKey(r.path, r.anchor)] = r.index;
-    }
-    return map;
-    // messageText is a stable local helper that closes over no state; it is
-    // intentionally omitted from deps (same pattern as the setCitedRefs effect).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return extractCitations(assistantMessages);
   }, [messages]);
+
+  useEffect(() => {
+    setCitedRefs(extractedRefs);
+  }, [extractedRefs, setCitedRefs]);
+
+  const citationIndices = useMemo(() => citationIndexMap(extractedRefs), [extractedRefs]);
 
   return (
     <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-card)]/20">
