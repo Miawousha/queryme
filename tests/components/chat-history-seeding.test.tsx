@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { mswServer } from "../../vitest.setup";
 import { Chat } from "@/components/chat";
@@ -23,6 +23,7 @@ vi.mock("@/components/kb/kb-context", async (importOriginal) => {
 
 const API_BASE = "http://localhost/api/a/fixture";
 const HISTORY_URL = `${API_BASE}/chat/history`;
+const CHAT_URL = `${API_BASE}/chat`;
 const STORED_ID = "11111111-2222-4333-8444-555555555555";
 
 const ALEX: Persona = {
@@ -55,6 +56,45 @@ function serveHistory(response: () => Response) {
     }),
   );
   return requested;
+}
+
+/**
+ * History endpoint held open until `release()` — deterministic stand-in for a
+ * slow round-trip, so a test can interleave visitor activity with the fetch.
+ * `settled()` flips once the handler has produced its response.
+ */
+function serveGatedHistory(response: () => Response) {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let settled = false;
+  mswServer.use(
+    http.get(HISTORY_URL, async () => {
+      await gate;
+      settled = true;
+      return response();
+    }),
+  );
+  return { release, settled: () => settled };
+}
+
+/**
+ * Drive the real submit flow (Enter in the textarea → sendMessage). The chat
+ * POST is served a 500, so the optimistic user message stays in the thread and
+ * `status` leaves "ready" — exactly the non-empty/non-idle state the history
+ * guards read.
+ */
+async function submitVisitorMessage(text: string) {
+  mswServer.use(http.post(CHAT_URL, () => HttpResponse.json({ error: "down" }, { status: 500 })));
+  fireEvent.change(screen.getByPlaceholderText(T.placeholder), { target: { value: text } });
+  fireEvent.keyDown(screen.getByPlaceholderText(T.placeholder), { key: "Enter" });
+  expect(await screen.findByText(text)).toBeInTheDocument();
+}
+
+/** Let the client finish processing a response the gated handler just sent. */
+function flushClient() {
+  return act(() => new Promise((resolve) => setTimeout(resolve, 30)));
 }
 
 function renderChat(ctx = makeKbContext(), onLangChange = vi.fn()) {
@@ -117,7 +157,7 @@ describe("Chat — history rehydration", () => {
   });
 
   it("404 → clears the stored id and starts fresh, silently", async () => {
-    serveHistory(() => HttpResponse.json({ error: "Not found." }, { status: 404 }));
+    serveHistory(() => HttpResponse.json({ error: "Not found" }, { status: 404 }));
     renderChat();
 
     await waitFor(() => {
@@ -138,5 +178,45 @@ describe("Chat — history rehydration", () => {
     expect(window.localStorage.getItem("queritae:conversationId")).toBe(STORED_ID);
     expect(screen.getByText(T.starters[0])).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("Chat — history fetch racing a visitor message", () => {
+  it("does not clobber a thread the visitor started while the fetch was in flight", async () => {
+    const history = serveGatedHistory(() =>
+      HttpResponse.json({ conversationId: STORED_ID, language: "fr", turns: TURNS }),
+    );
+    const { onLangChange } = renderChat();
+
+    await submitVisitorMessage("Hello, tell me about Alexandre");
+
+    history.release();
+    await waitFor(() => expect(history.settled()).toBe(true));
+    await flushClient();
+
+    // The visitor's thread is intact; the stored transcript never seeded.
+    expect(screen.getByText("Hello, tell me about Alexandre")).toBeInTheDocument();
+    expect(screen.queryByText("What did you build at ION?")).not.toBeInTheDocument();
+    // The guard returns before language adoption — the seed path's first
+    // side effect — so a clobber would surface here as a "fr" call.
+    expect(onLangChange).not.toHaveBeenCalled();
+  });
+
+  it("delayed 404 + visitor already chatting → the stored id is NOT swapped", async () => {
+    const history = serveGatedHistory(() =>
+      HttpResponse.json({ error: "Not found" }, { status: 404 }),
+    );
+    renderChat();
+
+    await submitVisitorMessage("Hello, tell me about Alexandre");
+
+    history.release();
+    await waitFor(() => expect(history.settled()).toBe(true));
+    await flushClient();
+
+    // The visitor's POST already created the conversation under the stored
+    // id; re-keying on the late 404 would split the server transcript.
+    expect(window.localStorage.getItem("queritae:conversationId")).toBe(STORED_ID);
+    expect(screen.getByText("Hello, tell me about Alexandre")).toBeInTheDocument();
   });
 });
