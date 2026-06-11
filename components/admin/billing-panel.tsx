@@ -25,6 +25,7 @@ export function BillingPanel({
   const [error, setError] = useState<string | null>(null);
 
   async function go(endpoint: "checkout" | "portal") {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -90,7 +91,7 @@ export function BillingPanel({
           </>
         ) : (
           <>
-            <p className="text-[13px] text-[var(--color-text-secondary)]">
+            <p className="text-[13px] text-[var(--color-text-secondary)]" suppressHydrationWarning>
               Pro is active
               {currentPeriodEnd
                 ? ` — renews ${new Date(currentPeriodEnd).toLocaleDateString()}`
