@@ -57,6 +57,21 @@ export async function getOrCreateConversation(
   return row;
 }
 
+/**
+ * Exact-id lookup behind the same ownership filter the chat path uses: a
+ * conversation resolves only when id, channel, AND account all match, so one
+ * account's id can never read another account's transcript. Returns null
+ * rather than throwing — absence is an expected outcome (the caller 404s).
+ * Deliberately no listing variant: the id is the bearer token.
+ */
+export async function findOwnedConversation(
+  db: Db,
+  input: ConversationKey,
+): Promise<Conversation | null> {
+  const [row] = await db.select().from(conversations).where(ownedBy(input));
+  return row ?? null;
+}
+
 export async function appendTurn(db: Db, conversationId: string, turn: ConversationTurn): Promise<void> {
   const updated = await db
     .update(conversations)
