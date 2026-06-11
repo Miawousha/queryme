@@ -4,7 +4,7 @@ import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderHook } from "@testing-library/react";
 import { KbLayout } from "@/components/kb/kb-layout";
-import { useIsDesktop } from "@/components/kb/use-media-query";
+import { useIsDesktop } from "@/lib/use-is-desktop";
 import { useKb } from "@/components/kb/kb-context";
 import type { KbStrings } from "@/lib/language";
 
@@ -190,6 +190,12 @@ describe("useIsDesktop", () => {
     const { unmount } = renderHook(() => useIsDesktop());
     unmount();
     expect(mql.removeEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+  });
+
+  it("queries the correct media query string", () => {
+    mockMatchMedia(true);
+    renderHook(() => useIsDesktop());
+    expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 640px)");
   });
 });
 

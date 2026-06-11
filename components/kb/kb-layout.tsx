@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useKb } from "@/components/kb/kb-context";
 import { useDialog } from "@/lib/use-dialog";
-import { useIsDesktop } from "@/components/kb/use-media-query";
+import { useIsDesktop } from "@/lib/use-is-desktop";
 
 const WIDTH_KEY = "queritae:kbPanelWidth";
 const MIN_PCT = 24;
@@ -136,7 +136,7 @@ export function KbLayout({
                 setWidthPct(next);
                 localStorage.setItem(WIDTH_KEY, String(Math.round(next)));
               }}
-              className="block w-1 shrink-0 cursor-col-resize bg-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)] focus-visible:bg-[var(--color-accent)] focus-visible:outline-none"
+              className="w-1 shrink-0 cursor-col-resize bg-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)] focus-visible:bg-[var(--color-accent)] focus-visible:outline-none"
             />
             <div
               className="flex shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-card)]/30"
