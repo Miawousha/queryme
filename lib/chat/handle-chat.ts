@@ -15,10 +15,8 @@ import { getPersonaStore } from "@/lib/persona/store";
 import { checkQuota } from "@/lib/usage/quota";
 import { recordUsage } from "@/lib/usage/repo";
 import { isUuid } from "@/lib/uuid";
+import { MAX_TURNS } from "@/lib/chat/limits";
 
-/** Max messages per chat POST. Exported so the history endpoint's cap can be
- * derived from it (the seeded history is echoed back through this limit). */
-export const MAX_TURNS = 50;
 const MAX_TOTAL_USER_CHARS = 20_000;
 // Per-part and all-roles ceilings. `messages` is fully client-supplied, so a
 // caller can fabricate `assistant` turns of arbitrary size that flow straight

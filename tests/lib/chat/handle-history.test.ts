@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { handleChatHistory, HISTORY_TURNS_CAP } from "@/lib/chat/handle-history";
-import { MAX_TURNS } from "@/lib/chat/handle-chat";
+import { handleChatHistory } from "@/lib/chat/handle-history";
+import { HISTORY_TURNS_CAP, MAX_TURNS } from "@/lib/chat/limits";
 import { findOwnedConversation } from "@/lib/conversations/repo";
 import type { Conversation, ConversationTurn } from "@/lib/db/schema";
 import type { NextRequest } from "next/server";

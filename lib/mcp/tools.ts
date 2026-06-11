@@ -28,7 +28,7 @@ export type ForwardQuestionInput = z.infer<typeof ForwardQuestionInputSchema>;
 // --- ask ---
 
 // Cap on how many prior transcript turns are replayed into the model on each
-// `ask` call. Mirrors `MAX_TURNS` in lib/chat/handle-chat.ts so a long-lived MCP
+// `ask` call. Mirrors `MAX_TURNS` in lib/chat/limits.ts so a long-lived MCP
 // conversation does not grow its message array unbounded (2 turns per call).
 const MAX_HISTORY_TURNS = 50;
 
