@@ -5,7 +5,7 @@ import { getCachedContent, getCachedKbManifest } from "@/lib/kb/cache";
 import { kbGroups } from "@/lib/kb/content-config";
 import { realpathWithin } from "@/lib/kb/safe-path";
 import { getPersonaStore } from "@/lib/persona/store";
-import type { KbFileType, KbLocale } from "@/lib/kb/file-type";
+import { parseKbLocale, type KbFileType, type KbLocale } from "@/lib/kb/file-type";
 import type { KbGroup } from "@/lib/kb/meta-format";
 
 /** `cv` is a synthesized type that never appears in the on-disk manifest, so
@@ -60,8 +60,7 @@ export async function handleKbFile(req: NextRequest, accountId: string): Promise
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
-  const langParam = new URL(req.url).searchParams.get("lang");
-  const lang = langParam === "fr" ? "fr" : "en";
+  const lang = parseKbLocale(new URL(req.url).searchParams.get("lang"));
 
   // Try the localized sidecar first when lang is non-English. Build the
   // candidate path by injecting `.<lang>` before the extension.
