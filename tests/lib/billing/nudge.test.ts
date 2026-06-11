@@ -38,4 +38,17 @@ describe("maybeSendUpgradeNudge", () => {
     await maybeSendUpgradeNudge(deps, ACCOUNT_ID, new Date());
     expect(vi.mocked(deps.transport.send)).not.toHaveBeenCalled();
   });
+
+  it("logs but does not throw when transport send fails", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const deps = makeDeps({
+      transport: { send: vi.fn(async () => { throw new Error("smtp down"); }) },
+    });
+    await maybeSendUpgradeNudge(deps, ACCOUNT_ID, new Date());
+    expect(spy).toHaveBeenCalledWith(
+      "billing: upgrade nudge send failed",
+      "smtp down",
+    );
+    spy.mockRestore();
+  });
 });

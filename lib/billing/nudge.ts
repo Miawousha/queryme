@@ -33,16 +33,23 @@ export async function maybeSendUpgradeNudge(
     const month = now.toISOString().slice(0, 7); // "YYYY-MM", UTC
     if (!(await deps.claimNudge(deps.db, accountId, month))) return;
     const account = await deps.getAccountById(deps.db, accountId);
-    if (!account) return;
+    if (!account) {
+      console.warn("billing: nudge claimed but account missing", accountId);
+      return;
+    }
     const to = await deps.ownerNotifyAddress(accountId);
-    if (!to) return;
-    await sendUpgradeNudge(deps.transport, {
+    if (!to) {
+      console.warn("billing: nudge claimed but no recipient address", accountId);
+      return;
+    }
+    const result = await sendUpgradeNudge(deps.transport, {
       to,
       from: deps.from,
       username: account.username,
       freeAllowance: FREE_MONTHLY_ANSWERS,
       billingUrl: `${deps.siteUrl}/${account.username}/admin/settings/billing`,
     });
+    if (!result.ok) console.error("billing: upgrade nudge send failed", result.error);
   } catch (err) {
     console.error("billing: upgrade nudge failed", err);
   }
