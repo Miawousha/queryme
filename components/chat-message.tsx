@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { parseCitations } from "@/lib/kb/citations";
+import { citedRefKey } from "@/lib/kb/cited-paths";
 import { splitOnMarkers } from "@/lib/markers";
 import { cn } from "@/lib/utils";
 
@@ -49,18 +50,22 @@ export type ChatMessageProps = {
     cancel: string;
   };
   onForward?: (question: string, contact: string) => void;
-  onOpenArtifact?: (path: string) => void;
+  onOpenArtifact?: (path: string, anchor: string | null) => void;
+  /** Conversation-global citation numbers keyed by `path` / `path#anchor`. */
+  citationIndices?: Record<string, number>;
 };
 
-function rewriteCitations(text: string): string {
+function rewriteCitations(text: string, indices: Record<string, number>): string {
   const cites = parseCitations(text);
-  let i = 0;
+  let fallback = 0;
   let out = text;
   for (const c of cites) {
-    i += 1;
-    // `kb://<path>` is an internal sentinel — the `a` renderer below turns it
-    // into a button that opens the file in the KB panel.
-    const replacement = `<sup>[\\[${i}\\]](kb://${c.path})</sup>`;
+    fallback += 1;
+    const target = citedRefKey(c.path, c.anchor);
+    const n = indices[target] ?? fallback;
+    // `kb://<path>[#anchor]` is an internal sentinel — the `a` renderer below
+    // turns it into a button that opens the file (and section) in the KB panel.
+    const replacement = `<sup>[\\[${n}\\]](kb://${target})</sup>`;
     out = out.replace(c.token, replacement);
   }
   return out;
@@ -74,9 +79,10 @@ export function ChatMessage({
   forwardStrings,
   onForward,
   onOpenArtifact,
+  citationIndices,
 }: ChatMessageProps) {
   const isAssistant = role === "assistant";
-  const rendered = isAssistant ? rewriteCitations(text) : text;
+  const rendered = isAssistant ? rewriteCitations(text, citationIndices ?? {}) : text;
   const chunks = isAssistant ? splitOnMarkers(rendered) : [];
   const [pendingForward, setPendingForward] = useState<string | null>(null);
   const [contact, setContact] = useState("");
@@ -143,11 +149,14 @@ export function ChatMessage({
                   components={{
                     a: ({ href, children }) => {
                       if (href?.startsWith("kb://")) {
-                        const path = href.slice("kb://".length);
+                        const target = href.slice("kb://".length);
+                        const hash = target.indexOf("#");
+                        const path = hash === -1 ? target : target.slice(0, hash);
+                        const anchor = hash === -1 ? null : target.slice(hash + 1);
                         return (
                           <button
                             type="button"
-                            onClick={() => onOpenArtifact?.(path)}
+                            onClick={() => onOpenArtifact?.(path, anchor)}
                             className="kb-citation"
                           >
                             {children}

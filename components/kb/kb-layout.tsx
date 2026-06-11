@@ -76,9 +76,10 @@ export function KbLayout({
     <>
       {/*
         `chat` is rendered EXACTLY ONCE — it owns a `useChat` instance, so a
-        second mount would create a second conversation. `panel` is stateless
-        (it reads `KbContext`); rendering it in both the desktop pane and the
-        mobile overlay is a harmless minor duplication.
+        second mount would create a second conversation. `panel` renders twice
+        (desktop pane + mobile drawer); KB state that must survive pane switches
+        lives in KbContext or sessionStorage, while per-pane component state
+        (filter, lens) resets on each mount.
       */}
       <div className="flex min-h-0 flex-1">
         {/* Chat — single instance, in flow on every breakpoint. */}

@@ -439,3 +439,32 @@ body {
 .chat-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* KB tree — citation chips and the auto-reveal pulse */
+.kb-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-accent);
+  letter-spacing: 0.04em;
+}
+.kb-pulse {
+  animation: kb-flash 1.4s ease-out;
+}
+@keyframes kb-flash {
+  0% {
+    background-color: rgba(var(--color-accent-rgb), 0.22);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* KB viewer — cited-section markers and the jump flash */
+.prose-chat .kb-cited-section {
+  border-left: 2px solid rgba(var(--color-accent-rgb), 0.5);
+  padding-left: 0.625rem;
+  margin-left: -0.75rem;
+}
+.kb-flash-target {
+  animation: kb-flash 1.4s ease-out;
+}

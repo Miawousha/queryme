@@ -1,8 +1,10 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { fileTypeFromPath, isLocaleSidecar, type KbFileType } from "@/lib/kb/file-type";
+import { fileTypeFromPath, isLocaleSidecar, type KbFileType, type KbLocale } from "@/lib/kb/file-type";
 import { humanizeSlug } from "@/lib/kb/meta-format";
+import { extractSections, type KbSection } from "@/lib/kb/sections";
+import { realpathWithin } from "@/lib/kb/safe-path";
 
 /**
  * Frontmatter fields surfaced to the UI. A loose superset of the experience
@@ -28,6 +30,8 @@ export type KbFileMeta = {
   description?: string;
 };
 
+export type { KbSection } from "@/lib/kb/sections";
+
 export type KbFile = {
   /** Path relative to the kb directory, e.g. "experience/2025-altergo.md". */
   path: string;
@@ -36,6 +40,8 @@ export type KbFile = {
   type: KbFileType;
   /** Parsed frontmatter, present only for markdown files that have any. */
   meta?: KbFileMeta;
+  /** h2/h3 headings, present only for markdown files that have any. */
+  sections?: KbSection[];
 };
 
 function asString(v: unknown): string | undefined {
@@ -83,22 +89,46 @@ function pickMeta(data: Record<string, unknown>): KbFileMeta | null {
 
 /**
  * Reads a markdown file once: derives the title (first `# Heading`, falling
- * back to the humanized path) and the parsed frontmatter.
+ * back to the humanized path), the parsed frontmatter, and the h2/h3 section
+ * outline.
  */
 async function readMarkdown(
   absPath: string,
   relPath: string,
-): Promise<{ title: string; meta?: KbFileMeta }> {
+): Promise<{ title: string; meta?: KbFileMeta; sections?: KbSection[] }> {
   const raw = await fs.readFile(absPath, "utf8");
   const { data, content } = matter(raw);
   const heading = content.split("\n").find((line) => /^#\s+/.test(line));
   const stem = path.basename(relPath, path.extname(relPath));
   const title = heading ? heading.replace(/^#\s+/, "").trim() : humanizeSlug(stem);
   const meta = pickMeta(data as Record<string, unknown>);
-  return meta ? { title, meta } : { title };
+  const sections = extractSections(content);
+  return {
+    title,
+    ...(meta ? { meta } : {}),
+    ...(sections.length > 0 ? { sections } : {}),
+  };
 }
 
-async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> {
+/** Resolves the localized sidecar (foo.fr.md) when it exists; canonical otherwise.
+ * Mirrors the read-time resolution in handleKbFile so tree labels and section
+ * slugs always match what the viewer renders. The realpath check keeps a
+ * symlinked sidecar in an untrusted synced repo from leaking outside content
+ * into manifest titles/sections. */
+async function localizedVariant(abs: string, baseDir: string, lang: KbLocale): Promise<string> {
+  if (lang === "en") return abs;
+  const dot = abs.lastIndexOf(".");
+  if (dot <= 0) return abs;
+  const candidate = `${abs.slice(0, dot)}.${lang}${abs.slice(dot)}`;
+  try {
+    await fs.access(candidate);
+    return await realpathWithin(baseDir, candidate);
+  } catch {
+    return abs;
+  }
+}
+
+async function walk(dir: string, baseDir: string, out: KbFile[], lang: KbLocale): Promise<void> {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name.startsWith(".")) continue;
@@ -108,7 +138,7 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
     if (entry.isSymbolicLink()) continue;
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      await walk(abs, baseDir, out);
+      await walk(abs, baseDir, out, lang);
       continue;
     }
     const rel = path.relative(baseDir, abs);
@@ -119,8 +149,15 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
     // read time via `?lang=`.
     if (isLocaleSidecar(rel)) continue;
     if (type === "md") {
-      const { title, meta } = await readMarkdown(abs, rel);
-      out.push({ path: rel, title, type, ...(meta ? { meta } : {}) });
+      const source = await localizedVariant(abs, baseDir, lang);
+      const { title, meta, sections } = await readMarkdown(source, rel);
+      out.push({
+        path: rel,
+        title,
+        type,
+        ...(meta ? { meta } : {}),
+        ...(sections ? { sections } : {}),
+      });
     } else {
       const stem = path.basename(rel, path.extname(rel));
       out.push({ path: rel, title: humanizeSlug(stem), type });
@@ -132,9 +169,9 @@ async function walk(dir: string, baseDir: string, out: KbFile[]): Promise<void> 
  * Walks `kbDir` and returns every public artifact file (yaml/md/html/pdf),
  * excluding dotfiles. Sorted by path.
  */
-export async function loadKbManifest(kbDir: string): Promise<KbFile[]> {
+export async function loadKbManifest(kbDir: string, lang: KbLocale = "en"): Promise<KbFile[]> {
   const out: KbFile[] = [];
-  await walk(kbDir, kbDir, out);
+  await walk(kbDir, kbDir, out, lang);
   out.sort((a, b) => a.path.localeCompare(b.path));
   return out;
 }

@@ -25,6 +25,16 @@ describe("handleKbManifest", () => {
   });
 });
 
+describe("handleKbManifest — lang", () => {
+  it("serves a manifest for both locales (files present, groups stable)", async () => {
+    const en = await (await handleKbManifest(ACCOUNT_ID, "en")).json();
+    const fr = await (await handleKbManifest(ACCOUNT_ID, "fr")).json();
+    expect(en.files.length).toBeGreaterThan(0);
+    expect(fr.files.length).toBe(en.files.length);
+    expect(fr.groups).toEqual(en.groups);
+  });
+});
+
 describe("handleKbFile", () => {
   it("400s when no path is given", async () => {
     expect((await get(null)).status).toBe(400);
