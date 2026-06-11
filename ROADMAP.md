@@ -67,11 +67,12 @@ content repo with required files. No template flow, no in-app editor, no import.
 
 ## Phase 5 — Billing
 
-Only meaningful once Phases 1 and 4 prove people show up and what they cost.
+Shipped 2026-06-11 — spec: `docs/superpowers/specs/2026-06-11-stripe-billing-design.md`,
+plan: `docs/superpowers/plans/2026-06-11-stripe-billing.md`.
 
-- [ ] Stripe subscriptions, two plans: free (tight Phase 1 caps) and pro (higher caps, custom domains, MCP access).
-- [ ] Plan enforcement wired into the existing quota checks — no new enforcement machinery, just different numbers per plan.
-- [ ] Billing section in account settings.
+- [x] Stripe subscriptions, two plans: free (10 answered questions/month, forward-only past the limit) and pro ($9/month — fair-use caps, custom domains; MCP on both, metered by the same allowance).
+- [x] Plan enforcement wired into the existing quota checks — `quotaConfigForPlan` behind the same `checkQuota`, new `plan_allowance` verdict.
+- [x] Billing section in account settings (upgrade via Stripe Checkout, manage via Customer Portal).
 
 ## Phase 6 — Retention polish (post-launch)
 

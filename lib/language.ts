@@ -38,6 +38,12 @@ export function buildUiStrings(persona: Persona) {
         errorRetry: "Couldn't send — try again.",
       },
       genericError: "Something went wrong — please try again.",
+      planLimit: {
+        notice: `${enGiven} has answered this month's included questions. Leave yours below — you'll get a personal reply.`,
+        questionPlaceholder: "Your question…",
+        contactPlaceholder: "Email or LinkedIn (optional)",
+        submit: `Send to ${enGiven}`,
+      },
       identity: {
         chipPrefix: "Recognized you as",
         hiring: "hiring",
@@ -175,6 +181,12 @@ export function buildUiStrings(persona: Persona) {
         errorRetry: "Échec de l'envoi — réessayez.",
       },
       genericError: "Une erreur s'est produite — réessayez.",
+      planLimit: {
+        notice: `${frGiven} a répondu aux questions incluses ce mois-ci. Laissez la vôtre ci-dessous — vous recevrez une réponse personnelle.`,
+        questionPlaceholder: "Votre question…",
+        contactPlaceholder: "Email ou LinkedIn (facultatif)",
+        submit: `Envoyer à ${frGiven}`,
+      },
       identity: {
         chipPrefix: "Vous avez été reconnu·e comme",
         hiring: "recrute pour",

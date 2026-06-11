@@ -15,6 +15,61 @@ import { citationIndexMap, extractCitations } from "@/lib/kb/cited-paths";
 import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
+function PlanLimitNotice({
+  strings,
+  initialQuestion,
+  onForward,
+}: {
+  strings: { notice: string; questionPlaceholder: string; contactPlaceholder: string; submit: string };
+  initialQuestion: string;
+  onForward: (question: string, contact: string) => void;
+}) {
+  const [question, setQuestion] = useState(initialQuestion);
+  const [contact, setContact] = useState("");
+  const [sent, setSent] = useState(false);
+
+  return (
+    <div className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3">
+      <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+        {strings.notice}
+      </p>
+      {!sent && (
+        <form
+          className="mt-3 flex flex-col gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!question.trim()) return;
+            onForward(question.trim(), contact);
+            setSent(true); // the shared forward toast reports the outcome
+          }}
+        >
+          <Textarea
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder={strings.questionPlaceholder}
+            rows={2}
+            className="text-[13px]"
+          />
+          <div className="flex items-center gap-2">
+            <input
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              placeholder={strings.contactPlaceholder}
+              className="flex-1 rounded-md border border-[var(--color-border)] bg-transparent px-2.5 py-1.5 text-[13px] text-[var(--color-text-primary)]"
+            />
+            <button
+              type="submit"
+              className="shrink-0 rounded-full bg-[var(--color-primary)] px-4 py-1.5 text-[13px] font-medium text-white transition-all hover:brightness-110"
+            >
+              {strings.submit}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
 export type ChatProps = {
   /** The full string table for the active language. */
   t: UiStrings;
@@ -90,6 +145,18 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
   );
   const { messages, sendMessage, status, error, setMessages } = useChat({ transport });
 
+  // The chat POST 429s with a JSON body carrying reason: "plan_allowance" when
+  // the persona's free allowance is spent. The AI SDK surfaces that body as
+  // error.message; anything unparseable falls back to the generic banner.
+  const planLimited = useMemo(() => {
+    if (!error) return false;
+    try {
+      return (JSON.parse(error.message) as { reason?: string }).reason === "plan_allowance";
+    } catch {
+      return false;
+    }
+  }, [error]);
+
   // Mirror of the live thread state, so the hook's async history fetch can
   // check "still empty and idle?" at resolution time instead of capturing a
   // stale snapshot in its closure.
@@ -146,9 +213,11 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
     });
   }, [onJumpToMessage]);
 
+  const lastSentRef = useRef("");
   function submit(text: string) {
     const trimmed = text.trim();
     if (!trimmed) return;
+    lastSentRef.current = trimmed;
     sendMessage({ text: trimmed });
     setInput("");
   }
@@ -347,7 +416,15 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
         </div>
       )}
 
-      {error && (
+      {error && planLimited && (
+        <PlanLimitNotice
+          strings={t.planLimit}
+          initialQuestion={lastSentRef.current}
+          onForward={handleForward}
+        />
+      )}
+
+      {error && !planLimited && (
         <div
           role="alert"
           className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"

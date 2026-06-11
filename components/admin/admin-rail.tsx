@@ -36,6 +36,7 @@ export function AdminRail({
       items: [
         { href: `${adminBasePath}/settings/content`, label: "Content source" },
         { href: `${adminBasePath}/settings/domains`, label: "Custom domains" },
+        { href: `${adminBasePath}/settings/billing`, label: "Billing" },
       ],
     },
   ];

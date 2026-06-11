@@ -58,6 +58,7 @@ d("usage/repo (integration)", () => {
     const totals = await getUsageTotals(db, accountId, now);
     // dayMessages spans both channels for the day; monthTokens sums in+out.
     expect(totals.dayMessages).toBe(3);
+    expect(totals.monthMessages).toBe(3);
     expect(totals.monthTokens).toBe(168);
   });
 
@@ -74,11 +75,12 @@ d("usage/repo (integration)", () => {
 
     const totals = await getUsageTotals(db, accountId, now);
     expect(totals.dayMessages).toBe(1);
+    expect(totals.monthMessages).toBe(1);
     expect(totals.monthTokens).toBe(0);
   });
 
   it("returns zeros for an account with no usage", async () => {
     const totals = await getUsageTotals(db, accountId, new Date("2030-01-01T00:00:00.000Z"));
-    expect(totals).toEqual({ dayMessages: 0, monthTokens: 0 });
+    expect(totals).toEqual({ dayMessages: 0, monthMessages: 0, monthTokens: 0 });
   });
 });

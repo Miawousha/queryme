@@ -197,7 +197,7 @@ describe("handleAsk quota + metering", () => {
     };
   }
 
-  it("rejects an over-quota account before producing an answer", async () => {
+  it("rejects an over-quota account (generic reason) before producing an answer", async () => {
     const produceAnswer = vi.fn(async () => ({
       text: "x",
       usage: { inputTokens: 1, outputTokens: 2 },
@@ -210,8 +210,30 @@ describe("handleAsk quota + metering", () => {
       })),
     });
 
-    await expect(handleAsk(deps, { question: "q" })).rejects.toThrow(/quota_exceeded/);
+    await expect(handleAsk(deps, { question: "q" })).rejects.toThrow(
+      /quota_exceeded \(daily_messages\): This persona has reached its usage limit/,
+    );
     // No paid model call — the cap is enforced before produceAnswer.
+    expect(produceAnswer).not.toHaveBeenCalled();
+    expect(deps.recordUsage).not.toHaveBeenCalled();
+  });
+
+  it("rejects with a forward-pointing message when the free plan allowance is hit", async () => {
+    const produceAnswer = vi.fn(async () => ({
+      text: "x",
+      usage: { inputTokens: 1, outputTokens: 2 },
+    }));
+    const deps = quotaDeps({
+      produceAnswer,
+      checkQuota: vi.fn(async () => ({
+        allowed: false as const,
+        reason: "plan_allowance" as const,
+      })),
+    });
+
+    await expect(handleAsk(deps, { question: "q" })).rejects.toThrow(
+      /quota_exceeded \(plan_allowance\): This persona has answered all of its free questions this month.*forward_question/,
+    );
     expect(produceAnswer).not.toHaveBeenCalled();
     expect(deps.recordUsage).not.toHaveBeenCalled();
   });

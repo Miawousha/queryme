@@ -15,6 +15,7 @@
     "evals": "tsx scripts/eval.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
+    "stripe:setup": "tsx scripts/stripe-setup.ts",
     "backfill:root": "tsx scripts/backfill-root-account.ts",
     "admin": "tsx scripts/admin-cli.ts"
   },
@@ -50,6 +51,7 @@
     "rehype-raw": "^7.0.0",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
+    "stripe": "^22.2.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
     "tar": "^7.5.15",

@@ -28,7 +28,7 @@ import {
 } from "@/lib/domains/service";
 
 const db = {} as any;
-const account = { id: "acct-a", username: "alex" } as any;
+const account = { id: "acct-a", username: "alex", plan: "pro" } as any;
 const baseRow = {
   id: "d1",
   accountId: "acct-a",
@@ -47,6 +47,13 @@ beforeEach(() => {
 });
 
 describe("addDomainForAccount", () => {
+  it("rejects when the account is on the free plan", async () => {
+    await expect(
+      addDomainForAccount(db, { ...account, plan: "free" }, "cv.example.com"),
+    ).rejects.toMatchObject({ reason: "pro_required" });
+    expect(vercelDomains.add).not.toHaveBeenCalled();
+  });
+
   it("rejects an invalid hostname before touching Vercel", async () => {
     await expect(addDomainForAccount(db, account, "alex.com")).rejects.toBeInstanceOf(DomainError);
     expect(vercelDomains.add).not.toHaveBeenCalled();

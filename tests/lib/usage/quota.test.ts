@@ -1,9 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
-import { quotaConfig, checkQuota } from "@/lib/usage/quota";
+import { quotaConfig, quotaConfigForPlan, checkQuota } from "@/lib/usage/quota";
 import { getUsageTotals } from "@/lib/usage/repo";
+import { getAccountById } from "@/lib/accounts/repo";
 
 vi.mock("@/lib/usage/repo", () => ({
-  getUsageTotals: vi.fn(async () => ({ dayMessages: 0, monthTokens: 0 })),
+  getUsageTotals: vi.fn(async () => ({ dayMessages: 0, monthMessages: 0, monthTokens: 0 })),
+}));
+
+vi.mock("@/lib/accounts/repo", () => ({
+  getAccountById: vi.fn(async () => ({ plan: "free" })),
 }));
 
 /** Run `fn` with env vars temporarily set (undefined = unset), then restore. */
@@ -58,12 +63,12 @@ describe("checkQuota", () => {
   const config = { dailyMessages: 10, monthlyTokens: 1_000 };
 
   it("allows an account under both limits", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 9, monthTokens: 999 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 9, monthMessages: 9, monthTokens: 999 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({ allowed: true });
   });
 
   it("blocks at the daily message cap", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 10, monthTokens: 0 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 10, monthMessages: 10, monthTokens: 0 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({
       allowed: false,
       reason: "daily_messages",
@@ -71,7 +76,7 @@ describe("checkQuota", () => {
   });
 
   it("blocks at the monthly token cap", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthTokens: 1_000 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthMessages: 0, monthTokens: 1_000 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({
       allowed: false,
       reason: "monthly_tokens",
@@ -79,7 +84,7 @@ describe("checkQuota", () => {
   });
 
   it("reports daily_messages when both caps are exceeded", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 99, monthTokens: 9_999 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 99, monthMessages: 99, monthTokens: 9_999 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({
       allowed: false,
       reason: "daily_messages",
@@ -89,8 +94,104 @@ describe("checkQuota", () => {
   it("passes db, accountId and now through to getUsageTotals", async () => {
     const now = new Date("2026-06-10T12:00:00.000Z");
     vi.mocked(getUsageTotals).mockClear();
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthTokens: 0 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthMessages: 0, monthTokens: 0 });
     await checkQuota(db, accountId, config, now);
     expect(getUsageTotals).toHaveBeenCalledWith(db, accountId, now);
+  });
+});
+
+describe("quotaConfigForPlan", () => {
+  it("free adds the 10-answer monthly allowance on top of platform ceilings", () => {
+    withEnv({ [DAILY]: undefined, [MONTHLY]: undefined }, () => {
+      expect(quotaConfigForPlan("free")).toEqual({
+        dailyMessages: 200,
+        monthlyTokens: 10_000_000,
+        monthlyMessages: 10,
+      });
+    });
+  });
+
+  it("pro is the platform ceilings unchanged (no monthlyMessages cap)", () => {
+    withEnv({ [DAILY]: undefined, [MONTHLY]: undefined }, () => {
+      expect(quotaConfigForPlan("pro")).toEqual({ dailyMessages: 200, monthlyTokens: 10_000_000 });
+    });
+  });
+});
+
+describe("checkQuota plan allowance", () => {
+  const db = {} as never;
+  const accountId = "00000000-0000-4000-8000-000000000001";
+
+  it("refuses with plan_allowance when monthly messages hit the free cap", async () => {
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 3,
+      monthMessages: 10,
+      monthTokens: 100,
+    });
+    const verdict = await checkQuota(db, accountId, {
+      dailyMessages: 200,
+      monthlyTokens: 10_000_000,
+      monthlyMessages: 10,
+    });
+    expect(verdict).toEqual({ allowed: false, reason: "plan_allowance" });
+  });
+
+  it("resolves the plan config itself when no explicit config is passed", async () => {
+    // getAccountById mock returns { plan: "free" } → allowance 10 applies.
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 10,
+      monthTokens: 0,
+    });
+    const verdict = await checkQuota(db, accountId);
+    expect(verdict).toEqual({ allowed: false, reason: "plan_allowance" });
+  });
+
+  it("allows a free account under its allowance", async () => {
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 9,
+      monthTokens: 0,
+    });
+    const verdict = await checkQuota(db, accountId, {
+      dailyMessages: 200,
+      monthlyTokens: 10_000_000,
+      monthlyMessages: 10,
+    });
+    expect(verdict).toEqual({ allowed: true });
+  });
+
+  it("resolves a pro account's config with no monthly allowance", async () => {
+    vi.mocked(getAccountById).mockResolvedValueOnce({ plan: "pro" } as never);
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 10,
+      monthTokens: 0,
+    });
+    await expect(checkQuota(db, accountId)).resolves.toEqual({ allowed: true });
+  });
+
+  it("skips the account lookup when an explicit config is passed", async () => {
+    vi.mocked(getAccountById).mockClear();
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 0,
+      monthTokens: 0,
+    });
+    await checkQuota(db, accountId, { dailyMessages: 10, monthlyTokens: 1_000 });
+    expect(getAccountById).not.toHaveBeenCalled();
+  });
+
+  it("fails closed to the free allowance when the account row is missing", async () => {
+    vi.mocked(getAccountById).mockResolvedValueOnce(null as never);
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 10,
+      monthTokens: 0,
+    });
+    await expect(checkQuota(db, accountId)).resolves.toEqual({
+      allowed: false,
+      reason: "plan_allowance",
+    });
   });
 });

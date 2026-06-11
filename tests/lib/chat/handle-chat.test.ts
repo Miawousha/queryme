@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { handleChat } from "@/lib/chat/handle-chat";
 import { checkQuota } from "@/lib/usage/quota";
 import { checkRateLimit } from "@/lib/kv/rate-limit";
+import { maybeSendUpgradeNudge } from "@/lib/billing/nudge";
 import type { NextRequest } from "next/server";
 
 // Infra-touching modules are mocked so the quota tests can drive handleChat
@@ -14,6 +15,10 @@ vi.mock("@/lib/kv/rate-limit", () => ({
 }));
 vi.mock("@/lib/usage/quota", () => ({
   checkQuota: vi.fn(async () => ({ allowed: true })),
+}));
+vi.mock("@/lib/billing/nudge", () => ({
+  maybeSendUpgradeNudge: vi.fn(async () => {}),
+  nudgeDeps: vi.fn(() => ({})),
 }));
 
 // PERSONA_LOCAL_OVERRIDE (vitest.setup.ts) makes any accountId resolve to the
@@ -185,6 +190,16 @@ describe("handleChat quota + per-account rate limit", () => {
       // throws on the fake db — that's fine, only the skip matters here.
     }
     expect(checkQuota).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 with plan_allowance and fires the nudge when the free allowance is hit", async () => {
+    vi.mocked(maybeSendUpgradeNudge).mockClear();
+    vi.mocked(checkQuota).mockResolvedValueOnce({ allowed: false, reason: "plan_allowance" });
+    const res = await handleChat(makeReq(validBody()), UUID_ACCOUNT);
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.reason).toBe("plan_allowance");
+    expect(maybeSendUpgradeNudge).toHaveBeenCalled();
   });
 
   it("returns 429 when the account-wide rate limit trips (distributed-IP hammering)", async () => {

@@ -14,6 +14,7 @@ import { requestIp } from "@/lib/request-ip";
 import { getPersonaStore } from "@/lib/persona/store";
 import { checkQuota } from "@/lib/usage/quota";
 import { recordUsage } from "@/lib/usage/repo";
+import { maybeSendUpgradeNudge, nudgeDeps } from "@/lib/billing/nudge";
 import { isUuid } from "@/lib/uuid";
 import { MAX_TURNS } from "@/lib/chat/limits";
 
@@ -123,6 +124,20 @@ export async function handleChat(req: NextRequest, accountId: string): Promise<R
     // above bound burst traffic; this bounds total daily/monthly spend.
     const quota = await checkQuota(db, accountId);
     if (!quota.allowed) {
+      if (quota.reason === "plan_allowance") {
+        // First refusal each month emails the owner. Awaited (serverless may
+        // not survive the response) but never throws — see maybeSendUpgradeNudge.
+        await maybeSendUpgradeNudge(nudgeDeps(db), accountId);
+        return NextResponse.json(
+          {
+            error: "quota_exceeded",
+            reason: quota.reason,
+            message:
+              "This persona has answered all of its free questions this month. Forward your question instead — the owner will reply personally.",
+          },
+          { status: 429 },
+        );
+      }
       return NextResponse.json(
         {
           error: "quota_exceeded",

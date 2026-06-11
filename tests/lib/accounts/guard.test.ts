@@ -17,10 +17,10 @@ import {
   requireRootAdmin,
 } from "@/lib/accounts/guard";
 
-const user = { id: "u1", username: "u", githubId: null, role: "user", status: "active", createdAt: new Date() } as const;
-const other = { id: "u2", username: "o", githubId: null, role: "user", status: "active", createdAt: new Date() } as const;
-const admin = { id: "a1", username: "a", githubId: null, role: "admin", status: "active", createdAt: new Date() } as const;
-const root = { id: "r1", username: "root", githubId: null, role: "user", status: "active", createdAt: new Date() } as const;
+const user = { id: "u1", username: "u", githubId: null, role: "user", status: "active", plan: "free", createdAt: new Date() } as const;
+const other = { id: "u2", username: "o", githubId: null, role: "user", status: "active", plan: "free", createdAt: new Date() } as const;
+const admin = { id: "a1", username: "a", githubId: null, role: "admin", status: "active", plan: "free", createdAt: new Date() } as const;
+const root = { id: "r1", username: "root", githubId: null, role: "user", status: "active", plan: "free", createdAt: new Date() } as const;
 
 beforeEach(() => {
   getSessionAccountId.mockReset();
