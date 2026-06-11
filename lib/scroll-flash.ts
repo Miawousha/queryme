@@ -5,7 +5,7 @@
  */
 
 /** Duration the kb-flash-target class stays active (matches the CSS animation). */
-export const FLASH_MS = 1600;
+const FLASH_MS = 1600;
 
 /**
  * Scrolls `el` to the top of the visible area and flashes it with the

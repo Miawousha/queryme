@@ -179,6 +179,31 @@ describe("Chat — history rehydration", () => {
     expect(screen.getByText(T.starters[0])).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  it("first-time visitor (empty localStorage) → NO history request fires", async () => {
+    // Override the beforeEach seed: start with a truly empty store.
+    window.localStorage.clear();
+
+    // Register a sentinel handler. If a history fetch arrives it records the
+    // hit; the assertion below makes the expectation explicit. The global
+    // onUnhandledRequest: "error" would already surface a stray request as a
+    // test failure, but an explicit spy makes the intent unambiguous.
+    const historyHits: string[] = [];
+    mswServer.use(
+      http.get(HISTORY_URL, ({ request }) => {
+        historyHits.push(request.url);
+        return HttpResponse.json({ error: "unexpected" }, { status: 500 });
+      }),
+    );
+
+    renderChat();
+
+    // Wait for the component to settle: starters visible = init effect done.
+    await waitFor(() => expect(screen.getByText(T.starters[0])).toBeInTheDocument());
+
+    // Explicit assertion: the history endpoint was never called.
+    expect(historyHits).toHaveLength(0);
+  });
 });
 
 describe("Chat — history fetch racing a visitor message", () => {

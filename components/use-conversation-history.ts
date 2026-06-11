@@ -11,14 +11,13 @@ import type { UiLang } from "@/lib/language";
 
 const CONVERSATION_ID_KEY = "queritae:conversationId";
 
-function loadOrCreateConversationId(): string {
-  if (typeof window === "undefined") return "";
-  let id = window.localStorage.getItem(CONVERSATION_ID_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    window.localStorage.setItem(CONVERSATION_ID_KEY, id);
-  }
-  return id;
+function loadOrCreateConversationId(): { id: string; isNew: boolean } {
+  if (typeof window === "undefined") return { id: "", isNew: false };
+  const existing = window.localStorage.getItem(CONVERSATION_ID_KEY);
+  if (existing) return { id: existing, isNew: false };
+  const id = crypto.randomUUID();
+  window.localStorage.setItem(CONVERSATION_ID_KEY, id);
+  return { id, isNew: true };
 }
 
 export type UseConversationHistoryArgs = {
@@ -65,16 +64,18 @@ export function useConversationHistory({
 } {
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
-  useEffect(() => {
-    const id = loadOrCreateConversationId();
-    conversationIdRef.current = id;
-    setConversationId(id);
-  }, []);
-
   // The attempt guard is a ref so the re-run triggered by the 404 branch's
   // fresh id (and any StrictMode double-invoke) doesn't fetch again — a fresh
   // id has no history anyway.
   const historyAttemptedRef = useRef(false);
+  useEffect(() => {
+    const { id, isNew } = loadOrCreateConversationId();
+    // A freshly minted id has no server-side history — mark the guard now so
+    // the history effect below skips the fetch entirely (avoids a guaranteed 404).
+    if (isNew) historyAttemptedRef.current = true;
+    conversationIdRef.current = id;
+    setConversationId(id);
+  }, []);
   useEffect(() => {
     if (!conversationId || historyAttemptedRef.current) return;
     historyAttemptedRef.current = true;
