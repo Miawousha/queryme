@@ -10,7 +10,9 @@ import { StreamingMessage } from "@/components/streaming-message";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
 import { useKb } from "@/components/kb/kb-context";
 import { chatMessageDomId, jumpToChatMessage } from "@/lib/chat-jump";
+import { historyCitationKeys, turnsToUiMessages } from "@/lib/chat/history-messages";
 import { citationIndexMap, extractCitations } from "@/lib/kb/cited-paths";
+import type { ConversationTurn } from "@/lib/db/schema";
 import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
@@ -19,17 +21,25 @@ export type ChatProps = {
   t: UiStrings;
   /** The active UI language; posted to /api/chat to ground the answerer. */
   lang: UiLang;
+  /**
+   * Lets a rehydrated conversation pull the UI over to its sticky stored
+   * language (the server answers in that language regardless of the toggle,
+   * so the thread and the chrome should agree). Optional — without it the
+   * thread still seeds, just without the language adoption.
+   */
+  onLangChange?: (next: UiLang) => void;
   /** Base path for API calls. Defaults to "/api". */
   apiBasePath?: string;
 };
 
+const CONVERSATION_ID_KEY = "queritae:conversationId";
+
 function loadOrCreateConversationId(): string {
   if (typeof window === "undefined") return "";
-  const KEY = "queritae:conversationId";
-  let id = window.localStorage.getItem(KEY);
+  let id = window.localStorage.getItem(CONVERSATION_ID_KEY);
   if (!id) {
     id = crypto.randomUUID();
-    window.localStorage.setItem(KEY, id);
+    window.localStorage.setItem(CONVERSATION_ID_KEY, id);
   }
   return id;
 }
@@ -60,8 +70,8 @@ function latestIdentity(
   return found;
 }
 
-export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
-  const { setCitedRefs, openFile, onJumpToMessage } = useKb();
+export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps) {
+  const { setCitedRefs, openFile, onJumpToMessage, seenAutoReveal } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
   useEffect(() => {
@@ -96,7 +106,67 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
       }),
     [apiBasePath],
   );
-  const { messages, sendMessage, status, error } = useChat({ transport });
+  const { messages, sendMessage, status, error, setMessages } = useChat({ transport });
+
+  // Mirror of the live thread state, so the async history fetch below can
+  // check "still empty and idle?" at resolution time instead of capturing a
+  // stale snapshot in its closure.
+  const threadStateRef = useRef({ empty: true, idle: true });
+  threadStateRef.current = { empty: messages.length === 0, idle: status === "ready" };
+
+  // History rehydration: with a stored conversationId, fetch the server-side
+  // transcript once and seed it into useChat. The attempt guard is a ref so
+  // the re-run triggered by the 404 branch's fresh id (and any StrictMode
+  // double-invoke) doesn't fetch again — a fresh id has no history anyway.
+  const historyAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (!conversationId || historyAttemptedRef.current) return;
+    historyAttemptedRef.current = true;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${apiBasePath}/chat/history?conversationId=${encodeURIComponent(conversationId)}`,
+        );
+        if (res.status === 404) {
+          // Unknown, deleted, or another persona's conversation: the stored
+          // id is dead weight. Drop it and start fresh — no error surfaced.
+          const fresh = crypto.randomUUID();
+          window.localStorage.setItem(CONVERSATION_ID_KEY, fresh);
+          conversationIdRef.current = fresh;
+          setConversationId(fresh);
+          return;
+        }
+        // Transient failure (5xx): start fresh but KEEP the stored id — the
+        // conversation may still exist, so the next reload can retry.
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          turns?: ConversationTurn[];
+          language?: UiLang | null;
+        };
+        // Don't clobber a thread the visitor started while we were fetching.
+        if (!threadStateRef.current.empty || !threadStateRef.current.idle) return;
+        // Adopt the conversation's sticky language: the server answers any
+        // continuation in it no matter what the toggle says, so the UI
+        // follows the thread rather than the other way around.
+        if ((data.language === "en" || data.language === "fr") && onLangChange) {
+          onLangChange(data.language);
+        }
+        const seeded = turnsToUiMessages(data.turns ?? []);
+        if (seeded.length === 0) return;
+        // Mute the KB tree's auto-reveal pulse for rehydrated citations by
+        // marking them seen BEFORE the messages land (and independently of
+        // whether the manifest has loaded). The chips still render via the
+        // citedRefs flow; only genuinely new citations from post-reload
+        // answers pulse.
+        for (const key of historyCitationKeys(seeded)) {
+          seenAutoReveal.current.add(key);
+        }
+        setMessages(seeded);
+      } catch {
+        // Network failure: same call as !res.ok — start fresh, keep the id.
+      }
+    })();
+  }, [conversationId, apiBasePath, onLangChange, seenAutoReveal, setMessages]);
 
   const identity = useMemo(() => latestIdentity(messages), [messages]);
   const identitySummary = identity
