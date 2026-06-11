@@ -1,9 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
-import { quotaConfig, checkQuota } from "@/lib/usage/quota";
+import { quotaConfig, quotaConfigForPlan, checkQuota } from "@/lib/usage/quota";
 import { getUsageTotals } from "@/lib/usage/repo";
+import { getAccountById } from "@/lib/accounts/repo";
 
 vi.mock("@/lib/usage/repo", () => ({
   getUsageTotals: vi.fn(async () => ({ dayMessages: 0, monthMessages: 0, monthTokens: 0 })),
+}));
+
+vi.mock("@/lib/accounts/repo", () => ({
+  getAccountById: vi.fn(async () => ({ plan: "free" })),
 }));
 
 /** Run `fn` with env vars temporarily set (undefined = unset), then restore. */
@@ -92,5 +97,67 @@ describe("checkQuota", () => {
     vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthMessages: 0, monthTokens: 0 });
     await checkQuota(db, accountId, config, now);
     expect(getUsageTotals).toHaveBeenCalledWith(db, accountId, now);
+  });
+});
+
+describe("quotaConfigForPlan", () => {
+  it("free adds the 10-answer monthly allowance on top of platform ceilings", () => {
+    withEnv({ [DAILY]: undefined, [MONTHLY]: undefined }, () => {
+      expect(quotaConfigForPlan("free")).toEqual({
+        dailyMessages: 200,
+        monthlyTokens: 10_000_000,
+        monthlyMessages: 10,
+      });
+    });
+  });
+
+  it("pro is the platform ceilings unchanged (no monthlyMessages cap)", () => {
+    withEnv({ [DAILY]: undefined, [MONTHLY]: undefined }, () => {
+      expect(quotaConfigForPlan("pro")).toEqual({ dailyMessages: 200, monthlyTokens: 10_000_000 });
+    });
+  });
+});
+
+describe("checkQuota plan allowance", () => {
+  const db = {} as never;
+  const accountId = "00000000-0000-4000-8000-000000000001";
+
+  it("refuses with plan_allowance when monthly messages hit the free cap", async () => {
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 3,
+      monthMessages: 10,
+      monthTokens: 100,
+    });
+    const verdict = await checkQuota(db, accountId, {
+      dailyMessages: 200,
+      monthlyTokens: 10_000_000,
+      monthlyMessages: 10,
+    });
+    expect(verdict).toEqual({ allowed: false, reason: "plan_allowance" });
+  });
+
+  it("resolves the plan config itself when no explicit config is passed", async () => {
+    // getAccountById mock returns { plan: "free" } → allowance 10 applies.
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 10,
+      monthTokens: 0,
+    });
+    const verdict = await checkQuota(db, accountId);
+    expect(verdict).toEqual({ allowed: false, reason: "plan_allowance" });
+  });
+
+  it("allows a free account under its allowance", async () => {
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 9,
+      monthTokens: 0,
+    });
+    const verdict = await checkQuota(db, accountId, {
+      dailyMessages: 200,
+      monthlyTokens: 10_000_000,
+      monthlyMessages: 10,
+    });
+    expect(verdict).toEqual({ allowed: true });
   });
 });
