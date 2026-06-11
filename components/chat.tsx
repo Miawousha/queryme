@@ -61,7 +61,7 @@ function latestIdentity(
 }
 
 export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
-  const { setCitedRefs, openFile, jumpToMessageHandler } = useKb();
+  const { setCitedRefs, openFile, onJumpToMessage } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
   useEffect(() => {
@@ -129,20 +129,16 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
     atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }
 
-  // Tree chip → chat: register the scroll-to-message handler in the KB
-  // context (the tree and the chat are sibling panes — the context ref is
-  // their channel). Unpin from the bottom BEFORE jumping so the streaming
-  // autoscroll above doesn't immediately yank the view back down; the scroll
-  // event the jump produces re-derives the pin from the actual position.
+  // Tree chip → chat: subscribe to jump requests from the KB context. Unpin
+  // from the bottom BEFORE jumping so the streaming autoscroll above doesn't
+  // immediately yank the view back down; the scroll event the jump produces
+  // re-derives the pin from the actual position.
   useEffect(() => {
-    jumpToMessageHandler.current = (messageId: string) => {
+    return onJumpToMessage((messageId: string) => {
       atBottomRef.current = false;
       jumpToChatMessage(scrollRef.current, messageId);
-    };
-    return () => {
-      jumpToMessageHandler.current = null;
-    };
-  }, [jumpToMessageHandler]);
+    });
+  }, [onJumpToMessage]);
 
   function submit(text: string) {
     const trimmed = text.trim();

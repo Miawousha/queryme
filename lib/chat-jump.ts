@@ -7,15 +7,13 @@
  * flashes it. Kept as a plain DOM helper (no hooks) so it is unit-testable —
  * `components/chat.tsx` can't render under jsdom (useChat/transport).
  */
+import { scrollAndFlash } from "@/lib/scroll-flash";
 
 /** DOM id for a chat message bubble — shared by the chat renderer (sets it)
  * and the KB tree chip jump (queries it). */
 export function chatMessageDomId(messageId: string): string {
   return `msg-${messageId}`;
 }
-
-/** Matches the KB viewer's anchor flash (`kb-flash` runs 1.4s). */
-const FLASH_MS = 1600;
 
 /**
  * Scrolls the chat pane to the cited message and flashes it. The query is
@@ -29,8 +27,6 @@ const FLASH_MS = 1600;
 export function jumpToChatMessage(root: HTMLElement | null, messageId: string): boolean {
   const el = root?.querySelector(`[id="${CSS.escape(chatMessageDomId(messageId))}"]`);
   if (!(el instanceof HTMLElement)) return false;
-  el.scrollIntoView({ block: "start" });
-  el.classList.add("kb-flash-target");
-  setTimeout(() => el.classList.remove("kb-flash-target"), FLASH_MS);
+  scrollAndFlash(el);
   return true;
 }

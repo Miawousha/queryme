@@ -52,18 +52,18 @@ type KbContextValue = {
   openFile: (path: string, anchor?: string | null) => void;
   closeFile: () => void;
   /**
-   * Panel → chat channel, the reverse of `openFile` (chat → panel). The chat
-   * pane stores its scroll-to-message function in this ref (mirrors the
-   * `seenAutoReveal` exposed-ref pattern: registration never re-renders
-   * consumers). Tree chips call `jumpToMessage`, which notifies the jump
-   * listeners first (the mobile drawer closes itself so the scroll is
-   * visible) and then invokes the registered handler.
+   * Panel → chat jump channel. All listeners receive the target messageId;
+   * both the chat scroll handler and the mobile drawer close subscribe here.
+   * The chat pane is always mounted (it owns the conversation), so ordering
+   * between listeners doesn't matter — scroll and drawer-close are independent.
    */
-  jumpToMessageHandler: RefObject<((messageId: string) => void) | null>;
   /** Ask the chat pane to scroll to (and flash) the citing message. Stable. */
   jumpToMessage: (messageId: string) => void;
-  /** Subscribe to jump requests; returns the unsubscribe function. */
-  onJumpToMessage: (listener: () => void) => () => void;
+  /**
+   * Subscribe to jump requests. The listener receives the target messageId.
+   * Returns the unsubscribe function — call it from an effect cleanup.
+   */
+  onJumpToMessage: (listener: (messageId: string) => void) => () => void;
   /** Base path for KB API calls (e.g. "/api" or "/api/a/username"). */
   apiBasePath: string;
   /** Account page base for CV links: "" (→ /cv) or "/{username}". */
@@ -99,22 +99,17 @@ export function KbProvider({
   const [citedRefs, setCitedRefs] = useState<CitedRef[]>([]);
   const [openTarget, setOpenTarget] = useState<KbOpenTarget | null>(null);
   const seenAutoReveal = useRef<Set<string>>(new Set());
-  const jumpToMessageHandler = useRef<((messageId: string) => void) | null>(null);
-  const jumpListeners = useRef<Set<() => void>>(new Set());
+  const jumpListeners = useRef<Set<(messageId: string) => void>>(new Set());
 
-  const onJumpToMessage = useCallback((listener: () => void) => {
+  const onJumpToMessage = useCallback((listener: (messageId: string) => void) => {
     jumpListeners.current.add(listener);
     return () => {
       jumpListeners.current.delete(listener);
     };
   }, []);
 
-  // Listeners run before the handler so the mobile drawer can close in the
-  // same click; the scroll itself works regardless (the chat stays mounted
-  // and laid out underneath the drawer overlay).
   const jumpToMessage = useCallback((messageId: string) => {
-    for (const listener of jumpListeners.current) listener();
-    jumpToMessageHandler.current?.(messageId);
+    for (const listener of jumpListeners.current) listener(messageId);
   }, []);
 
   useEffect(() => {
@@ -163,14 +158,13 @@ export function KbProvider({
       openTarget,
       openFile,
       closeFile,
-      jumpToMessageHandler,
       jumpToMessage,
       onJumpToMessage,
       apiBasePath,
       cvPrintBase,
       seenAutoReveal,
     }),
-    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessageHandler, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, seenAutoReveal],
+    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, seenAutoReveal],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;
