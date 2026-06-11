@@ -3,7 +3,7 @@ import { quotaConfig, checkQuota } from "@/lib/usage/quota";
 import { getUsageTotals } from "@/lib/usage/repo";
 
 vi.mock("@/lib/usage/repo", () => ({
-  getUsageTotals: vi.fn(async () => ({ dayMessages: 0, monthTokens: 0 })),
+  getUsageTotals: vi.fn(async () => ({ dayMessages: 0, monthMessages: 0, monthTokens: 0 })),
 }));
 
 /** Run `fn` with env vars temporarily set (undefined = unset), then restore. */
@@ -58,12 +58,12 @@ describe("checkQuota", () => {
   const config = { dailyMessages: 10, monthlyTokens: 1_000 };
 
   it("allows an account under both limits", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 9, monthTokens: 999 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 9, monthMessages: 9, monthTokens: 999 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({ allowed: true });
   });
 
   it("blocks at the daily message cap", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 10, monthTokens: 0 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 10, monthMessages: 10, monthTokens: 0 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({
       allowed: false,
       reason: "daily_messages",
@@ -71,7 +71,7 @@ describe("checkQuota", () => {
   });
 
   it("blocks at the monthly token cap", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthTokens: 1_000 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthMessages: 0, monthTokens: 1_000 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({
       allowed: false,
       reason: "monthly_tokens",
@@ -79,7 +79,7 @@ describe("checkQuota", () => {
   });
 
   it("reports daily_messages when both caps are exceeded", async () => {
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 99, monthTokens: 9_999 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 99, monthMessages: 99, monthTokens: 9_999 });
     await expect(checkQuota(db, accountId, config)).resolves.toEqual({
       allowed: false,
       reason: "daily_messages",
@@ -89,7 +89,7 @@ describe("checkQuota", () => {
   it("passes db, accountId and now through to getUsageTotals", async () => {
     const now = new Date("2026-06-10T12:00:00.000Z");
     vi.mocked(getUsageTotals).mockClear();
-    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthTokens: 0 });
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({ dayMessages: 0, monthMessages: 0, monthTokens: 0 });
     await checkQuota(db, accountId, config, now);
     expect(getUsageTotals).toHaveBeenCalledWith(db, accountId, now);
   });

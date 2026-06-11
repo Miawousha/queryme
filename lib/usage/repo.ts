@@ -60,6 +60,8 @@ export async function recordUsage(
 export type UsageTotals = {
   /** Messages across all channels today (UTC). */
   dayMessages: number;
+  /** Messages across all channels this UTC calendar month. */
+  monthMessages: number;
   /** input + output tokens across all channels this UTC calendar month. */
   monthTokens: number;
 };
@@ -74,11 +76,12 @@ export async function getUsageTotals(
   const [row] = await db
     .select({
       dayMessages: sql<number>`coalesce(sum(${accountUsage.messages}) filter (where ${accountUsage.day} = ${day}), 0)::int`,
+      monthMessages: sql<number>`coalesce(sum(${accountUsage.messages}), 0)::int`,
       monthTokens: sql<number>`coalesce(sum(${accountUsage.inputTokens} + ${accountUsage.outputTokens}), 0)::int`,
     })
     .from(accountUsage)
     .where(and(eq(accountUsage.accountId, accountId), gte(accountUsage.day, utcMonthStart(now))));
-  return { dayMessages: row?.dayMessages ?? 0, monthTokens: row?.monthTokens ?? 0 };
+  return { dayMessages: row?.dayMessages ?? 0, monthMessages: row?.monthMessages ?? 0, monthTokens: row?.monthTokens ?? 0 };
 }
 
 export type PlatformUsageRow = {
