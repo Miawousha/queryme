@@ -11,6 +11,13 @@ import { sql } from "drizzle-orm";
 export const ACCOUNT_STATUSES = ["active", "waitlisted", "disabled"] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
+/**
+ * Billing plans. `free` is the default for every account; `pro` is set only by
+ * billing code deriving it from the Stripe subscription status — never by hand.
+ */
+export const ACCOUNT_PLANS = ["free", "pro"] as const;
+export type AccountPlan = (typeof ACCOUNT_PLANS)[number];
+
 export const accounts = pgTable(
   "accounts",
   {
@@ -19,6 +26,7 @@ export const accounts = pgTable(
     username: text("username").notNull().unique(),
     role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
     status: text("status", { enum: ACCOUNT_STATUSES }).notNull().default("waitlisted"),
+    plan: text("plan", { enum: ACCOUNT_PLANS }).notNull().default("free"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
@@ -177,3 +185,34 @@ export const accountUsage = pgTable(
 );
 
 export type AccountUsage = typeof accountUsage.$inferSelect;
+
+/**
+ * Stripe state cache plus billing-adjacent account state, one row per account.
+ * Stripe fields are written only by billing code (webhook + checkout sync);
+ * `lastNudgeMonth` is claimed from the allowance check when the upgrade-nudge
+ * email sends, so a row may exist for a never-subscribed free account. Stripe
+ * is the source of truth — this table is derived from it.
+ */
+export const accountBilling = pgTable(
+  "account_billing",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    accountId: uuid("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    subscriptionStatus: text("subscription_status"), // raw Stripe status
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    lastNudgeMonth: text("last_nudge_month"), // "YYYY-MM", UTC
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    accountUnique: uniqueIndex("account_billing_account_unique").on(table.accountId),
+    customerUnique: uniqueIndex("account_billing_customer_unique")
+      .on(table.stripeCustomerId)
+      .where(sql`stripe_customer_id IS NOT NULL`),
+  }),
+);
+
+export type AccountBilling = typeof accountBilling.$inferSelect;
