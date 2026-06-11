@@ -89,7 +89,9 @@ export async function handleAsk(deps: AskDeps, rawInput: unknown): Promise<AskRe
     const quota = await deps.checkQuota(deps.db, deps.accountId);
     if (!quota.allowed) {
       throw new Error(
-        `quota_exceeded (${quota.reason}): This persona has reached its usage limit. Try again later.`,
+        quota.reason === "plan_allowance"
+          ? "quota_exceeded (plan_allowance): This persona has answered all of its free questions this month. Use the forward_question tool to leave your question — the candidate will reply personally."
+          : `quota_exceeded (${quota.reason}): This persona has reached its usage limit. Try again later.`,
       );
     }
   }
