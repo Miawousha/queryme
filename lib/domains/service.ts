@@ -14,7 +14,7 @@ const CNAME_TARGET = "cname.vercel-dns.com";
 /** `reason` is a machine code; `message` is human-facing. */
 export class DomainError extends Error {
   constructor(
-    public reason: "invalid" | "limit" | "taken" | "not-found",
+    public reason: "invalid" | "limit" | "taken" | "not-found" | "pro_required",
     message: string,
   ) {
     super(message);
@@ -40,6 +40,12 @@ export async function addDomainForAccount(
   account: Account,
   raw: string,
 ): Promise<DomainView> {
+  // Adding domains is Pro-only. Existing active domains keep serving — the
+  // gate is on creation, never on traffic, so a downgrade can't break a live URL.
+  if (account.plan !== "pro") {
+    throw new DomainError("pro_required", "Custom domains require the Pro plan.");
+  }
+
   const hostname = normalizeHostname(raw);
   const check = validateHostname(hostname, process.env.PLATFORM_HOST ?? null);
   if (!check.ok) throw new DomainError("invalid", check.reason);
