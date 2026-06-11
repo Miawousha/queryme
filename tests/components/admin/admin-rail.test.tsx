@@ -19,6 +19,10 @@ describe("AdminRail", () => {
       "href",
       "/alex/admin/settings/domains",
     );
+    expect(screen.getByRole("link", { name: /billing/i })).toHaveAttribute(
+      "href",
+      "/alex/admin/settings/billing",
+    );
   });
 
   it("shows the unanswered badge and the conversations count", () => {
