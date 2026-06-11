@@ -25,6 +25,10 @@ const API_BASE = "http://localhost/api/a/fixture";
 const HISTORY_URL = `${API_BASE}/chat/history`;
 const CHAT_URL = `${API_BASE}/chat`;
 const STORED_ID = "11111111-2222-4333-8444-555555555555";
+// Conversation ids are stored per account page, keyed by the apiBasePath the
+// hook receives — a visitor's thread with persona A must never leak into a
+// chat POST against persona B.
+const ID_KEY = `queritae:conversationId:${API_BASE}`;
 
 const ALEX: Persona = {
   id: "alex-collet",
@@ -83,13 +87,21 @@ function serveGatedHistory(response: () => Response) {
  * Drive the real submit flow (Enter in the textarea → sendMessage). The chat
  * POST is served a 500, so the optimistic user message stays in the thread and
  * `status` leaves "ready" — exactly the non-empty/non-idle state the history
- * guards read.
+ * guards read. Returns the captured POST bodies for conversation-id assertions.
  */
-async function submitVisitorMessage(text: string) {
-  mswServer.use(http.post(CHAT_URL, () => HttpResponse.json({ error: "down" }, { status: 500 })));
+async function submitVisitorMessage(text: string, chatUrl = CHAT_URL) {
+  const bodies: { conversationId?: string }[] = [];
+  mswServer.use(
+    http.post(chatUrl, async ({ request }) => {
+      bodies.push((await request.json()) as { conversationId?: string });
+      return HttpResponse.json({ error: "down" }, { status: 500 });
+    }),
+  );
   fireEvent.change(screen.getByPlaceholderText(T.placeholder), { target: { value: text } });
   fireEvent.keyDown(screen.getByPlaceholderText(T.placeholder), { key: "Enter" });
   expect(await screen.findByText(text)).toBeInTheDocument();
+  await waitFor(() => expect(bodies).toHaveLength(1));
+  return bodies;
 }
 
 /** Let the client finish processing a response the gated handler just sent. */
@@ -97,16 +109,16 @@ function flushClient() {
   return act(() => new Promise((resolve) => setTimeout(resolve, 30)));
 }
 
-function renderChat(ctx = makeKbContext(), onLangChange = vi.fn()) {
+function renderChat(ctx = makeKbContext(), onLangChange = vi.fn(), apiBase = API_BASE) {
   vi.mocked(useKb).mockReturnValue(ctx);
-  render(<Chat t={T} lang="en" onLangChange={onLangChange} apiBasePath={API_BASE} />);
-  return { ctx, onLangChange };
+  const view = render(<Chat t={T} lang="en" onLangChange={onLangChange} apiBasePath={apiBase} />);
+  return { ctx, onLangChange, unmount: view.unmount };
 }
 
 beforeEach(() => {
   vi.mocked(useKb).mockReset();
   window.localStorage.clear();
-  window.localStorage.setItem("queritae:conversationId", STORED_ID);
+  window.localStorage.setItem(ID_KEY, STORED_ID);
   // jsdom has no matchMedia. StreamingMessage queries prefers-reduced-motion;
   // answering `matches: true` also skips its rAF reveal loop, so seeded text
   // renders in full immediately — exactly what these assertions need.
@@ -161,7 +173,7 @@ describe("Chat — history rehydration", () => {
     renderChat();
 
     await waitFor(() => {
-      const id = window.localStorage.getItem("queritae:conversationId");
+      const id = window.localStorage.getItem(ID_KEY);
       expect(id).not.toBe(STORED_ID);
       expect(id).toMatch(/^[0-9a-f-]{36}$/);
     });
@@ -175,7 +187,7 @@ describe("Chat — history rehydration", () => {
     renderChat();
 
     await waitFor(() => expect(requested).toHaveLength(1));
-    expect(window.localStorage.getItem("queritae:conversationId")).toBe(STORED_ID);
+    expect(window.localStorage.getItem(ID_KEY)).toBe(STORED_ID);
     expect(screen.getByText(T.starters[0])).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -241,7 +253,56 @@ describe("Chat — history fetch racing a visitor message", () => {
 
     // The visitor's POST already created the conversation under the stored
     // id; re-keying on the late 404 would split the server transcript.
-    expect(window.localStorage.getItem("queritae:conversationId")).toBe(STORED_ID);
+    expect(window.localStorage.getItem(ID_KEY)).toBe(STORED_ID);
     expect(screen.getByText("Hello, tell me about Alexandre")).toBeInTheDocument();
+  });
+});
+
+describe("Chat — conversation-id namespacing per account", () => {
+  const API_BASE_B = "http://localhost/api/a/other";
+
+  it("an id minted on one persona's page does not leak into another persona's chat POST", async () => {
+    window.localStorage.clear();
+    // If the id DOES leak, persona B's mount sees it as "existing" and fetches
+    // history for it; serve a network error so the hook keeps the id (the 404
+    // branch would rotate it and mask the leak).
+    mswServer.use(http.get(`${API_BASE_B}/chat/history`, () => HttpResponse.error()));
+
+    const pageA = renderChat();
+    const aBodies = await submitVisitorMessage("Hello from A's page");
+    const idOnA = aBodies[0]?.conversationId;
+    expect(idOnA).toMatch(/^[0-9a-f-]{36}$/);
+    pageA.unmount();
+
+    renderChat(makeKbContext(), vi.fn(), API_BASE_B);
+    const bBodies = await submitVisitorMessage("Hello from B's page", `${API_BASE_B}/chat`);
+    const idOnB = bBodies[0]?.conversationId;
+    expect(idOnB).toMatch(/^[0-9a-f-]{36}$/);
+
+    // The collision under test: B's POST carrying A's id is what the server
+    // rejects as a foreign-account conversation (a visitor-facing 500).
+    expect(idOnB).not.toBe(idOnA);
+
+    // Each page keeps its own id under its own key.
+    expect(window.localStorage.getItem(ID_KEY)).toBe(idOnA);
+    expect(window.localStorage.getItem(`queritae:conversationId:${API_BASE_B}`)).toBe(idOnB);
+  });
+
+  it("adopts the pre-namespacing global key once, then retires it", async () => {
+    window.localStorage.clear();
+    window.localStorage.setItem("queritae:conversationId", STORED_ID);
+    const requested = serveHistory(() =>
+      HttpResponse.json({ conversationId: STORED_ID, language: "en", turns: TURNS }),
+    );
+    renderChat();
+
+    // The migrated id still rehydrates its transcript…
+    expect(await screen.findByText("What did you build at ION?")).toBeInTheDocument();
+    expect(requested[0]?.searchParams.get("conversationId")).toBe(STORED_ID);
+    // …now lives under the per-account key…
+    expect(window.localStorage.getItem(ID_KEY)).toBe(STORED_ID);
+    // …and the global key is gone, so no other persona page can claim it
+    // (a wrong first claimant self-heals through the 404 rotation above).
+    expect(window.localStorage.getItem("queritae:conversationId")).toBeNull();
   });
 });

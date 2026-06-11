@@ -9,14 +9,33 @@ import {
 import type { ConversationTurn } from "@/lib/db/schema";
 import type { UiLang } from "@/lib/language";
 
-const CONVERSATION_ID_KEY = "queritae:conversationId";
+// Pre-namespacing key, kept only as a one-shot migration source below.
+const LEGACY_CONVERSATION_ID_KEY = "queritae:conversationId";
 
-function loadOrCreateConversationId(): { id: string; isNew: boolean } {
+// Keyed by apiBasePath (same namespacing as the KB tree's storage keys): a
+// conversation belongs to one account server-side, so a global id would make
+// persona B's chat POST carry persona A's id — which the ownership check in
+// getOrCreateConversation rejects, surfacing as a 500 to the visitor.
+function conversationIdKey(apiBasePath: string): string {
+  return `${LEGACY_CONVERSATION_ID_KEY}:${apiBasePath}`;
+}
+
+function loadOrCreateConversationId(apiBasePath: string): { id: string; isNew: boolean } {
   if (typeof window === "undefined") return { id: "", isNew: false };
-  const existing = window.localStorage.getItem(CONVERSATION_ID_KEY);
+  const key = conversationIdKey(apiBasePath);
+  const existing = window.localStorage.getItem(key);
   if (existing) return { id: existing, isNew: false };
+  // Migrate the legacy global id into the first page that loads it, then
+  // retire it so no other persona page can claim it too. A wrong claimant
+  // self-heals: the history fetch 404s and the id rotates silently.
+  const legacy = window.localStorage.getItem(LEGACY_CONVERSATION_ID_KEY);
+  if (legacy) {
+    window.localStorage.setItem(key, legacy);
+    window.localStorage.removeItem(LEGACY_CONVERSATION_ID_KEY);
+    return { id: legacy, isNew: false };
+  }
   const id = crypto.randomUUID();
-  window.localStorage.setItem(CONVERSATION_ID_KEY, id);
+  window.localStorage.setItem(key, id);
   return { id, isNew: true };
 }
 
@@ -69,13 +88,13 @@ export function useConversationHistory({
   // id has no history anyway.
   const historyAttemptedRef = useRef(false);
   useEffect(() => {
-    const { id, isNew } = loadOrCreateConversationId();
+    const { id, isNew } = loadOrCreateConversationId(apiBasePath);
     // A freshly minted id has no server-side history — mark the guard now so
     // the history effect below skips the fetch entirely (avoids a guaranteed 404).
     if (isNew) historyAttemptedRef.current = true;
     conversationIdRef.current = id;
     setConversationId(id);
-  }, []);
+  }, [apiBasePath]);
   useEffect(() => {
     if (!conversationId || historyAttemptedRef.current) return;
     historyAttemptedRef.current = true;
@@ -93,7 +112,7 @@ export function useConversationHistory({
           // the transcript across two ids, so leave the id alone.
           if (!threadStateRef.current.empty || !threadStateRef.current.idle) return;
           const fresh = crypto.randomUUID();
-          window.localStorage.setItem(CONVERSATION_ID_KEY, fresh);
+          window.localStorage.setItem(conversationIdKey(apiBasePath), fresh);
           conversationIdRef.current = fresh;
           setConversationId(fresh);
           return;
