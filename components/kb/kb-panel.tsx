@@ -77,18 +77,35 @@ export function KbPanel({ onLangChange }: { onLangChange: (next: UiLang) => void
     );
   }
 
+  // openTarget is set but the path is missing from the manifest — dead-end.
+  const isNotInKb = openTarget !== null && openFileEntry === null;
+
   return (
     <aside className="flex h-full flex-col overflow-hidden">
       <div className={BAND}>
-        <span
-          className="font-mono text-[10px] uppercase text-[var(--color-primary)]"
-          style={{ letterSpacing: "0.32em" }}
-        >
-          {strings.title}
-        </span>
-        <span className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
-          {manifest.length}
-        </span>
+        {isNotInKb ? (
+          <button
+            type="button"
+            onClick={closeFile}
+            aria-label={strings.backToList}
+            className="shrink-0 whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+            style={{ letterSpacing: "0.2em" }}
+          >
+            ‹ {strings.back}
+          </button>
+        ) : (
+          <>
+            <span
+              className="font-mono text-[10px] uppercase text-[var(--color-primary)]"
+              style={{ letterSpacing: "0.32em" }}
+            >
+              {strings.title}
+            </span>
+            <span className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+              {manifest.length}
+            </span>
+          </>
+        )}
       </div>
 
       <div
