@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 function OutlineTitle({
@@ -17,18 +17,70 @@ function OutlineTitle({
   outlineAria?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Wrap around: ArrowDown past last → first; ArrowUp before first → last.
+  const focusItem = useCallback(
+    (rawIndex: number) => {
+      const len = outline.length;
+      if (len === 0) return;
+      const index = ((rawIndex % len) + len) % len;
+      itemRefs.current[index]?.focus();
+    },
+    [outline.length],
+  );
+
+  const closeAndReturnFocus = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  // Focus the first item each time the menu opens.
+  useEffect(() => {
+    if (open) {
+      itemRefs.current[0]?.focus();
+    }
+  }, [open]);
 
   return (
     <div
       className="relative min-w-0"
       onKeyDown={(e) => {
-        if (e.key === "Escape") setOpen(false);
+        if (!open) return;
+        switch (e.key) {
+          case "Escape":
+            e.preventDefault();
+            closeAndReturnFocus();
+            break;
+          case "ArrowDown": {
+            e.preventDefault();
+            const idx = itemRefs.current.findIndex((r) => r === document.activeElement);
+            focusItem(idx === -1 ? 0 : idx + 1);
+            break;
+          }
+          case "ArrowUp": {
+            e.preventDefault();
+            const idx = itemRefs.current.findIndex((r) => r === document.activeElement);
+            focusItem(idx === -1 ? outline.length - 1 : idx - 1);
+            break;
+          }
+          case "Home":
+            e.preventDefault();
+            focusItem(0);
+            break;
+          case "End":
+            e.preventDefault();
+            focusItem(outline.length - 1);
+            break;
+        }
       }}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
       }}
     >
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -55,13 +107,18 @@ function OutlineTitle({
       {open && (
         <div
           role="menu"
+          aria-label={outlineAria ?? outlineLabel}
           className="absolute left-0 top-full z-20 mt-1 max-h-72 min-w-56 overflow-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-lg"
         >
-          {outline.map((s) => (
+          {outline.map((s, i) => (
             <button
               key={s.slug}
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
               type="button"
               role="menuitem"
+              tabIndex={-1}
               onClick={() => {
                 setOpen(false);
                 onJumpTo(s.slug);
