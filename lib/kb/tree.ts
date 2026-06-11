@@ -5,6 +5,10 @@ import type { KbGroup } from "@/lib/kb/meta-format";
 import { humanizeSlug, metaSubtitle } from "@/lib/kb/meta-format";
 import { anchorMatches } from "@/lib/kb/slug";
 
+/** One citation chip pinned to a tree node: the conversation-global footnote
+ * index plus the id of the chat message that cited it (chip → chat jumps). */
+export type KbChip = { index: number; messageId: string };
+
 /** One row of the KB tree. Ids are deterministic:
  * `col:<name>`, `dir:<dir/path>`, `doc:<file path>`, `sec:<file path>#<slug>`. */
 export type KbTreeNode = {
@@ -17,8 +21,8 @@ export type KbTreeNode = {
   anchor?: string;
   fileType?: KbFileType;
   subtitle?: string | null;
-  /** Citation indices pinned to this exact node. */
-  chips: number[];
+  /** Citation chips pinned to this exact node (doc and section nodes only). */
+  chips: KbChip[];
   /** True when a descendant carries chips — visible while collapsed. */
   dot: boolean;
   /** Docs under this container (collection/folder nodes). */
@@ -102,7 +106,7 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
 
   // 1. Citation chips per node id. Anchored refs land on the section whose
   //    slug matches loosely; everything else lands on the doc.
-  const chipsByNode = new Map<string, number[]>();
+  const chipsByNode = new Map<string, KbChip[]>();
   for (const r of citedRefs) {
     const file = files.find((f) => f.path === r.path);
     if (!file) continue;
@@ -110,7 +114,10 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
       ? file.sections?.find((s) => anchorMatches(r.anchor!, s.slug))
       : undefined;
     const id = section ? `sec:${file.path}#${section.slug}` : `doc:${file.path}`;
-    chipsByNode.set(id, [...(chipsByNode.get(id) ?? []), r.index]);
+    chipsByNode.set(id, [
+      ...(chipsByNode.get(id) ?? []),
+      { index: r.index, messageId: r.messageId },
+    ]);
   }
 
   // 2. Assemble the unpruned tree.

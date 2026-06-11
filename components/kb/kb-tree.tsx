@@ -6,20 +6,40 @@ import type { KbFile } from "@/lib/kb/manifest";
 import type { CitedRef } from "@/lib/kb/cited-paths";
 import { useKb } from "@/components/kb/kb-context";
 import { useKbTreeState } from "@/components/kb/use-kb-tree-state";
-import { buildKbTree, resolveGroups, type KbTreeNode } from "@/lib/kb/tree";
+import { buildKbTree, resolveGroups, type KbChip, type KbTreeNode } from "@/lib/kb/tree";
 import { cn } from "@/lib/utils";
 
 const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
 const LABEL_STYLE = { letterSpacing: "0.24em" };
 
-function Chips({ chips }: { chips: number[] }) {
+/**
+ * Citation chip buttons: clicking `[n]` scrolls the chat to the citing
+ * message. Rendered as SIBLINGS of the row button, never inside it —
+ * interactive descendants of a button are invalid HTML/ARIA.
+ */
+function ChipButtons({
+  chips,
+  jumpToMessage,
+  labelTemplate,
+}: {
+  chips: KbChip[];
+  jumpToMessage: (messageId: string) => void;
+  /** Localized aria-label template; `{n}` is the citation number. */
+  labelTemplate: string;
+}) {
   if (chips.length === 0) return null;
   return (
-    <span className="ml-auto flex shrink-0 items-center gap-1">
-      {chips.map((n) => (
-        <span key={n} className="kb-chip">
-          [{n}]
-        </span>
+    <span className="flex shrink-0 items-center gap-1">
+      {chips.map((c) => (
+        <button
+          key={c.index}
+          type="button"
+          aria-label={labelTemplate.replace("{n}", String(c.index))}
+          onClick={() => jumpToMessage(c.messageId)}
+          className="kb-chip cursor-pointer rounded px-0.5 transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]"
+        >
+          [{c.index}]
+        </button>
       ))}
     </span>
   );
@@ -75,8 +95,12 @@ type RowCtx = {
   toggle: (node: KbTreeNode) => void;
   pulseId: string | null;
   onOpen: (path: string, anchor?: string | null) => void;
+  /** Chip click → scroll the chat to the citing message. */
+  jumpToMessage: (messageId: string) => void;
   expandLabel: string;
   collapseLabel: string;
+  /** Localized chip aria-label template; `{n}` is the citation number. */
+  citationJumpLabel: string;
   /** Trimmed, lowercased filter text; empty string when filter is off. */
   needle: string;
 };
@@ -125,8 +149,9 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
               {node.count}
             </span>
           )}
+          {/* Containers never carry chips — citations pin to doc/section
+              nodes (collapsed cited descendants surface as the dot). */}
           {!open && node.dot && <Dot />}
-          <Chips chips={node.chips} />
         </button>
         {open && node.children.map((c) => <Row key={c.id} node={c} depth={depth + 1} ctx={ctx} />)}
       </>
@@ -135,6 +160,39 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
 
   if (node.kind === "doc") {
     const hasChildren = node.children.length > 0;
+    const label = (
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span
+          className={cn(
+            "truncate text-[13px]",
+            isCited
+              ? "text-[var(--color-text-primary)]"
+              : "text-[var(--color-text-secondary)]",
+          )}
+        >
+          {highlightMatch(node.label, ctx.needle)}
+        </span>
+        {node.subtitle && (
+          <span className="truncate text-[11px] text-[var(--color-text-tertiary)]">
+            {highlightMatch(node.subtitle, ctx.needle)}
+          </span>
+        )}
+      </span>
+    );
+    const dot = !open && node.dot && (
+      <span
+        aria-hidden
+        className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]"
+      />
+    );
+    const typeBadge = (
+      <span
+        className="ml-1 shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)]"
+        style={{ letterSpacing: "0.16em" }}
+      >
+        {node.fileType}
+      </span>
+    );
     return (
       <>
         <div
@@ -160,7 +218,11 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
           >
             <Chevron open={open} />
           </button>
-          {/* Main open-file button */}
+          {/* Main open-file button. Cited rows pull the chip buttons (and the
+              trailing dot/type meta, to keep the visual order label → chips →
+              dot → type) OUT of the button — chips are interactive and must
+              not nest inside it. Non-cited rows keep the simpler all-in-one
+              button markup. */}
           <button
             type="button"
             data-kb-row=""
@@ -171,54 +233,45 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
             onClick={() => ctx.onOpen(node.path!, null)}
             onKeyDown={rowKeyDown}
           >
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span
-                className={cn(
-                  "truncate text-[13px]",
-                  isCited
-                    ? "text-[var(--color-text-primary)]"
-                    : "text-[var(--color-text-secondary)]",
-                )}
-              >
-                {highlightMatch(node.label, ctx.needle)}
-              </span>
-              {node.subtitle && (
-                <span className="truncate text-[11px] text-[var(--color-text-tertiary)]">
-                  {highlightMatch(node.subtitle, ctx.needle)}
-                </span>
-              )}
-            </span>
-            <Chips chips={node.chips} />
-            {!open && node.dot && (
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]"
-              />
+            {label}
+            {!isCited && (
+              <>
+                {dot}
+                {typeBadge}
+              </>
             )}
-            <span
-              className="ml-1 shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)]"
-              style={{ letterSpacing: "0.16em" }}
-            >
-              {node.fileType}
-            </span>
           </button>
+          {isCited && (
+            <span className="flex shrink-0 items-center gap-1.5 pr-1">
+              <ChipButtons
+                chips={node.chips}
+                jumpToMessage={ctx.jumpToMessage}
+                labelTemplate={ctx.citationJumpLabel}
+              />
+              {dot}
+              {typeBadge}
+            </span>
+          )}
         </div>
         {open && node.children.map((c) => <Row key={c.id} node={c} depth={depth + 1} ctx={ctx} />)}
       </>
     );
   }
 
-  // section
-  return (
+  // section — the open-section button. Cited sections wrap it in a flex row
+  // so the chip buttons render as siblings (never inside the button); the
+  // cited tint and pulse move to the wrapper so the whole row stays
+  // highlighted. Non-cited sections keep the simpler single-button markup.
+  const sectionButton = (
     <button
       type="button"
       data-kb-row=""
-      style={{ paddingLeft: depth * 14 }}
+      style={isCited ? undefined : { paddingLeft: depth * 14 }}
       className={cn(
-        "flex w-full items-center gap-1.5 rounded px-2 py-0.5 text-left transition-colors",
+        "flex w-full min-w-0 items-center gap-1.5 rounded py-0.5 text-left transition-colors",
+        isCited ? "flex-1 pl-2" : "px-2",
         "hover:bg-[rgba(var(--color-primary-rgb),0.07)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]",
-        isCited && "bg-[rgba(var(--color-accent-rgb),0.06)]",
-        isPulse && "kb-pulse",
+        !isCited && isPulse && "kb-pulse",
       )}
       onClick={() => ctx.onOpen(node.path!, node.anchor ?? null)}
       onKeyDown={rowKeyDown}
@@ -236,8 +289,26 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       >
         {highlightMatch(node.label, ctx.needle)}
       </span>
-      <Chips chips={node.chips} />
     </button>
+  );
+
+  if (!isCited) return sectionButton;
+  return (
+    <div
+      style={{ paddingLeft: depth * 14 }}
+      className={cn(
+        "flex items-center gap-1.5 rounded pr-2",
+        "bg-[rgba(var(--color-accent-rgb),0.06)]",
+        isPulse && "kb-pulse",
+      )}
+    >
+      {sectionButton}
+      <ChipButtons
+        chips={node.chips}
+        jumpToMessage={ctx.jumpToMessage}
+        labelTemplate={ctx.citationJumpLabel}
+      />
+    </div>
   );
 }
 
@@ -250,7 +321,8 @@ export function KbTree({
   citedRefs: CitedRef[];
   onOpen: (path: string, anchor?: string | null) => void;
 }) {
-  const { strings, lang, groups: configGroups, apiBasePath, seenAutoReveal } = useKb();
+  const { strings, lang, groups: configGroups, apiBasePath, seenAutoReveal, jumpToMessage } =
+    useKb();
   const filterRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -306,8 +378,10 @@ export function KbTree({
     toggle,
     pulseId,
     onOpen,
+    jumpToMessage,
     expandLabel: strings.expandGroup,
     collapseLabel: strings.collapseGroup,
+    citationJumpLabel: strings.citationJump,
     needle: filter.trim().toLowerCase(),
   };
 

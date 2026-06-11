@@ -79,7 +79,9 @@ describe("buildKbTree — citations", () => {
   it("pins an anchored citation to the section (normalized match) and dots ancestors", () => {
     const refs = [ref("experience/2025-altergo.md", "Battery_Telemetry", 1)];
     const tree = buildKbTree({ ...BASE, citedRefs: refs });
-    expect(find(tree, "sec:experience/2025-altergo.md#battery-telemetry")?.chips).toEqual([1]);
+    expect(find(tree, "sec:experience/2025-altergo.md#battery-telemetry")?.chips).toEqual([
+      { index: 1, messageId: "m1" },
+    ]);
     expect(find(tree, "doc:experience/2025-altergo.md")?.dot).toBe(true);
     expect(find(tree, "col:experience")?.dot).toBe(true);
   });
@@ -90,13 +92,31 @@ describe("buildKbTree — citations", () => {
       ref("experience/2021-ion.md", null, 2),
     ];
     const tree = buildKbTree({ ...BASE, citedRefs: refs });
-    expect(find(tree, "doc:experience/2025-altergo.md")?.chips).toEqual([1]);
-    expect(find(tree, "doc:experience/2021-ion.md")?.chips).toEqual([2]);
+    expect(find(tree, "doc:experience/2025-altergo.md")?.chips).toEqual([
+      { index: 1, messageId: "m1" },
+    ]);
+    expect(find(tree, "doc:experience/2021-ion.md")?.chips).toEqual([
+      { index: 2, messageId: "m1" },
+    ]);
   });
 
   it("ignores citations to paths outside the manifest", () => {
     const tree = buildKbTree({ ...BASE, citedRefs: [ref("ghost.md", null, 1)] });
     expect(tree.every((n) => !n.dot)).toBe(true);
+  });
+
+  it("chips carry the citing messageId so a chip click can jump to the chat message", () => {
+    const refs: CitedRef[] = [
+      { path: "experience/2025-altergo.md", anchor: "battery-telemetry", index: 1, messageId: "msg-a" },
+      { path: "experience/2021-ion.md", anchor: null, index: 2, messageId: "msg-b" },
+    ];
+    const tree = buildKbTree({ ...BASE, citedRefs: refs });
+    expect(find(tree, "sec:experience/2025-altergo.md#battery-telemetry")?.chips).toEqual([
+      { index: 1, messageId: "msg-a" },
+    ]);
+    expect(find(tree, "doc:experience/2021-ion.md")?.chips).toEqual([
+      { index: 2, messageId: "msg-b" },
+    ]);
   });
 });
 
