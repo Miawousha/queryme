@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useKb } from "@/components/kb/kb-context";
 import { useDialog } from "@/lib/use-dialog";
+import { useIsDesktop } from "@/lib/use-is-desktop";
 
 const WIDTH_KEY = "queritae:kbPanelWidth";
 const MIN_PCT = 24;
@@ -31,12 +32,24 @@ export function KbLayout({
   collapsed?: boolean;
   onCollapsedChange?: (next: boolean) => void;
 }) {
-  const { strings } = useKb();
+  const { strings, onJumpToMessage } = useKb();
+  const isDesktop = useIsDesktop();
   const [widthPct, setWidthPct] = useState(DEFAULT_PCT);
   const [collapsedInternal, setCollapsedInternal] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const dragging = useRef(false);
   const drawerRef = useDialog<HTMLDivElement>(drawerOpen, () => setDrawerOpen(false));
+
+  // Close the mobile drawer when the viewport grows past the breakpoint so the
+  // drawer state doesn't linger invisibly and confuse the next narrow-viewport visit.
+  useEffect(() => {
+    if (isDesktop) setDrawerOpen(false);
+  }, [isDesktop]);
+
+  // A tree-chip jump must be visible: on mobile the drawer covers the chat,
+  // so close it when a chip requests a jump. No-op while already closed
+  // (desktop included — React bails out on the unchanged state).
+  useEffect(() => onJumpToMessage(() => setDrawerOpen(false)), [onJumpToMessage]);
 
   const collapsed = collapsedProp ?? collapsedInternal;
   const setCollapsed = (next: boolean) => {
@@ -76,22 +89,28 @@ export function KbLayout({
     <>
       {/*
         `chat` is rendered EXACTLY ONCE — it owns a `useChat` instance, so a
-        second mount would create a second conversation. `panel` renders twice
-        (desktop pane + mobile drawer); KB state that must survive pane switches
-        lives in KbContext or sessionStorage, while per-pane component state
-        (filter, lens) resets on each mount.
+        second mount would create a second conversation. `panel` is also mounted
+        at most once: the desktop pane is JS-gated on isDesktop, and the mobile
+        drawer is JS-gated on !isDesktop, so they are mutually exclusive.
+        KB state that must survive the desktop↔mobile swap lives in KbContext
+        or sessionStorage; per-pane component state (filter, lens) resets on
+        each mount.
       */}
       <div className="flex min-h-0 flex-1">
         {/* Chat — single instance, in flow on every breakpoint. */}
         <div className="min-w-0 flex-1">{chat}</div>
 
-        {/* Desktop KB pane (>= sm only). */}
-        {collapsed ? (
+        {/* Desktop KB pane (>= sm only). JS-gated so the panel is never
+            mounted on mobile — CSS-only hiding left panel rendering twice
+            (desktop pane + open drawer). isDesktop is false during SSR
+            (server snapshot) to avoid the mobile flash-of-desktop-pane;
+            desktop users see the pane appear on the first client render. */}
+        {isDesktop && (collapsed ? (
           <button
             type="button"
             onClick={() => setCollapsed(false)}
             aria-label={strings.showPanel}
-            className="hidden w-9 shrink-0 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-card)]/30 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)] sm:flex"
+            className="flex w-9 shrink-0 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-card)]/30 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
             style={{ writingMode: "vertical-rl", letterSpacing: "0.3em" }}
           >
             KB
@@ -122,35 +141,38 @@ export function KbLayout({
                 setWidthPct(next);
                 localStorage.setItem(WIDTH_KEY, String(Math.round(next)));
               }}
-              className="hidden w-1 shrink-0 cursor-col-resize bg-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)] focus-visible:bg-[var(--color-accent)] focus-visible:outline-none sm:block"
+              className="w-1 shrink-0 cursor-col-resize bg-[var(--color-border)] transition-colors hover:bg-[var(--color-accent)] focus-visible:bg-[var(--color-accent)] focus-visible:outline-none"
             />
             <div
-              className="hidden shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-card)]/30 sm:flex"
+              className="flex shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-card)]/30"
               style={{ width: `${widthPct}%` }}
             >
               {panel}
             </div>
           </>
-        )}
+        ))}
       </div>
 
-      {/* Mobile KB trigger (< sm only). */}
-      <button
-        type="button"
-        onClick={() => setDrawerOpen(true)}
-        className="fixed bottom-4 right-4 z-30 rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 font-mono text-[10px] uppercase text-[var(--color-text-secondary)] shadow-lg sm:hidden"
-        style={{ letterSpacing: "0.2em" }}
-      >
-        KB
-      </button>
-      {drawerOpen && (
+      {/* Mobile KB trigger (< sm only). JS-gated so it's absent from the
+          DOM on desktop — symmetrical with the desktop pane above. */}
+      {!isDesktop && (
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="fixed bottom-4 right-4 z-30 rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 font-mono text-[10px] uppercase text-[var(--color-text-secondary)] shadow-lg"
+          style={{ letterSpacing: "0.2em" }}
+        >
+          KB
+        </button>
+      )}
+      {!isDesktop && drawerOpen && (
         <div
           ref={drawerRef}
           role="dialog"
           aria-modal="true"
           aria-label={strings.panelLabel}
           tabIndex={-1}
-          className="fixed inset-0 z-40 flex flex-col bg-[var(--color-background)] outline-none sm:hidden"
+          className="fixed inset-0 z-40 flex flex-col bg-[var(--color-background)] outline-none"
         >
           <div className="flex shrink-0 justify-end px-4 py-2">
             <button

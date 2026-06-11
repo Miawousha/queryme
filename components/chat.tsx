@@ -9,7 +9,9 @@ import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
 import { useKb } from "@/components/kb/kb-context";
-import { citedRefKey, extractCitations } from "@/lib/kb/cited-paths";
+import { useConversationHistory } from "@/components/use-conversation-history";
+import { chatMessageDomId, jumpToChatMessage } from "@/lib/chat-jump";
+import { citationIndexMap, extractCitations } from "@/lib/kb/cited-paths";
 import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
@@ -18,20 +20,16 @@ export type ChatProps = {
   t: UiStrings;
   /** The active UI language; posted to /api/chat to ground the answerer. */
   lang: UiLang;
+  /**
+   * Lets a rehydrated conversation pull the UI over to its sticky stored
+   * language (the server answers in that language regardless of the toggle,
+   * so the thread and the chrome should agree). Optional — without it the
+   * thread still seeds, just without the language adoption.
+   */
+  onLangChange?: (next: UiLang) => void;
   /** Base path for API calls. Defaults to "/api". */
   apiBasePath?: string;
 };
-
-function loadOrCreateConversationId(): string {
-  if (typeof window === "undefined") return "";
-  const KEY = "queritae:conversationId";
-  let id = window.localStorage.getItem(KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    window.localStorage.setItem(KEY, id);
-  }
-  return id;
-}
 
 type ChatIdentity = {
   name?: string;
@@ -59,15 +57,8 @@ function latestIdentity(
   return found;
 }
 
-export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
-  const { setCitedRefs, citedRefs, openFile } = useKb();
-  const [conversationId, setConversationId] = useState("");
-  const conversationIdRef = useRef("");
-  useEffect(() => {
-    const id = loadOrCreateConversationId();
-    conversationIdRef.current = id;
-    setConversationId(id);
-  }, []);
+export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps) {
+  const { setCitedRefs, openFile, onJumpToMessage, seenAutoReveal } = useKb();
   // The transport body is a stable closure; read `lang` through a ref so a
   // mid-session toggle is observed by the next request without recreating the
   // transport. Sticky-per-conversation semantics live server-side — the
@@ -83,6 +74,8 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
   // from a ref at request time. Capturing the state value directly would pin
   // it to the empty initial render and every request would 400 on the uuid
   // check. When the id isn't ready yet, omit it — the server generates one.
+  // (`conversationIdRef` is declared below the useChat call it depends on;
+  // the closure only dereferences it at request time, never during render.)
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -95,7 +88,21 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
       }),
     [apiBasePath],
   );
-  const { messages, sendMessage, status, error } = useChat({ transport });
+  const { messages, sendMessage, status, error, setMessages } = useChat({ transport });
+
+  // Mirror of the live thread state, so the hook's async history fetch can
+  // check "still empty and idle?" at resolution time instead of capturing a
+  // stale snapshot in its closure.
+  const threadStateRef = useRef({ empty: true, idle: true });
+  threadStateRef.current = { empty: messages.length === 0, idle: status === "ready" };
+
+  const { conversationId, conversationIdRef } = useConversationHistory({
+    apiBasePath,
+    setMessages,
+    onLangChange,
+    seenAutoReveal,
+    threadStateRef,
+  });
 
   const identity = useMemo(() => latestIdentity(messages), [messages]);
   const identitySummary = identity
@@ -127,6 +134,17 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
     if (!el) return;
     atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }
+
+  // Tree chip → chat: subscribe to jump requests from the KB context. Unpin
+  // from the bottom BEFORE jumping so the streaming autoscroll above doesn't
+  // immediately yank the view back down; the scroll event the jump produces
+  // re-derives the pin from the actual position.
+  useEffect(() => {
+    return onJumpToMessage((messageId: string) => {
+      atBottomRef.current = false;
+      jumpToChatMessage(scrollRef.current, messageId);
+    });
+  }, [onJumpToMessage]);
 
   function submit(text: string) {
     const trimmed = text.trim();
@@ -178,18 +196,20 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
   const showThinking = isBusy && (!lastIsAssistant || !lastHasText);
   const thinkingLabel = t.thinking.generic;
 
-  useEffect(() => {
+  // Single extraction pass — both the KB panel context and the superscripts
+  // are built from this one memo so messages are never traversed twice.
+  const extractedRefs = useMemo(() => {
     const assistantMessages = messages
       .filter((m) => m.role !== "user")
       .map((m) => ({ id: m.id, text: messageText(m) }));
-    setCitedRefs(extractCitations(assistantMessages));
-  }, [messages, setCitedRefs]);
+    return extractCitations(assistantMessages);
+  }, [messages]);
 
-  const citationIndices = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const r of citedRefs) map[citedRefKey(r.path, r.anchor)] = r.index;
-    return map;
-  }, [citedRefs]);
+  useEffect(() => {
+    setCitedRefs(extractedRefs);
+  }, [extractedRefs, setCitedRefs]);
+
+  const citationIndices = useMemo(() => citationIndexMap(extractedRefs), [extractedRefs]);
 
   return (
     <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-card)]/20">
@@ -268,6 +288,7 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
             return (
               <StreamingMessage
                 key={m.id}
+                id={chatMessageDomId(m.id)}
                 role={m.role === "user" ? "user" : "assistant"}
                 text={messageText(m)}
                 isStreaming={isStreaming}

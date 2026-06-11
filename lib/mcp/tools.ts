@@ -8,6 +8,7 @@ import type { forwardQuestion } from "@/lib/questions/repo";
 import type { checkQuota } from "@/lib/usage/quota";
 import type { recordUsage } from "@/lib/usage/repo";
 import { isUuid } from "@/lib/uuid";
+import { MAX_TURNS } from "@/lib/chat/limits";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -28,9 +29,9 @@ export type ForwardQuestionInput = z.infer<typeof ForwardQuestionInputSchema>;
 // --- ask ---
 
 // Cap on how many prior transcript turns are replayed into the model on each
-// `ask` call. Mirrors `MAX_TURNS` in lib/chat/handle-chat.ts so a long-lived MCP
-// conversation does not grow its message array unbounded (2 turns per call).
-const MAX_HISTORY_TURNS = 50;
+// `ask` call. Sourced from lib/chat/limits so a long-lived MCP conversation
+// does not grow its message array unbounded (2 turns per call).
+const MAX_HISTORY_TURNS = MAX_TURNS;
 
 export type ProduceAnswerArgs = {
   messages: ModelMessage[];

@@ -6,7 +6,9 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
+  type RefObject,
   type ReactNode,
 } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
@@ -34,10 +36,34 @@ type KbContextValue = {
   /** Ordered (path, anchor) citation pairs from this conversation. */
   citedRefs: CitedRef[];
   setCitedRefs: (refs: CitedRef[]) => void;
+  /**
+   * Mutable ref whose `.current` Set tracks which citation keys have already
+   * triggered an auto-reveal pulse in the tree. Lives in the provider so it
+   * survives the tree↔viewer panel swap (which unmounts KbTree). A full page
+   * reload resets it together with `citedRefs`, which is correct.
+   *
+   * Intentionally a ref (not state) — mutations never cause re-renders.
+   * Exposed as-is so future callers can pre-populate it (e.g. to suppress
+   * re-pulses when seeding history citations on load).
+   */
+  seenAutoReveal: RefObject<Set<string>>;
   /** The doc (and optional section) shown in the viewer; null = tree. */
   openTarget: KbOpenTarget | null;
   openFile: (path: string, anchor?: string | null) => void;
   closeFile: () => void;
+  /**
+   * Panel → chat jump channel. All listeners receive the target messageId;
+   * both the chat scroll handler and the mobile drawer close subscribe here.
+   * The chat pane is always mounted (it owns the conversation), so ordering
+   * between listeners doesn't matter — scroll and drawer-close are independent.
+   */
+  /** Ask the chat pane to scroll to (and flash) the citing message. Stable. */
+  jumpToMessage: (messageId: string) => void;
+  /**
+   * Subscribe to jump requests. The listener receives the target messageId.
+   * Returns the unsubscribe function — call it from an effect cleanup.
+   */
+  onJumpToMessage: (listener: (messageId: string) => void) => () => void;
   /** Base path for KB API calls (e.g. "/api" or "/api/a/username"). */
   apiBasePath: string;
   /** Account page base for CV links: "" (→ /cv) or "/{username}". */
@@ -72,6 +98,19 @@ export function KbProvider({
   const [groups, setGroups] = useState<KbGroup[]>([]);
   const [citedRefs, setCitedRefs] = useState<CitedRef[]>([]);
   const [openTarget, setOpenTarget] = useState<KbOpenTarget | null>(null);
+  const seenAutoReveal = useRef<Set<string>>(new Set());
+  const jumpListeners = useRef<Set<(messageId: string) => void>>(new Set());
+
+  const onJumpToMessage = useCallback((listener: (messageId: string) => void) => {
+    jumpListeners.current.add(listener);
+    return () => {
+      jumpListeners.current.delete(listener);
+    };
+  }, []);
+
+  const jumpToMessage = useCallback((messageId: string) => {
+    for (const listener of jumpListeners.current) listener(messageId);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,10 +158,13 @@ export function KbProvider({
       openTarget,
       openFile,
       closeFile,
+      jumpToMessage,
+      onJumpToMessage,
       apiBasePath,
       cvPrintBase,
+      seenAutoReveal,
     }),
-    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, apiBasePath, cvPrintBase],
+    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, seenAutoReveal],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

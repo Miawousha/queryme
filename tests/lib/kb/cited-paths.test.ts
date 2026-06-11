@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractCitations, citedRefKey } from "@/lib/kb/cited-paths";
+import { extractCitations, citedRefKey, citationIndexMap } from "@/lib/kb/cited-paths";
 
 describe("extractCitations", () => {
   it("keeps anchors, assigns 1-based first-appearance indices and message ids", () => {
@@ -27,5 +27,23 @@ describe("citedRefKey", () => {
   it("distinguishes anchored from anchorless refs", () => {
     expect(citedRefKey("doc.md", "a")).toBe("doc.md#a");
     expect(citedRefKey("doc.md", null)).toBe("doc.md");
+  });
+});
+
+describe("citationIndexMap", () => {
+  it("assigns global first-appearance numbers across messages and deduplicates", () => {
+    const messages = [
+      { id: "m1", text: "First [^kb:experience/a.md#s1] and second [^kb:profile.yaml]." },
+      { id: "m2", text: "First again [^kb:experience/a.md#s1] and third [^kb:skills.yaml]." },
+    ];
+    const map = citationIndexMap(extractCitations(messages));
+    expect(map["experience/a.md#s1"]).toBe(1);
+    expect(map["profile.yaml"]).toBe(2);
+    expect(map["skills.yaml"]).toBe(3);
+    expect(Object.keys(map).length).toBe(3);
+  });
+
+  it("returns an empty map for an empty ref list", () => {
+    expect(citationIndexMap([])).toEqual({});
   });
 });

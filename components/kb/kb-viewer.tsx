@@ -8,6 +8,7 @@ import rehypeSanitize from "rehype-sanitize";
 import type { KbFile } from "@/lib/kb/manifest";
 import type { CitedRef } from "@/lib/kb/cited-paths";
 import { anchorMatches, slugify } from "@/lib/kb/slug";
+import { scrollAndFlash } from "@/lib/scroll-flash";
 import { KbMetaCard } from "@/components/kb/kb-meta-card";
 import { useKb } from "@/components/kb/kb-context";
 import {
@@ -112,9 +113,7 @@ export function KbViewer({
   const jumpTo = useCallback((slug: string) => {
     const el = contentRef.current?.querySelector(`[id="${CSS.escape(slug)}"]`);
     if (!(el instanceof HTMLElement)) return;
-    el.scrollIntoView({ block: "start" });
-    el.classList.add("kb-flash-target");
-    setTimeout(() => el.classList.remove("kb-flash-target"), 1600);
+    scrollAndFlash(el);
   }, []);
 
   // Opening from a citation: once the markdown is on screen, scroll to the

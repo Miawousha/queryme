@@ -5,6 +5,10 @@ import type { KbGroup } from "@/lib/kb/meta-format";
 import { humanizeSlug, metaSubtitle } from "@/lib/kb/meta-format";
 import { anchorMatches } from "@/lib/kb/slug";
 
+/** One citation chip pinned to a tree node: the conversation-global footnote
+ * index plus the id of the chat message that cited it (chip → chat jumps). */
+export type KbChip = { index: number; messageId: string };
+
 /** One row of the KB tree. Ids are deterministic:
  * `col:<name>`, `dir:<dir/path>`, `doc:<file path>`, `sec:<file path>#<slug>`. */
 export type KbTreeNode = {
@@ -17,8 +21,8 @@ export type KbTreeNode = {
   anchor?: string;
   fileType?: KbFileType;
   subtitle?: string | null;
-  /** Citation indices pinned to this exact node. */
-  chips: number[];
+  /** Citation chips pinned to this exact node (doc and section nodes only). */
+  chips: KbChip[];
   /** True when a descendant carries chips — visible while collapsed. */
   dot: boolean;
   /** Docs under this container (collection/folder nodes). */
@@ -102,7 +106,7 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
 
   // 1. Citation chips per node id. Anchored refs land on the section whose
   //    slug matches loosely; everything else lands on the doc.
-  const chipsByNode = new Map<string, number[]>();
+  const chipsByNode = new Map<string, KbChip[]>();
   for (const r of citedRefs) {
     const file = files.find((f) => f.path === r.path);
     if (!file) continue;
@@ -110,7 +114,10 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
       ? file.sections?.find((s) => anchorMatches(r.anchor!, s.slug))
       : undefined;
     const id = section ? `sec:${file.path}#${section.slug}` : `doc:${file.path}`;
-    chipsByNode.set(id, [...(chipsByNode.get(id) ?? []), r.index]);
+    chipsByNode.set(id, [
+      ...(chipsByNode.get(id) ?? []),
+      { index: r.index, messageId: r.messageId },
+    ]);
   }
 
   // 2. Assemble the unpruned tree.
@@ -120,7 +127,6 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
     label: g.label,
     chips: [],
     dot: false,
-    count: 0,
     children: [],
   }));
   const byId = new Map(roots.map((n) => [n.id, n] as const));
@@ -129,7 +135,6 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
     const ids = ancestorIdsFor(file.path, groupNames);
     let parent = byId.get(ids[0]);
     if (!parent) continue;
-    parent.count = (parent.count ?? 0) + 1;
     for (const id of ids.slice(1, -1)) {
       let node = byId.get(id);
       if (!node) {
@@ -140,13 +145,11 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
           label: dirPath.split("/").pop()!,
           chips: [],
           dot: false,
-          count: 0,
           children: [],
         };
         byId.set(id, node);
         parent.children.push(node);
       }
-      node.count = (node.count ?? 0) + 1;
       parent = node;
     }
     const docId = `doc:${file.path}`;
@@ -185,7 +188,8 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
   for (const r of roots) markDots(r);
 
   // 4. Prune: filter (label/meta match keeps node + subtree-anchor) AND lens
-  //    (only cited branches). Containers vanish when emptied.
+  //    (only cited branches). Containers vanish when emptied; counts are
+  //    recalculated to reflect surviving doc descendants only.
   const needle = filter.trim().toLowerCase();
   const fileByPath = new Map(files.map((f) => [f.path, f] as const));
 
@@ -208,7 +212,11 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
       .filter((c): c is KbTreeNode => c !== null);
     const lensOk = !lens || node.chips.length > 0 || node.dot;
     if (node.kind === "collection" || node.kind === "folder") {
-      return children.length > 0 ? { ...node, children } : null;
+      const count = children.reduce(
+        (s, c) => s + (c.kind === "doc" ? 1 : (c.count ?? 0)),
+        0,
+      );
+      return children.length > 0 ? { ...node, children, count } : null;
     }
     if (node.kind === "doc") {
       return (self && lensOk) || children.length > 0 ? { ...node, children } : null;

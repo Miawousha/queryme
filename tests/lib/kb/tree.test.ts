@@ -22,6 +22,7 @@ const FILES: KbFile[] = [
   },
   { path: "experience/2021-ion.md", title: "2021 — ION Energy", type: "md" },
   { path: "notes/research/idea.md", title: "Research idea", type: "md" },
+  { path: "notes/research/quantum.md", title: "Quantum computing notes", type: "md" },
   { path: "profile.yaml", title: "Profile", type: "yaml" },
 ];
 
@@ -52,6 +53,7 @@ describe("buildKbTree — structure", () => {
     expect(tree.map((n) => n.id)).toEqual(["col:experience", "col:notes", "col:other"]);
     expect(find(tree, "dir:notes/research")?.children.map((c) => c.id)).toEqual([
       "doc:notes/research/idea.md",
+      "doc:notes/research/quantum.md",
     ]);
     expect(find(tree, "doc:experience/2025-altergo.md")?.children.map((c) => c.id)).toEqual([
       "sec:experience/2025-altergo.md#overview",
@@ -67,7 +69,7 @@ describe("buildKbTree — structure", () => {
   it("counts docs per container and drops empty collections", () => {
     const tree = buildKbTree(BASE);
     expect(find(tree, "col:experience")?.count).toBe(2);
-    expect(find(tree, "dir:notes/research")?.count).toBe(1);
+    expect(find(tree, "dir:notes/research")?.count).toBe(2);
     const noOther = buildKbTree({ ...BASE, files: FILES.slice(0, 3) });
     expect(find(noOther, "col:other")).toBeUndefined();
   });
@@ -77,7 +79,9 @@ describe("buildKbTree — citations", () => {
   it("pins an anchored citation to the section (normalized match) and dots ancestors", () => {
     const refs = [ref("experience/2025-altergo.md", "Battery_Telemetry", 1)];
     const tree = buildKbTree({ ...BASE, citedRefs: refs });
-    expect(find(tree, "sec:experience/2025-altergo.md#battery-telemetry")?.chips).toEqual([1]);
+    expect(find(tree, "sec:experience/2025-altergo.md#battery-telemetry")?.chips).toEqual([
+      { index: 1, messageId: "m1" },
+    ]);
     expect(find(tree, "doc:experience/2025-altergo.md")?.dot).toBe(true);
     expect(find(tree, "col:experience")?.dot).toBe(true);
   });
@@ -88,13 +92,31 @@ describe("buildKbTree — citations", () => {
       ref("experience/2021-ion.md", null, 2),
     ];
     const tree = buildKbTree({ ...BASE, citedRefs: refs });
-    expect(find(tree, "doc:experience/2025-altergo.md")?.chips).toEqual([1]);
-    expect(find(tree, "doc:experience/2021-ion.md")?.chips).toEqual([2]);
+    expect(find(tree, "doc:experience/2025-altergo.md")?.chips).toEqual([
+      { index: 1, messageId: "m1" },
+    ]);
+    expect(find(tree, "doc:experience/2021-ion.md")?.chips).toEqual([
+      { index: 2, messageId: "m1" },
+    ]);
   });
 
   it("ignores citations to paths outside the manifest", () => {
     const tree = buildKbTree({ ...BASE, citedRefs: [ref("ghost.md", null, 1)] });
     expect(tree.every((n) => !n.dot)).toBe(true);
+  });
+
+  it("chips carry the citing messageId so a chip click can jump to the chat message", () => {
+    const refs: CitedRef[] = [
+      { path: "experience/2025-altergo.md", anchor: "battery-telemetry", index: 1, messageId: "msg-a" },
+      { path: "experience/2021-ion.md", anchor: null, index: 2, messageId: "msg-b" },
+    ];
+    const tree = buildKbTree({ ...BASE, citedRefs: refs });
+    expect(find(tree, "sec:experience/2025-altergo.md#battery-telemetry")?.chips).toEqual([
+      { index: 1, messageId: "msg-a" },
+    ]);
+    expect(find(tree, "doc:experience/2021-ion.md")?.chips).toEqual([
+      { index: 2, messageId: "msg-b" },
+    ]);
   });
 });
 
@@ -123,6 +145,21 @@ describe("buildKbTree — filter and lens", () => {
     expect(find(tree, "sec:experience/2025-altergo.md#overview")).toBeUndefined();
     expect(find(tree, "doc:experience/2021-ion.md")).toBeUndefined();
     expect(find(tree, "col:notes")).toBeUndefined();
+  });
+
+  it("recounts container counts to reflect surviving docs after pruning", () => {
+    // filter: only experience/2025-altergo.md survives (has "battery" in meta.tags)
+    const filtered = buildKbTree({ ...BASE, filter: "battery" });
+    expect(find(filtered, "col:experience")?.count).toBe(1);
+
+    // lens: only the cited doc survives in experience
+    const refs = [ref("experience/2025-altergo.md", null, 1)];
+    const lensed = buildKbTree({ ...BASE, citedRefs: refs, lens: true });
+    expect(find(lensed, "col:experience")?.count).toBe(1);
+
+    // folder-level recount: filter "idea" matches idea.md only, so notes/research drops to 1
+    const folderFiltered = buildKbTree({ ...BASE, filter: "idea" });
+    expect(find(folderFiltered, "dir:notes/research")?.count).toBe(1);
   });
 
   it("lens and filter compose with AND", () => {
