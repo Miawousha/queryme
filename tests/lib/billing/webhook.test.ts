@@ -65,7 +65,14 @@ describe("handleStripeWebhook", () => {
   });
 
   it("subscription.updated resolves the account from metadata", async () => {
-    const deps = makeDeps();
+    const deps = makeDeps({
+      retrieveSubscription: vi.fn(async () => ({
+        id: "sub_1",
+        status: "past_due",
+        customer: "cus_1",
+        items: { data: [{ current_period_end: 1_780_000_000 }] },
+      })),
+    });
     const { payload, signature } = signedRequest({
       id: "evt_2",
       type: "customer.subscription.updated",
@@ -81,6 +88,7 @@ describe("handleStripeWebhook", () => {
     });
     const res = await handleStripeWebhook(deps, payload, signature);
     expect(res.status).toBe(200);
+    expect(deps.retrieveSubscription).toHaveBeenCalledWith("sub_1");
     expect(deps.applySubscriptionState).toHaveBeenCalledWith(
       deps.db,
       expect.objectContaining({ accountId: ACCOUNT_ID, subscriptionStatus: "past_due" }),
@@ -88,7 +96,14 @@ describe("handleStripeWebhook", () => {
   });
 
   it("subscription.deleted falls back to the customer-id lookup", async () => {
-    const deps = makeDeps({ findAccountIdByCustomer: vi.fn(async () => ACCOUNT_ID) });
+    const deps = makeDeps({
+      findAccountIdByCustomer: vi.fn(async () => ACCOUNT_ID),
+      retrieveSubscription: vi.fn(async () => ({
+        id: "sub_1",
+        status: "canceled",
+        customer: "cus_1",
+      })),
+    });
     const { payload, signature } = signedRequest({
       id: "evt_3",
       type: "customer.subscription.deleted",
@@ -97,9 +112,40 @@ describe("handleStripeWebhook", () => {
     const res = await handleStripeWebhook(deps, payload, signature);
     expect(res.status).toBe(200);
     expect(deps.findAccountIdByCustomer).toHaveBeenCalledWith(deps.db, "cus_1");
+    expect(deps.retrieveSubscription).toHaveBeenCalledWith("sub_1");
     expect(deps.applySubscriptionState).toHaveBeenCalledWith(
       deps.db,
       expect.objectContaining({ accountId: ACCOUNT_ID, subscriptionStatus: "canceled" }),
+    );
+  });
+
+  it("a stale event payload cannot re-grant pro — state comes from the re-fetch", async () => {
+    // Event claims active but Stripe returns canceled — the re-fetch wins.
+    const deps = makeDeps({
+      retrieveSubscription: vi.fn(async () => ({
+        id: "sub_1",
+        status: "canceled",
+        customer: "cus_1",
+      })),
+    });
+    const { payload, signature } = signedRequest({
+      id: "evt_stale",
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_1",
+          status: "active", // stale payload
+          customer: "cus_1",
+          metadata: { accountId: ACCOUNT_ID },
+        },
+      },
+    });
+    const res = await handleStripeWebhook(deps, payload, signature);
+    expect(res.status).toBe(200);
+    expect(deps.retrieveSubscription).toHaveBeenCalledWith("sub_1");
+    expect(deps.applySubscriptionState).toHaveBeenCalledWith(
+      deps.db,
+      expect.objectContaining({ subscriptionStatus: "canceled" }),
     );
   });
 
@@ -115,5 +161,70 @@ describe("handleStripeWebhook", () => {
     const other = signedRequest({ id: "evt_5", type: "invoice.paid", data: { object: {} } });
     expect((await handleStripeWebhook(deps, other.payload, other.signature)).status).toBe(200);
     expect(deps.applySubscriptionState).not.toHaveBeenCalled();
+    expect(deps.retrieveSubscription).not.toHaveBeenCalled();
+  });
+
+  it("non-UUID client_reference_id is acked with 200 without applying state", async () => {
+    const deps = makeDeps();
+    const { payload, signature } = signedRequest({
+      id: "evt_junk",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          mode: "subscription",
+          client_reference_id: "not-a-uuid",
+          customer: "cus_1",
+          subscription: "sub_1",
+        },
+      },
+    });
+    const res = await handleStripeWebhook(deps, payload, signature);
+    expect(res.status).toBe(200);
+    expect(deps.applySubscriptionState).not.toHaveBeenCalled();
+  });
+
+  it("a foreign-key violation is acked with 200 instead of retry-storming", async () => {
+    const fkError = Object.assign(new Error("FK violation"), { code: "23503" });
+    const deps = makeDeps({
+      applySubscriptionState: vi.fn(async () => {
+        throw fkError;
+      }),
+    });
+    const { payload, signature } = signedRequest({
+      id: "evt_fk",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          mode: "subscription",
+          client_reference_id: ACCOUNT_ID,
+          customer: "cus_1",
+          subscription: "sub_1",
+        },
+      },
+    });
+    const res = await handleStripeWebhook(deps, payload, signature);
+    expect(res.status).toBe(200);
+  });
+
+  it("non-FK errors propagate so the route 500s and Stripe retries", async () => {
+    const dbError = new Error("DB down");
+    const deps = makeDeps({
+      applySubscriptionState: vi.fn(async () => {
+        throw dbError;
+      }),
+    });
+    const { payload, signature } = signedRequest({
+      id: "evt_dberr",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          mode: "subscription",
+          client_reference_id: ACCOUNT_ID,
+          customer: "cus_1",
+          subscription: "sub_1",
+        },
+      },
+    });
+    await expect(handleStripeWebhook(deps, payload, signature)).rejects.toThrow("DB down");
   });
 });
