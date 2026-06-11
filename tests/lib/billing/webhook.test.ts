@@ -23,6 +23,7 @@ function makeDeps(overrides: Partial<WebhookDeps> = {}): WebhookDeps {
     })),
     applySubscriptionState: vi.fn(async () => {}),
     findAccountIdByCustomer: vi.fn(async () => null),
+    getBillingForAccount: vi.fn(async () => null),
     ...overrides,
   };
 }
@@ -226,5 +227,64 @@ describe("handleStripeWebhook", () => {
       },
     });
     await expect(handleStripeWebhook(deps, payload, signature)).rejects.toThrow("DB down");
+  });
+
+  it("a delayed deleted retry for a replaced subscription does not downgrade", async () => {
+    // cancel → re-subscribe gives sub_new; a stale deleted event for sub_old
+    // must not downgrade an account that now has sub_new active.
+    const deps = makeDeps({
+      getBillingForAccount: vi.fn(async () => ({ stripeSubscriptionId: "sub_new" } as never)),
+      retrieveSubscription: vi.fn(async () => ({
+        id: "sub_old",
+        status: "canceled",
+        customer: "cus_1",
+      })),
+    });
+    const { payload, signature } = signedRequest({
+      id: "evt_stale_del",
+      type: "customer.subscription.deleted",
+      data: {
+        object: {
+          id: "sub_old",
+          status: "canceled",
+          customer: "cus_1",
+          metadata: { accountId: ACCOUNT_ID },
+        },
+      },
+    });
+    const res = await handleStripeWebhook(deps, payload, signature);
+    expect(res.status).toBe(200);
+    expect(deps.applySubscriptionState).not.toHaveBeenCalled();
+  });
+
+  it("cancelling the stored subscription still downgrades", async () => {
+    // When the event's sub id matches what is stored, a canceled status must
+    // still write through and downgrade the account.
+    const deps = makeDeps({
+      getBillingForAccount: vi.fn(async () => ({ stripeSubscriptionId: "sub_1" } as never)),
+      retrieveSubscription: vi.fn(async () => ({
+        id: "sub_1",
+        status: "canceled",
+        customer: "cus_1",
+      })),
+    });
+    const { payload, signature } = signedRequest({
+      id: "evt_real_cancel",
+      type: "customer.subscription.deleted",
+      data: {
+        object: {
+          id: "sub_1",
+          status: "canceled",
+          customer: "cus_1",
+          metadata: { accountId: ACCOUNT_ID },
+        },
+      },
+    });
+    const res = await handleStripeWebhook(deps, payload, signature);
+    expect(res.status).toBe(200);
+    expect(deps.applySubscriptionState).toHaveBeenCalledWith(
+      deps.db,
+      expect.objectContaining({ subscriptionStatus: "canceled" }),
+    );
   });
 });

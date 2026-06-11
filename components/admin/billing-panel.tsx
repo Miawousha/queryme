@@ -32,7 +32,11 @@ export function BillingPanel({
       const res = await fetch(`${apiBasePath}/billing/${endpoint}`, { method: "POST" });
       const body = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !body.url) {
-        setError(body.error ?? "Something went wrong — try again.");
+        setError(
+          body.error === "already_subscribed"
+            ? "You're already on Pro — reload the page."
+            : (body.error ?? "Something went wrong — try again."),
+        );
         setBusy(false);
         return;
       }

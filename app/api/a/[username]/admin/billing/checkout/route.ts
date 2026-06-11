@@ -3,6 +3,8 @@ import { getDb } from "@/lib/db/client";
 import { resolveAccountAdmin } from "@/app/[username]/admin/resolve";
 import { getStripe } from "@/lib/billing/stripe";
 import { getOrCreateStripeCustomer, siteUrl } from "@/lib/billing/checkout";
+import { getBillingForAccount } from "@/lib/billing/repo";
+import { planFromSubscriptionStatus } from "@/lib/billing/plan";
 
 export const runtime = "nodejs";
 
@@ -18,6 +20,13 @@ export async function POST(
   if (!priceId) return NextResponse.json({ error: "billing_not_configured" }, { status: 500 });
 
   const db = getDb();
+  const billing = await getBillingForAccount(db, res.account.id);
+  // A second Checkout for an already-paying account would create a second live
+  // subscription on the same customer — Stripe double-bills happily.
+  if (planFromSubscriptionStatus(billing?.subscriptionStatus) === "pro") {
+    return NextResponse.json({ error: "already_subscribed" }, { status: 409 });
+  }
+
   const stripe = getStripe();
   const customer = await getOrCreateStripeCustomer(db, stripe, res.account);
   const base = `${siteUrl()}/${res.account.username}/admin/settings/billing`;

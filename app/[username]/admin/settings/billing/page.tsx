@@ -25,7 +25,7 @@ export default async function BillingSettingsPage({
   // Checkout just completed: apply the session now instead of waiting for the
   // webhook, so the page never shows "free" to someone who just paid.
   const { session_id: sessionId } = await searchParams;
-  if (typeof sessionId === "string" && sessionId.length > 0) {
+  if (typeof sessionId === "string" && sessionId.length > 0 && process.env.STRIPE_SECRET_KEY) {
     await syncCheckoutSession(db, getStripe(), account.id, sessionId);
   }
 

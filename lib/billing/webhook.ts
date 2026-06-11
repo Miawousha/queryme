@@ -1,10 +1,15 @@
 import type Stripe from "stripe";
 import {
+  planFromSubscriptionStatus,
   subscriptionCustomerId,
   subscriptionPeriodEnd,
   type SubscriptionLike,
 } from "@/lib/billing/plan";
-import type { applySubscriptionState, findAccountIdByCustomer } from "@/lib/billing/repo";
+import type {
+  applySubscriptionState,
+  findAccountIdByCustomer,
+  getBillingForAccount,
+} from "@/lib/billing/repo";
 import type { getDb } from "@/lib/db/client";
 import { isUuid } from "@/lib/uuid";
 
@@ -17,6 +22,7 @@ export type WebhookDeps = {
   retrieveSubscription: (id: string) => Promise<SubscriptionLike>;
   applySubscriptionState: typeof applySubscriptionState;
   findAccountIdByCustomer: typeof findAccountIdByCustomer;
+  getBillingForAccount: typeof getBillingForAccount;
 };
 
 export type WebhookOutcome = { status: number; body: Record<string, unknown> };
@@ -139,6 +145,17 @@ export async function handleStripeWebhook(
       // `deleted` would re-grant pro with no future event to correct it.
       // Canceled subscriptions stay retrievable, so this works for both types.
       const sub = await deps.retrieveSubscription(evSub.id);
+      // A free-deriving event may be a delayed retry for a subscription this
+      // account has since replaced (cancel → re-subscribe). Only the stored
+      // subscription may downgrade; pro-deriving events always apply (a new
+      // subscription activating IS the replacement).
+      if (planFromSubscriptionStatus(sub.status) === "free") {
+        const billing = await deps.getBillingForAccount(deps.db, accountId);
+        if (billing?.stripeSubscriptionId && billing.stripeSubscriptionId !== sub.id) {
+          console.error("stripe webhook: stale event for replaced subscription", sub.id);
+          break;
+        }
+      }
       await applyOrAckMissingAccount(deps, sub, accountId);
       break;
     }

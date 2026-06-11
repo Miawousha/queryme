@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db/client";
 import { getStripe } from "@/lib/billing/stripe";
 import { handleStripeWebhook } from "@/lib/billing/webhook";
-import { applySubscriptionState, findAccountIdByCustomer } from "@/lib/billing/repo";
+import { applySubscriptionState, findAccountIdByCustomer, getBillingForAccount } from "@/lib/billing/repo";
 import type { SubscriptionLike } from "@/lib/billing/plan";
 
 export const runtime = "nodejs";
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         (await stripe.subscriptions.retrieve(id)) as unknown as SubscriptionLike,
       applySubscriptionState,
       findAccountIdByCustomer,
+      getBillingForAccount,
     },
     payload,
     req.headers.get("stripe-signature"),
