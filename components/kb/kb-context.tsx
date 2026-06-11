@@ -6,7 +6,9 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
@@ -34,6 +36,17 @@ type KbContextValue = {
   /** Ordered (path, anchor) citation pairs from this conversation. */
   citedRefs: CitedRef[];
   setCitedRefs: (refs: CitedRef[]) => void;
+  /**
+   * Mutable ref whose `.current` Set tracks which citation keys have already
+   * triggered an auto-reveal pulse in the tree. Lives in the provider so it
+   * survives the tree↔viewer panel swap (which unmounts KbTree). A full page
+   * reload resets it together with `citedRefs`, which is correct.
+   *
+   * Intentionally a ref (not state) — mutations never cause re-renders.
+   * Exposed as-is so future callers can pre-populate it (e.g. to suppress
+   * re-pulses when seeding history citations on load).
+   */
+  seenAutoReveal: MutableRefObject<Set<string>>;
   /** The doc (and optional section) shown in the viewer; null = tree. */
   openTarget: KbOpenTarget | null;
   openFile: (path: string, anchor?: string | null) => void;
@@ -72,6 +85,7 @@ export function KbProvider({
   const [groups, setGroups] = useState<KbGroup[]>([]);
   const [citedRefs, setCitedRefs] = useState<CitedRef[]>([]);
   const [openTarget, setOpenTarget] = useState<KbOpenTarget | null>(null);
+  const seenAutoReveal = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -121,8 +135,9 @@ export function KbProvider({
       closeFile,
       apiBasePath,
       cvPrintBase,
+      seenAutoReveal,
     }),
-    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, apiBasePath, cvPrintBase],
+    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, apiBasePath, cvPrintBase, seenAutoReveal],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

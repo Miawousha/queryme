@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
 import { citedRefKey, type CitedRef } from "@/lib/kb/cited-paths";
 import { ancestorIdsFor, type KbTreeNode } from "@/lib/kb/tree";
@@ -27,11 +27,18 @@ export function useKbTreeState({
   files,
   citedRefs,
   groupNames,
+  seenAutoReveal,
 }: {
   storageKey: string;
   files: KbFile[];
   citedRefs: CitedRef[];
   groupNames: ReadonlySet<string>;
+  /**
+   * Ref to the dedup Set tracking which citation keys have already triggered an
+   * auto-reveal pulse. Lifted into KbContext so it survives the tree↔viewer
+   * panel swap (which unmounts KbTree). Pass `useKb().seenAutoReveal`.
+   */
+  seenAutoReveal: MutableRefObject<Set<string>>;
 }) {
   const [overrides, setOverrides] = useState<Record<string, boolean>>(() =>
     readOverrides(storageKey),
@@ -39,7 +46,6 @@ export function useKbTreeState({
   const [filter, setFilter] = useState("");
   const [lens, setLens] = useState(false);
   const [pulseId, setPulseId] = useState<string | null>(null);
-  const seen = useRef<Set<string>>(new Set());
   const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persist = useCallback(
@@ -67,9 +73,9 @@ export function useKbTreeState({
   // Auto-reveal: expand the path to a newly cited node once (never re-opening
   // a branch the user closed) and pulse the cited node.
   useEffect(() => {
-    const fresh = citedRefs.filter((r) => !seen.current.has(citedRefKey(r.path, r.anchor)));
+    const fresh = citedRefs.filter((r) => !seenAutoReveal.current.has(citedRefKey(r.path, r.anchor)));
     if (fresh.length === 0) return;
-    for (const r of fresh) seen.current.add(citedRefKey(r.path, r.anchor));
+    for (const r of fresh) seenAutoReveal.current.add(citedRefKey(r.path, r.anchor));
 
     const next = { ...overrides };
     let changed = false;
@@ -96,7 +102,7 @@ export function useKbTreeState({
       if (pulseTimer.current !== null) clearTimeout(pulseTimer.current);
       pulseTimer.current = setTimeout(() => setPulseId(null), 1600);
     }
-  }, [citedRefs, files, groupNames, overrides, persist]);
+  }, [citedRefs, files, groupNames, overrides, persist, seenAutoReveal]);
 
   // Unmount-only: clear any pending pulse timer.
   useEffect(

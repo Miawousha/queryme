@@ -250,7 +250,7 @@ export function KbTree({
   citedRefs: CitedRef[];
   onOpen: (path: string, anchor?: string | null) => void;
 }) {
-  const { strings, lang, groups: configGroups, apiBasePath } = useKb();
+  const { strings, lang, groups: configGroups, apiBasePath, seenAutoReveal } = useKb();
   const filterRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -281,6 +281,7 @@ export function KbTree({
     files,
     citedRefs,
     groupNames,
+    seenAutoReveal,
   });
 
   const tree = useMemo(
