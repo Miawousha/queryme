@@ -6,7 +6,7 @@ import { KbTree } from "@/components/kb/kb-tree";
 import { useKb } from "@/components/kb/kb-context";
 import type { KbFile } from "@/lib/kb/manifest";
 import type { CitedRef } from "@/lib/kb/cited-paths";
-import type { KbStrings } from "@/lib/language";
+import { makeKbContext } from "@/tests/helpers/kb-fixtures";
 
 // ---------------------------------------------------------------------------
 // Mock KbContext — KbTree reads strings/lang/groups/apiBasePath/seenAutoReveal
@@ -17,67 +17,6 @@ vi.mock("@/components/kb/kb-context", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/kb/kb-context")>();
   return { ...actual, useKb: vi.fn() };
 });
-
-const KB_STRINGS: KbStrings = {
-  title: "knowledge base",
-  unavailable: "The knowledge base is unavailable.",
-  referenced: "Referenced in this conversation",
-  allDocuments: "All documents",
-  notInKb: "That document isn't in the knowledge base.",
-  back: "files",
-  loading: "Loading…",
-  loadError: "Couldn't load this file.",
-  github: "GitHub",
-  expand: "expand",
-  minimize: "minimize",
-  close: "close",
-  details: "File details",
-  showDetails: "Show file details",
-  hideDetails: "Hide file details",
-  backToList: "Back to the file list",
-  expandFocus: "Expand to focus mode",
-  exitFocus: "Exit focus mode",
-  showPanel: "Show the knowledge base panel",
-  closePanel: "Close the knowledge base panel",
-  resizePanel: "Resize the knowledge base panel",
-  panelLabel: "Knowledge base",
-  copy: "Copy",
-  copied: "Copied",
-  copyAria: "Copy document content",
-  download: "Download",
-  downloadAria: "Download document",
-  print: "Print",
-  printAria: "Print or save as PDF",
-  cv: "Curriculum Vitae",
-  openCv: "Open CV",
-  filterPlaceholder: "Filter…",
-  clearFilter: "Clear filter",
-  noMatches: "No documents match.",
-  referencedLens: "Referenced",
-  referencedLensAria: "Show only documents referenced in this conversation",
-  outline: "Outline",
-  outlineAria: "Jump to a section",
-  citationJump: "Show citation {n} in chat",
-  sections: {
-    experience: "Experience",
-    projects: "Projects",
-    talks: "Talks",
-    recommendations: "Recommendations",
-    other: "Other",
-  },
-  expandGroup: "Expand",
-  collapseGroup: "Collapse",
-  meta: {
-    company: "Company",
-    role: "Role",
-    period: "Period",
-    location: "Location",
-    year: "Year",
-    link: "Link",
-    stack: "Stack",
-    tags: "Tags",
-  },
-};
 
 const FILES: KbFile[] = [
   {
@@ -92,24 +31,10 @@ const FILES: KbFile[] = [
   { path: "experience/2021-ion.md", title: "2021 — ION Energy", type: "md" },
 ];
 
-function makeKbContext(jumpToMessage = vi.fn()): ReturnType<typeof useKb> {
-  return {
-    lang: "en",
-    strings: KB_STRINGS,
-    manifest: FILES,
-    groups: [{ name: "experience" }],
-    citedRefs: [],
-    setCitedRefs: vi.fn(),
-    seenAutoReveal: { current: new Set() },
-    openTarget: null,
-    openFile: vi.fn(),
-    closeFile: vi.fn(),
-    jumpToMessageHandler: { current: null },
-    jumpToMessage,
-    onJumpToMessage: vi.fn(() => () => {}),
-    apiBasePath: "/api",
-    cvPrintBase: "",
-  };
+// Tree tests always need the FILES manifest and an "experience" group; wrap the
+// shared factory with those defaults so individual tests stay readable.
+function makeTreeCtx(overrides?: Partial<ReturnType<typeof useKb>>) {
+  return makeKbContext({ manifest: FILES, groups: [{ name: "experience" }], ...overrides });
 }
 
 beforeEach(() => {
@@ -119,7 +44,7 @@ beforeEach(() => {
 
 describe("KbTree — citation chip buttons", () => {
   it("renders a doc chip as a real button, NOT nested inside the row button", () => {
-    vi.mocked(useKb).mockReturnValue(makeKbContext());
+    vi.mocked(useKb).mockReturnValue(makeTreeCtx());
     const refs: CitedRef[] = [
       { path: "experience/2021-ion.md", anchor: null, index: 1, messageId: "msg-a" },
     ];
@@ -137,7 +62,7 @@ describe("KbTree — citation chip buttons", () => {
     const jumpToMessage = vi.fn();
     const onOpen = vi.fn();
     const user = userEvent.setup();
-    vi.mocked(useKb).mockReturnValue(makeKbContext(jumpToMessage));
+    vi.mocked(useKb).mockReturnValue(makeTreeCtx({ jumpToMessage }));
     const refs: CitedRef[] = [
       { path: "experience/2021-ion.md", anchor: null, index: 1, messageId: "msg-a" },
     ];
@@ -152,7 +77,7 @@ describe("KbTree — citation chip buttons", () => {
   it("the cited doc's row button still opens the doc", async () => {
     const onOpen = vi.fn();
     const user = userEvent.setup();
-    vi.mocked(useKb).mockReturnValue(makeKbContext());
+    vi.mocked(useKb).mockReturnValue(makeTreeCtx());
     const refs: CitedRef[] = [
       { path: "experience/2021-ion.md", anchor: null, index: 1, messageId: "msg-a" },
     ];
@@ -167,7 +92,7 @@ describe("KbTree — citation chip buttons", () => {
     const jumpToMessage = vi.fn();
     const onOpen = vi.fn();
     const user = userEvent.setup();
-    vi.mocked(useKb).mockReturnValue(makeKbContext(jumpToMessage));
+    vi.mocked(useKb).mockReturnValue(makeTreeCtx({ jumpToMessage }));
     const refs: CitedRef[] = [
       { path: "experience/2025-altergo.md", anchor: "battery-telemetry", index: 2, messageId: "msg-b" },
     ];
@@ -186,7 +111,7 @@ describe("KbTree — citation chip buttons", () => {
   });
 
   it("chips are keyboard-reachable in the natural tab order", () => {
-    vi.mocked(useKb).mockReturnValue(makeKbContext());
+    vi.mocked(useKb).mockReturnValue(makeTreeCtx());
     const refs: CitedRef[] = [
       { path: "experience/2021-ion.md", anchor: null, index: 1, messageId: "msg-a" },
     ];
@@ -199,7 +124,7 @@ describe("KbTree — citation chip buttons", () => {
   });
 
   it("renders no chip buttons when nothing is cited", () => {
-    vi.mocked(useKb).mockReturnValue(makeKbContext());
+    vi.mocked(useKb).mockReturnValue(makeTreeCtx());
 
     render(<KbTree manifest={FILES} citedRefs={[]} onOpen={vi.fn()} />);
 

@@ -6,7 +6,7 @@ import { renderHook } from "@testing-library/react";
 import { KbLayout } from "@/components/kb/kb-layout";
 import { useIsDesktop } from "@/lib/use-is-desktop";
 import { useKb } from "@/components/kb/kb-context";
-import type { KbStrings } from "@/lib/language";
+import { makeKbContext, type KbFixture } from "@/tests/helpers/kb-fixtures";
 
 // ---------------------------------------------------------------------------
 // Mock KbContext — KbLayout only reads strings from it.
@@ -62,102 +62,6 @@ function mockMatchMedia(matches: boolean): MockMql {
   return mql;
 }
 
-// ---------------------------------------------------------------------------
-// Minimal KbStrings stub
-// ---------------------------------------------------------------------------
-
-const KB_STRINGS: KbStrings = {
-  title: "knowledge base",
-  unavailable: "The knowledge base is unavailable.",
-  referenced: "Referenced in this conversation",
-  allDocuments: "All documents",
-  notInKb: "That document isn't in the knowledge base.",
-  back: "files",
-  loading: "Loading…",
-  loadError: "Couldn't load this file.",
-  github: "GitHub",
-  expand: "expand",
-  minimize: "minimize",
-  close: "close",
-  details: "File details",
-  showDetails: "Show file details",
-  hideDetails: "Hide file details",
-  backToList: "Back to the file list",
-  expandFocus: "Expand to focus mode",
-  exitFocus: "Exit focus mode",
-  showPanel: "Show the knowledge base panel",
-  closePanel: "Close the knowledge base panel",
-  resizePanel: "Resize the knowledge base panel",
-  panelLabel: "Knowledge base",
-  copy: "Copy",
-  copied: "Copied",
-  copyAria: "Copy document content",
-  download: "Download",
-  downloadAria: "Download document",
-  print: "Print",
-  printAria: "Print or save as PDF",
-  cv: "Curriculum Vitae",
-  openCv: "Open CV",
-  filterPlaceholder: "Filter…",
-  clearFilter: "Clear filter",
-  noMatches: "No documents match.",
-  referencedLens: "Referenced",
-  referencedLensAria: "Show only documents referenced in this conversation",
-  outline: "Outline",
-  outlineAria: "Jump to a section",
-  citationJump: "Show citation {n} in chat",
-  sections: {
-    experience: "Experience",
-    projects: "Projects",
-    talks: "Talks",
-    recommendations: "Recommendations",
-    other: "Other",
-  },
-  expandGroup: "Expand",
-  collapseGroup: "Collapse",
-  meta: {
-    company: "Company",
-    role: "Role",
-    period: "Period",
-    location: "Location",
-    year: "Year",
-    link: "Link",
-    stack: "Stack",
-    tags: "Tags",
-  },
-};
-
-function makeKbContext(): ReturnType<typeof useKb> {
-  // Functional jump channel (mirrors KbProvider) so layout tests can fire a
-  // jump and observe the drawer closing.
-  const jumpListeners = new Set<() => void>();
-  const jumpToMessageHandler = { current: null as ((messageId: string) => void) | null };
-  return {
-    lang: "en",
-    strings: KB_STRINGS,
-    manifest: [],
-    groups: [],
-    citedRefs: [],
-    setCitedRefs: vi.fn(),
-    seenAutoReveal: { current: new Set() },
-    openTarget: null,
-    openFile: vi.fn(),
-    closeFile: vi.fn(),
-    jumpToMessageHandler,
-    jumpToMessage: (messageId: string) => {
-      for (const listener of jumpListeners) listener();
-      jumpToMessageHandler.current?.(messageId);
-    },
-    onJumpToMessage: (listener: () => void) => {
-      jumpListeners.add(listener);
-      return () => {
-        jumpListeners.delete(listener);
-      };
-    },
-    apiBasePath: "/api",
-    cvPrintBase: "",
-  };
-}
 
 beforeEach(() => {
   vi.mocked(useKb).mockReset();
@@ -333,14 +237,15 @@ describe("KbLayout — single panel mount per breakpoint", () => {
 
   it("unsubscribes its jump listener on unmount", async () => {
     mockMatchMedia(false);
-    const ctx = makeKbContext();
+    const ctx: KbFixture = makeKbContext();
     vi.mocked(useKb).mockReturnValue(ctx);
 
     const { unmount } = render(<KbLayout chat={<div>chat</div>} panel={<div>PANEL</div>} />);
+    // KbLayout subscribes exactly one listener (the drawer-close handler).
+    expect(ctx._jumpListeners.size).toBe(1);
     unmount();
-
-    // Firing a jump after unmount must not crash (listener was removed).
-    expect(() => ctx.jumpToMessage("m1")).not.toThrow();
+    // The effect cleanup must have unsubscribed it.
+    expect(ctx._jumpListeners.size).toBe(0);
   });
 
   it("drawer open on resize to desktop: drawer closes, desktop pane takes over", async () => {
