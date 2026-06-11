@@ -152,4 +152,48 @@ describe("KbDocToolbar — outline dropdown keyboard a11y (option a: roving focu
     expect(screen.queryByRole("menuitem")).toBeNull();
     expect(onJumpTo).toHaveBeenCalledWith("details");
   });
+
+  it("Escape closes the menu but does not bubble to a surrounding dialog's document listener", async () => {
+    // Mimics useDialog's document-level Escape handler (focus-mode overlay / mobile drawer).
+    const user = userEvent.setup();
+    const dialogEscape = vi.fn();
+    const onDocKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dialogEscape();
+    };
+    document.addEventListener("keydown", onDocKeyDown);
+
+    try {
+      renderToolbar();
+      const trigger = screen.getByRole("button", { name: "Jump to a section" });
+      await user.click(trigger);
+      expect(screen.getAllByRole("menuitem")).toHaveLength(4); // sanity: menu open
+
+      await user.keyboard("{Escape}");
+
+      expect(screen.queryByRole("menuitem")).toBeNull(); // menu closed
+      expect(dialogEscape).not.toHaveBeenCalled();       // surrounding dialog NOT dismissed
+    } finally {
+      document.removeEventListener("keydown", onDocKeyDown);
+    }
+  });
+
+  it("ArrowDown focuses the first item when focus is on the trigger (idx -1 fallback)", async () => {
+    // Covers the activeIdx === -1 branch: after Shift+Tab returns focus to the
+    // trigger while the menu is still open, ArrowDown should land on item[0].
+    const user = userEvent.setup();
+    renderToolbar();
+
+    const trigger = screen.getByRole("button", { name: "Jump to a section" });
+    await user.click(trigger); // opens menu; useEffect focuses first item
+
+    // Move focus back to the trigger (simulates Shift+Tab from an item back to
+    // the trigger); the menu stays open because the trigger is inside the container.
+    trigger.focus();
+    expect(screen.getAllByRole("menuitem")).toHaveLength(4); // menu still open
+
+    await user.keyboard("{ArrowDown}");
+
+    const items = screen.getAllByRole("menuitem");
+    expect(items[0]).toHaveFocus(); // idx -1 fallback → first item
+  });
 });

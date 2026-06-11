@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 function OutlineTitle({
@@ -21,20 +21,17 @@ function OutlineTitle({
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Wrap around: ArrowDown past last → first; ArrowUp before first → last.
-  const focusItem = useCallback(
-    (rawIndex: number) => {
-      const len = outline.length;
-      if (len === 0) return;
-      const index = ((rawIndex % len) + len) % len;
-      itemRefs.current[index]?.focus();
-    },
-    [outline.length],
-  );
+  function focusItem(rawIndex: number) {
+    const len = outline.length;
+    if (len === 0) return;
+    const index = ((rawIndex % len) + len) % len;
+    itemRefs.current[index]?.focus();
+  }
 
-  const closeAndReturnFocus = useCallback(() => {
+  function closeAndReturnFocus() {
     setOpen(false);
     triggerRef.current?.focus();
-  }, []);
+  }
 
   // Focus the first item each time the menu opens.
   useEffect(() => {
@@ -48,21 +45,23 @@ function OutlineTitle({
       className="relative min-w-0"
       onKeyDown={(e) => {
         if (!open) return;
+        const activeIdx = itemRefs.current.findIndex((r) => r === document.activeElement);
         switch (e.key) {
           case "Escape":
             e.preventDefault();
+            // Stop propagation so a single Escape closes only this menu and not
+            // the surrounding dialog (focus-mode overlay or mobile drawer via useDialog).
+            e.stopPropagation();
             closeAndReturnFocus();
             break;
           case "ArrowDown": {
             e.preventDefault();
-            const idx = itemRefs.current.findIndex((r) => r === document.activeElement);
-            focusItem(idx === -1 ? 0 : idx + 1);
+            focusItem(activeIdx === -1 ? 0 : activeIdx + 1);
             break;
           }
           case "ArrowUp": {
             e.preventDefault();
-            const idx = itemRefs.current.findIndex((r) => r === document.activeElement);
-            focusItem(idx === -1 ? outline.length - 1 : idx - 1);
+            focusItem(activeIdx === -1 ? outline.length - 1 : activeIdx - 1);
             break;
           }
           case "Home":
