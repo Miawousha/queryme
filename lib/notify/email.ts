@@ -85,6 +85,40 @@ export async function sendUsageAlert(
   }
 }
 
+export type UpgradeNudge = {
+  to: string;
+  from: string;
+  username: string;
+  freeAllowance: number;
+  billingUrl: string;
+};
+
+export async function sendUpgradeNudge(
+  transport: EmailTransport,
+  input: UpgradeNudge,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const lines = [
+    `Your queritae persona has answered all ${input.freeAllowance} of this month's free questions — and a visitor just asked another one.`,
+    ``,
+    `Until you upgrade, new visitors are offered the forward-a-question flow instead of live answers (you'll still receive their questions by email).`,
+    ``,
+    `Upgrade to Pro to keep the conversation going:`,
+    input.billingUrl,
+  ];
+  const subject = `[queritae] your free questions for this month are used up`;
+  try {
+    const r = await transport.send({
+      to: input.to,
+      from: input.from,
+      subject,
+      text: lines.join("\n"),
+    });
+    return { ok: true, id: r.id };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /**
  * Resend transport. Reads `RESEND_API_KEY` lazily so unit tests can swap a
  * fake transport without setting env. Throws at first use if the key is

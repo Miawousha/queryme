@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { sendForwardNotification, type EmailTransport } from "@/lib/notify/email";
+import { sendForwardNotification, sendUpgradeNudge, type EmailTransport } from "@/lib/notify/email";
 
 function makeTransport(): EmailTransport & { sent: Parameters<EmailTransport["send"]>[0][] } {
   const sent: Parameters<EmailTransport["send"]>[0][] = [];
@@ -58,5 +58,22 @@ describe("sendForwardNotification", () => {
       conversationId: null,
     });
     expect(r).toEqual({ ok: false, error: "network" });
+  });
+});
+
+describe("sendUpgradeNudge", () => {
+  it("sends the upgrade email with the billing link", async () => {
+    const t = makeTransport();
+    const result = await sendUpgradeNudge(t, {
+      to: "owner@example.com",
+      from: "noreply@queritae.com",
+      username: "alex",
+      freeAllowance: 10,
+      billingUrl: "https://queritae.com/alex/admin/settings/billing",
+    });
+    expect(result).toEqual({ ok: true, id: "test-id" });
+    expect(t.sent[0].subject).toContain("free questions");
+    expect(t.sent[0].text).toContain("https://queritae.com/alex/admin/settings/billing");
+    expect(t.sent[0].text).toContain("10");
   });
 });
