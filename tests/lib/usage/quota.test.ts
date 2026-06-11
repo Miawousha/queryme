@@ -160,4 +160,38 @@ describe("checkQuota plan allowance", () => {
     });
     expect(verdict).toEqual({ allowed: true });
   });
+
+  it("resolves a pro account's config with no monthly allowance", async () => {
+    vi.mocked(getAccountById).mockResolvedValueOnce({ plan: "pro" } as never);
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 10,
+      monthTokens: 0,
+    });
+    await expect(checkQuota(db, accountId)).resolves.toEqual({ allowed: true });
+  });
+
+  it("skips the account lookup when an explicit config is passed", async () => {
+    vi.mocked(getAccountById).mockClear();
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 0,
+      monthTokens: 0,
+    });
+    await checkQuota(db, accountId, { dailyMessages: 10, monthlyTokens: 1_000 });
+    expect(getAccountById).not.toHaveBeenCalled();
+  });
+
+  it("fails closed to the free allowance when the account row is missing", async () => {
+    vi.mocked(getAccountById).mockResolvedValueOnce(null as never);
+    vi.mocked(getUsageTotals).mockResolvedValueOnce({
+      dayMessages: 0,
+      monthMessages: 10,
+      monthTokens: 0,
+    });
+    await expect(checkQuota(db, accountId)).resolves.toEqual({
+      allowed: false,
+      reason: "plan_allowance",
+    });
+  });
 });

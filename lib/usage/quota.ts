@@ -75,8 +75,9 @@ export async function checkQuota(
   const cfg =
     config ?? quotaConfigForPlan((await getAccountById(db, accountId))?.plan ?? "free");
   const totals = await getUsageTotals(db, accountId, now);
-  // Plan allowance first: it is the limit a visitor can actually hit in normal
-  // use, and the chat handler keys its forward-only response off this reason.
+  // Plan allowance first: of the three caps it is the one a visitor can hit in
+  // normal use, so callers can key user-facing behavior off this reason without
+  // it being shadowed by the platform ceilings.
   if (cfg.monthlyMessages !== undefined && totals.monthMessages >= cfg.monthlyMessages) {
     return { allowed: false, reason: "plan_allowance" };
   }
