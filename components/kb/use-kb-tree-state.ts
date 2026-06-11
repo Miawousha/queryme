@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
 import { citedRefKey, type CitedRef } from "@/lib/kb/cited-paths";
 import { ancestorIdsFor, type KbTreeNode } from "@/lib/kb/tree";
@@ -38,7 +38,7 @@ export function useKbTreeState({
    * auto-reveal pulse. Lifted into KbContext so it survives the tree↔viewer
    * panel swap (which unmounts KbTree). Pass `useKb().seenAutoReveal`.
    */
-  seenAutoReveal: MutableRefObject<Set<string>>;
+  seenAutoReveal: RefObject<Set<string>>;
 }) {
   const [overrides, setOverrides] = useState<Record<string, boolean>>(() =>
     readOverrides(storageKey),

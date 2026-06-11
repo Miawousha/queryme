@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useKbTreeState } from "@/components/kb/use-kb-tree-state";
-import type { CitedRef } from "@/lib/kb/cited-paths";
+import { citedRefKey, type CitedRef } from "@/lib/kb/cited-paths";
 import type { KbFile } from "@/lib/kb/manifest";
 
 // ---------------------------------------------------------------------------
@@ -53,7 +53,7 @@ describe("useKbTreeState — auto-reveal dedup survives tree remount", () => {
     // pulseId is set to the doc node id.
     expect(result.current.pulseId).toBe("doc:experience/test.md");
     // The key is recorded in the external ref after the effect runs.
-    expect(seenAutoReveal.current.has("experience/test.md")).toBe(true);
+    expect(seenAutoReveal.current.has(citedRefKey(CITED_REF.path, CITED_REF.anchor))).toBe(true);
   });
 
   it("does NOT re-pulse when remounted with the same seenAutoReveal ref (regression guard)", () => {
@@ -64,7 +64,7 @@ describe("useKbTreeState — auto-reveal dedup survives tree remount", () => {
     unmount();
 
     // The set must outlive the unmount — this is the invariant the fix provides.
-    expect(seenAutoReveal.current.has("experience/test.md")).toBe(true);
+    expect(seenAutoReveal.current.has(citedRefKey(CITED_REF.path, CITED_REF.anchor))).toBe(true);
 
     // Second mount with THE SAME external ref: the cited key is already seen
     // → effect returns early without setting pulseId.

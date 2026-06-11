@@ -8,7 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type MutableRefObject,
+  type RefObject,
   type ReactNode,
 } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
@@ -46,7 +46,7 @@ type KbContextValue = {
    * Exposed as-is so future callers can pre-populate it (e.g. to suppress
    * re-pulses when seeding history citations on load).
    */
-  seenAutoReveal: MutableRefObject<Set<string>>;
+  seenAutoReveal: RefObject<Set<string>>;
   /** The doc (and optional section) shown in the viewer; null = tree. */
   openTarget: KbOpenTarget | null;
   openFile: (path: string, anchor?: string | null) => void;
