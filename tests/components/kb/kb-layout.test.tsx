@@ -105,6 +105,7 @@ const KB_STRINGS: KbStrings = {
   referencedLensAria: "Show only documents referenced in this conversation",
   outline: "Outline",
   outlineAria: "Jump to a section",
+  citationJump: "Show citation {n} in chat",
   sections: {
     experience: "Experience",
     projects: "Projects",
@@ -127,6 +128,10 @@ const KB_STRINGS: KbStrings = {
 };
 
 function makeKbContext(): ReturnType<typeof useKb> {
+  // Functional jump channel (mirrors KbProvider) so layout tests can fire a
+  // jump and observe the drawer closing.
+  const jumpListeners = new Set<() => void>();
+  const jumpToMessageHandler = { current: null as ((messageId: string) => void) | null };
   return {
     lang: "en",
     strings: KB_STRINGS,
@@ -138,6 +143,17 @@ function makeKbContext(): ReturnType<typeof useKb> {
     openTarget: null,
     openFile: vi.fn(),
     closeFile: vi.fn(),
+    jumpToMessageHandler,
+    jumpToMessage: (messageId: string) => {
+      for (const listener of jumpListeners) listener();
+      jumpToMessageHandler.current?.(messageId);
+    },
+    onJumpToMessage: (listener: () => void) => {
+      jumpListeners.add(listener);
+      return () => {
+        jumpListeners.delete(listener);
+      };
+    },
     apiBasePath: "/api",
     cvPrintBase: "",
   };
@@ -296,6 +312,35 @@ describe("KbLayout — single panel mount per breakpoint", () => {
     expect(screen.queryByRole("separator")).toBeNull();
     // Mobile trigger appears.
     expect(screen.getByRole("button", { name: "KB" })).toBeInTheDocument();
+  });
+
+  it("mobile: a chip jump closes the drawer so the chat scroll is visible", async () => {
+    mockMatchMedia(false);
+    const user = userEvent.setup();
+    const ctx = makeKbContext();
+    vi.mocked(useKb).mockReturnValue(ctx);
+
+    render(<KbLayout chat={<div>chat</div>} panel={<div>PANEL</div>} />);
+
+    // Open the drawer — it covers the chat.
+    await user.click(screen.getByRole("button", { name: "KB" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    // A tree chip requests a jump → the drawer closes.
+    act(() => ctx.jumpToMessage("m1"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("unsubscribes its jump listener on unmount", async () => {
+    mockMatchMedia(false);
+    const ctx = makeKbContext();
+    vi.mocked(useKb).mockReturnValue(ctx);
+
+    const { unmount } = render(<KbLayout chat={<div>chat</div>} panel={<div>PANEL</div>} />);
+    unmount();
+
+    // Firing a jump after unmount must not crash (listener was removed).
+    expect(() => ctx.jumpToMessage("m1")).not.toThrow();
   });
 
   it("drawer open on resize to desktop: drawer closes, desktop pane takes over", async () => {

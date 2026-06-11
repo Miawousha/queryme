@@ -32,7 +32,7 @@ export function KbLayout({
   collapsed?: boolean;
   onCollapsedChange?: (next: boolean) => void;
 }) {
-  const { strings } = useKb();
+  const { strings, onJumpToMessage } = useKb();
   const isDesktop = useIsDesktop();
   const [widthPct, setWidthPct] = useState(DEFAULT_PCT);
   const [collapsedInternal, setCollapsedInternal] = useState(false);
@@ -45,6 +45,11 @@ export function KbLayout({
   useEffect(() => {
     if (isDesktop) setDrawerOpen(false);
   }, [isDesktop]);
+
+  // A tree-chip jump must be visible: on mobile the drawer covers the chat,
+  // so close it when a chip requests a jump. No-op while already closed
+  // (desktop included — React bails out on the unchanged state).
+  useEffect(() => onJumpToMessage(() => setDrawerOpen(false)), [onJumpToMessage]);
 
   const collapsed = collapsedProp ?? collapsedInternal;
   const setCollapsed = (next: boolean) => {

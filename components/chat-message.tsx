@@ -33,6 +33,8 @@ function urlTransform(url: string): string {
 export type ChatMessageProps = {
   role: "user" | "assistant";
   text: string;
+  /** DOM id anchor (`msg-<id>`) so the KB tree's chips can scroll here. */
+  id?: string;
   /** Localized label for the assistant role tag. */
   agentLabel: string;
   /** Localized label for the inline "forward to Alexandre" button. */
@@ -74,6 +76,7 @@ function rewriteCitations(text: string, indices: Record<string, number>): string
 export function ChatMessage({
   role,
   text,
+  id,
   agentLabel,
   forwardLabel,
   forwardStrings,
@@ -89,6 +92,7 @@ export function ChatMessage({
 
   return (
     <div
+      id={id}
       className={cn(
         "flex w-full",
         isAssistant ? "justify-start" : "justify-end",

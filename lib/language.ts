@@ -124,6 +124,8 @@ export function buildUiStrings(persona: Persona) {
         referencedLensAria: "Show only documents referenced in this conversation",
         outline: "Outline",
         outlineAria: "Jump to a section",
+        /** Chip-button label template — `{n}` is the citation number. */
+        citationJump: "Show citation {n} in chat",
         sections: {
           experience: "Experience",
           projects: "Projects",
@@ -259,6 +261,8 @@ export function buildUiStrings(persona: Persona) {
         referencedLensAria: "Afficher uniquement les documents référencés dans cette conversation",
         outline: "Plan",
         outlineAria: "Aller à une section",
+        /** Gabarit du libellé des puces — `{n}` est le numéro de citation. */
+        citationJump: "Afficher la citation {n} dans la conversation",
         sections: {
           experience: "Expérience",
           projects: "Projets",

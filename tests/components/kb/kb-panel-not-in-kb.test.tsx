@@ -57,6 +57,7 @@ const KB_STRINGS: KbStrings = {
   referencedLensAria: "Show only documents referenced in this conversation",
   outline: "Outline",
   outlineAria: "Jump to a section",
+  citationJump: "Show citation {n} in chat",
   sections: {
     experience: "Experience",
     projects: "Projects",
@@ -90,6 +91,9 @@ function makeKbContext(overrides: Partial<ReturnType<typeof useKb>> = {}): Retur
     openTarget: null,
     openFile: vi.fn(),
     closeFile: vi.fn(),
+    jumpToMessageHandler: { current: null },
+    jumpToMessage: vi.fn(),
+    onJumpToMessage: vi.fn(() => () => {}),
     apiBasePath: "/api",
     cvPrintBase: "",
     ...overrides,

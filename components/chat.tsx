@@ -9,6 +9,7 @@ import { ChatMessage } from "@/components/chat-message";
 import { StreamingMessage } from "@/components/streaming-message";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
 import { useKb } from "@/components/kb/kb-context";
+import { chatMessageDomId, jumpToChatMessage } from "@/lib/chat-jump";
 import { citationIndexMap, extractCitations } from "@/lib/kb/cited-paths";
 import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
@@ -60,7 +61,7 @@ function latestIdentity(
 }
 
 export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
-  const { setCitedRefs, openFile } = useKb();
+  const { setCitedRefs, openFile, jumpToMessageHandler } = useKb();
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
   useEffect(() => {
@@ -127,6 +128,21 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
     if (!el) return;
     atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }
+
+  // Tree chip → chat: register the scroll-to-message handler in the KB
+  // context (the tree and the chat are sibling panes — the context ref is
+  // their channel). Unpin from the bottom BEFORE jumping so the streaming
+  // autoscroll above doesn't immediately yank the view back down; the scroll
+  // event the jump produces re-derives the pin from the actual position.
+  useEffect(() => {
+    jumpToMessageHandler.current = (messageId: string) => {
+      atBottomRef.current = false;
+      jumpToChatMessage(scrollRef.current, messageId);
+    };
+    return () => {
+      jumpToMessageHandler.current = null;
+    };
+  }, [jumpToMessageHandler]);
 
   function submit(text: string) {
     const trimmed = text.trim();
@@ -270,6 +286,7 @@ export function Chat({ t, lang, apiBasePath = "/api" }: ChatProps) {
             return (
               <StreamingMessage
                 key={m.id}
+                id={chatMessageDomId(m.id)}
                 role={m.role === "user" ? "user" : "assistant"}
                 text={messageText(m)}
                 isStreaming={isStreaming}
