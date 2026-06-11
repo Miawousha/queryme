@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleKbManifest } from "@/lib/kb/handlers";
+import { parseKbLocale } from "@/lib/kb/file-type";
 import { loadActiveAccountForSlug } from "@/lib/accounts/load";
 export const runtime = "nodejs";
 
@@ -7,6 +8,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   const { username } = await params;
   const account = await loadActiveAccountForSlug(username);
   if (!account) return NextResponse.json({ error: "account_not_found" }, { status: 404 });
-  const lang = new URL(req.url).searchParams.get("lang") === "fr" ? "fr" : "en";
+  const lang = parseKbLocale(new URL(req.url).searchParams.get("lang"));
   return handleKbManifest(account.id, lang);
 }

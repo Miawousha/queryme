@@ -5,6 +5,11 @@ export type KbFileType = "md" | "yaml" | "html" | "pdf" | "cv";
 /** The app's shipped content locales — mirrors the sidecar set in `isLocaleSidecar`. */
 export type KbLocale = "en" | "fr";
 
+/** Narrows a raw `lang` query param to a `KbLocale`, defaulting to `en`. */
+export function parseKbLocale(v: string | null): KbLocale {
+  return v === "fr" ? "fr" : "en";
+}
+
 /** True for localized sidecar files like `foo.fr.md` / `foo.fr.yaml`. The
  * locale set is fixed to the app's shipped locales — a two-letter suffix like
  * `web.ui.md` is content, not a sidecar. */
