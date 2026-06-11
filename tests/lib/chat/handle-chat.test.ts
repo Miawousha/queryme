@@ -193,6 +193,7 @@ describe("handleChat quota + per-account rate limit", () => {
   });
 
   it("returns 429 with plan_allowance and fires the nudge when the free allowance is hit", async () => {
+    vi.mocked(maybeSendUpgradeNudge).mockClear();
     vi.mocked(checkQuota).mockResolvedValueOnce({ allowed: false, reason: "plan_allowance" });
     const res = await handleChat(makeReq(validBody()), UUID_ACCOUNT);
     expect(res.status).toBe(429);
