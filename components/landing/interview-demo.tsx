@@ -325,9 +325,13 @@ export function InterviewDemo() {
         <div className="flex">
           {/* Chat pane */}
           <div className="flex min-w-0 flex-1 flex-col">
+            {/* Height budget: 100dvh minus everything that shares the first
+                viewport with the chat (header, hero copy, CTAs, frame chrome,
+                composer, chip row ≈ 555px) so the whole demo frame sits above
+                the fold on laptop screens instead of being sliced by it. */}
             <div
               ref={scrollRef}
-              className="chat-scroll flex h-[380px] flex-col gap-3 overflow-y-auto px-4 py-4 sm:h-[420px]"
+              className="chat-scroll flex h-[clamp(240px,calc(100dvh_-_555px),420px)] flex-col gap-3 overflow-y-auto px-4 py-4"
               aria-label="Simulated interview with the agent"
             >
               {reduce ? (
@@ -451,12 +455,6 @@ export function InterviewDemo() {
           </button>
         ))}
       </div>
-      <p
-        className="mt-3 text-center font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
-        style={{ letterSpacing: "0.22em" }}
-      >
-        scripted replay — the live agent answers for real
-      </p>
     </div>
   );
 }

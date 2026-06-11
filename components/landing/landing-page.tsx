@@ -196,7 +196,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
         </header>
 
         {/* Hero */}
-        <section className="flex flex-col items-center pb-16 pt-10 text-center sm:pt-14">
+        <section className="flex flex-col items-center pb-16 pt-8 text-center sm:pt-10">
           <p
             className={`fade-up ${MONO_LABEL}`}
             style={{ letterSpacing: "0.42em", animationDelay: "0.05s" }}
@@ -205,7 +205,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           </p>
 
           <h1
-            className="fade-up mt-6 max-w-3xl font-display text-4xl font-light leading-[1.05] tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-6xl"
+            className="fade-up mt-5 max-w-3xl font-display text-4xl font-light leading-[1.05] tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-6xl"
             style={{ animationDelay: "0.12s" }}
           >
             A résumé you can{" "}
@@ -216,7 +216,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           </h1>
 
           <p
-            className="fade-up mt-6 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-secondary)] sm:text-base"
+            className="fade-up mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-secondary)] sm:text-base"
             style={{ animationDelay: "0.2s" }}
           >
             Your experience lives as plain files in a GitHub repo you own. queritae
@@ -253,7 +253,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           </div>
 
           {/* The product, demoing itself */}
-          <div className="fade-up mt-12 w-full max-w-3xl" style={{ animationDelay: "0.36s" }}>
+          <div className="fade-up mt-8 w-full max-w-3xl" style={{ animationDelay: "0.36s" }}>
             <InterviewDemo />
           </div>
         </section>
