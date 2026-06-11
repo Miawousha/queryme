@@ -125,6 +125,17 @@ describe("buildKbTree — filter and lens", () => {
     expect(find(tree, "col:notes")).toBeUndefined();
   });
 
+  it("recounts container counts to reflect surviving docs after pruning", () => {
+    // filter: only experience/2025-altergo.md survives (has "battery" in meta.tags)
+    const filtered = buildKbTree({ ...BASE, filter: "battery" });
+    expect(find(filtered, "col:experience")?.count).toBe(1);
+
+    // lens: only the cited doc survives in experience
+    const refs = [ref("experience/2025-altergo.md", null, 1)];
+    const lensed = buildKbTree({ ...BASE, citedRefs: refs, lens: true });
+    expect(find(lensed, "col:experience")?.count).toBe(1);
+  });
+
   it("lens and filter compose with AND", () => {
     const refs = [
       ref("experience/2025-altergo.md", null, 1),

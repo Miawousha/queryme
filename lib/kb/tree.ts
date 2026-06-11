@@ -185,9 +185,19 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
   for (const r of roots) markDots(r);
 
   // 4. Prune: filter (label/meta match keeps node + subtree-anchor) AND lens
-  //    (only cited branches). Containers vanish when emptied.
+  //    (only cited branches). Containers vanish when emptied; counts are
+  //    recalculated to reflect surviving doc descendants only.
   const needle = filter.trim().toLowerCase();
   const fileByPath = new Map(files.map((f) => [f.path, f] as const));
+
+  function countDocs(nodes: KbTreeNode[]): number {
+    let n = 0;
+    for (const c of nodes) {
+      if (c.kind === "doc") n++;
+      else n += countDocs(c.children);
+    }
+    return n;
+  }
 
   function matches(node: KbTreeNode): boolean {
     if (node.label.toLowerCase().includes(needle)) return true;
@@ -208,7 +218,7 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
       .filter((c): c is KbTreeNode => c !== null);
     const lensOk = !lens || node.chips.length > 0 || node.dot;
     if (node.kind === "collection" || node.kind === "folder") {
-      return children.length > 0 ? { ...node, children } : null;
+      return children.length > 0 ? { ...node, children, count: countDocs(children) } : null;
     }
     if (node.kind === "doc") {
       return (self && lensOk) || children.length > 0 ? { ...node, children } : null;
