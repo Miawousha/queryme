@@ -120,7 +120,6 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
     label: g.label,
     chips: [],
     dot: false,
-    count: 0,
     children: [],
   }));
   const byId = new Map(roots.map((n) => [n.id, n] as const));
@@ -129,7 +128,6 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
     const ids = ancestorIdsFor(file.path, groupNames);
     let parent = byId.get(ids[0]);
     if (!parent) continue;
-    parent.count = (parent.count ?? 0) + 1;
     for (const id of ids.slice(1, -1)) {
       let node = byId.get(id);
       if (!node) {
@@ -140,13 +138,11 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
           label: dirPath.split("/").pop()!,
           chips: [],
           dot: false,
-          count: 0,
           children: [],
         };
         byId.set(id, node);
         parent.children.push(node);
       }
-      node.count = (node.count ?? 0) + 1;
       parent = node;
     }
     const docId = `doc:${file.path}`;
@@ -190,15 +186,6 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
   const needle = filter.trim().toLowerCase();
   const fileByPath = new Map(files.map((f) => [f.path, f] as const));
 
-  function countDocs(nodes: KbTreeNode[]): number {
-    let n = 0;
-    for (const c of nodes) {
-      if (c.kind === "doc") n++;
-      else n += countDocs(c.children);
-    }
-    return n;
-  }
-
   function matches(node: KbTreeNode): boolean {
     if (node.label.toLowerCase().includes(needle)) return true;
     if (node.kind === "doc") {
@@ -218,7 +205,11 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
       .filter((c): c is KbTreeNode => c !== null);
     const lensOk = !lens || node.chips.length > 0 || node.dot;
     if (node.kind === "collection" || node.kind === "folder") {
-      return children.length > 0 ? { ...node, children, count: countDocs(children) } : null;
+      const count = children.reduce(
+        (s, c) => s + (c.kind === "doc" ? 1 : (c.count ?? 0)),
+        0,
+      );
+      return children.length > 0 ? { ...node, children, count } : null;
     }
     if (node.kind === "doc") {
       return (self && lensOk) || children.length > 0 ? { ...node, children } : null;
