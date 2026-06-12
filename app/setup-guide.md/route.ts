@@ -4,8 +4,8 @@ import path from "node:path";
 export const runtime = "nodejs";
 
 // Served as one document: agent preamble first, then the full content-repo
-// guide verbatim — the same file that documents the schemas the sync
-// validates with, so what agents fetch cannot drift from validation.
+// guide verbatim — the same file that documents the KB schemas, so what
+// agents fetch cannot drift from what the app enforces.
 export async function GET() {
   const parts = await Promise.all([
     readFile(path.join(process.cwd(), "docs", "agent-setup-preamble.md"), "utf8"),
