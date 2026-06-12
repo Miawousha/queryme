@@ -16,6 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "stripe:setup": "tsx scripts/stripe-setup.ts",
+    "stripe:golive": "tsx scripts/stripe-golive.ts",
     "backfill:root": "tsx scripts/backfill-root-account.ts",
     "admin": "tsx scripts/admin-cli.ts"
   },
