@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 function buildPrompt(username: string, origin: string): string {
   return [
     `I'm setting up my Queritae knowledge base — a queryable CV that will live at ${origin}/${username}.`,
     "",
-    `Fetch ${origin}/setup-guide.md and follow it exactly. Ask me for my source material (CV, LinkedIn export, portfolio links), and interview me briefly to fill gaps and capture stories. When everything passes the guide's self-checks, create a public GitHub repo, push, and give me the repo URL to paste back here.`,
+    `Fetch ${origin}/setup-guide.md and follow it exactly. Ask me for my source material (CV, LinkedIn export, portfolio links), and interview me briefly to fill gaps and capture stories. When everything passes the guide's self-checks, create a public GitHub repo, push, and give me the repo URL so I can paste it into my Queritae admin.`,
   ].join("\n");
 }
 
@@ -14,13 +14,20 @@ function buildPrompt(username: string, origin: string): string {
 // letting a coding agent build the content repo. Rendered only client-side
 // (ContentTab shows it after its initial fetch), so window is available.
 export function KbSetupSteps({ username }: { username: string }) {
-  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<"idle" | "copied" | "failed">("idle");
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prompt = buildPrompt(username, window.location.origin);
 
   const copy = async () => {
-    await navigator.clipboard.writeText(prompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setFeedback("copied");
+    } catch {
+      // Clipboard can be unavailable or denied; the <pre> stays selectable.
+      setFeedback("failed");
+    }
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => setFeedback("idle"), 2000);
   };
 
   return (
@@ -48,7 +55,13 @@ export function KbSetupSteps({ username }: { username: string }) {
               onClick={copy}
               className="mt-2 rounded border border-[var(--color-border)] px-3 py-1 text-xs"
             >
-              {copied ? "Copied" : "Copy prompt"}
+              <span aria-live="polite">
+                {feedback === "copied"
+                  ? "Copied"
+                  : feedback === "failed"
+                    ? "Copy failed"
+                    : "Copy prompt"}
+              </span>
             </button>
           </div>
         </li>
