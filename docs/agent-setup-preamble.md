@@ -31,11 +31,13 @@ repo. Follow this workflow:
    the user's voice; don't pad and don't invent anything.
 4. **Self-check before pushing.** Re-read every file you wrote against the
    schema reference (field names, date formats, slug conventions, required
-   front-matter). This self-check is the real gate: the sync only verifies
-   that required files exist and that `content.config.yaml` (if present) is
-   valid — schema mistakes surface as errors on the user's live page, not
-   at sync time. (The "Validate locally" section in the reference needs a
-   Queritae checkout; skip it unless you have one.)
+   front-matter). The sync runs the full schema validation — every YAML
+   file and Markdown front-matter block, in every declared locale, plus
+   `persona.yaml` — so a schema mistake fails the sync with a descriptive
+   error instead of breaking the user's live page. The self-check saves
+   you round-trips through that repair loop. (The "Validate locally"
+   section in the reference needs a Queritae checkout; skip it unless you
+   have one.)
 5. **Publish.** Create a **public** GitHub repo (private repos cannot be
    synced — the fetch is unauthenticated), push, and give the user the
    repo URL.
