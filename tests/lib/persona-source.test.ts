@@ -4,12 +4,15 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseGitHubRepoUrl, validatePersonaTree, syncFromGitHubForAccount, getPersonaRootForAccount, ensurePersonaCacheReadyForAccount, resolveLatestSha, refreshPersonaIfStale } from "@/lib/persona-source";
 
-const TEST_ACCOUNT_ID = "test-account-id";
 import { getDb } from "@/lib/db/client";
 import { personaSource } from "@/lib/db/schema";
 import { http, HttpResponse } from "msw";
 import { mswServer } from "../../vitest.setup";
 import { FAKE_SHA, happyPathHandlers, makeTarball } from "./__mocks__/github-handlers";
+import { ensureTestAccount, deleteTestAccount } from "./__mocks__/test-account";
+
+// Set in each DB suite's beforeAll — persona_source.account_id is a uuid FK.
+let TEST_ACCOUNT_ID = "";
 
 // DB-integration blocks opt in via RUN_DB_TESTS so the default `pnpm test` run
 // (no test database, dev DB may lack the latest migration) stays green.
@@ -158,8 +161,10 @@ const MIN_REQUIRED_FILES: Record<string, string> = {
   "kb/public-contact.fr.yaml": "email: test@example.com\n",
   "kb/skills.yaml": "skills: []\n",
   "kb/skills.fr.yaml": "skills: []\n",
-  "kb/education.yaml": "education: []\n",
-  "kb/education.fr.yaml": "education: []\n",
+  // NB: deep validation runs the real Zod schemas, so these must be
+  // schema-valid (EducationSchema keys entries, not education).
+  "kb/education.yaml": "entries: []\n",
+  "kb/education.fr.yaml": "entries: []\n",
 };
 
 describeDb("syncFromGitHub — happy path", () => {
@@ -174,6 +179,7 @@ describeDb("syncFromGitHub — happy path", () => {
         "Point POSTGRES_URL at a test branch or truncate the table first.",
       );
     }
+    TEST_ACCOUNT_ID = await ensureTestAccount();
   });
 
   beforeEach(async () => {
@@ -200,6 +206,7 @@ describeDb("syncFromGitHub — happy path", () => {
   // suite doesn't trip the production-data guard in beforeAll.
   afterAll(async () => {
     await getDb().delete(personaSource);
+    await deleteTestAccount();
   });
 
   it("downloads, extracts, validates, flips the symlink, and writes a DB row", async () => {
@@ -239,6 +246,7 @@ describeDb("syncFromGitHub — error paths", () => {
         "Point POSTGRES_URL at a test branch or truncate the table first.",
       );
     }
+    TEST_ACCOUNT_ID = await ensureTestAccount();
   });
 
   beforeEach(async () => {
@@ -254,6 +262,7 @@ describeDb("syncFromGitHub — error paths", () => {
 
   afterAll(async () => {
     await getDb().delete(personaSource);
+    await deleteTestAccount();
   });
 
   it("returns an error and writes an error row when a required file is missing", async () => {
@@ -354,6 +363,7 @@ describeDb("ensurePersonaCacheReady — cold-start re-fetch", () => {
         "Point POSTGRES_URL at a test branch or truncate the table first.",
       );
     }
+    TEST_ACCOUNT_ID = await ensureTestAccount();
   });
 
   beforeEach(async () => {
@@ -378,6 +388,7 @@ describeDb("ensurePersonaCacheReady — cold-start re-fetch", () => {
 
   afterAll(async () => {
     await getDb().delete(personaSource);
+    await deleteTestAccount();
   });
 
   it("is a no-op when no persona is configured", async () => {
@@ -438,6 +449,7 @@ describeDb("syncFromGitHub — cache cleanup", () => {
         "Point POSTGRES_URL at a test branch or truncate the table first.",
       );
     }
+    TEST_ACCOUNT_ID = await ensureTestAccount();
   });
 
   beforeEach(async () => {
@@ -453,6 +465,7 @@ describeDb("syncFromGitHub — cache cleanup", () => {
 
   afterAll(async () => {
     await getDb().delete(personaSource);
+    await deleteTestAccount();
   });
 
   it("keeps the current + previous SHA dirs and deletes older ones", async () => {

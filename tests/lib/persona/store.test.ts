@@ -17,15 +17,18 @@ describe("PersonaStore (filesystem) under PERSONA_LOCAL_OVERRIDE", () => {
 const d = process.env.RUN_DB_TESTS ? describe : describe.skip;
 
 d("PersonaStore (filesystem) — DB paths", () => {
+  // account_id is a uuid column — a valid-but-absent uuid, not a slug.
+  const NONEXISTENT_ACCOUNT_ID = "00000000-0000-0000-0000-000000000000";
+
   it("getActivePersonaSourceRowForAccount returns null when no row exists", async () => {
     const { getActivePersonaSourceRowForAccount } = await import("@/lib/persona-source");
-    const row = await getActivePersonaSourceRowForAccount("acct-nonexistent");
+    const row = await getActivePersonaSourceRowForAccount(NONEXISTENT_ACCOUNT_ID);
     expect(row).toBeNull();
   });
 
   it("listSyncHistoryForAccount returns empty array when no rows exist", async () => {
     const { listSyncHistoryForAccount } = await import("@/lib/persona-source");
-    const rows = await listSyncHistoryForAccount("acct-nonexistent");
+    const rows = await listSyncHistoryForAccount(NONEXISTENT_ACCOUNT_ID);
     expect(rows).toEqual([]);
   });
 });
