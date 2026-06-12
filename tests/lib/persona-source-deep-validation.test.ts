@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readlinkSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readlinkSync, readFileSync, readdirSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -65,6 +65,8 @@ describe("validatePersonaTreeDeep", () => {
     const result = await validatePersonaTreeDeep(dir);
     expect(result).toMatch(/skills\.yaml/);
     expect(result).toMatch(/level/);
+    // Paths read like repo paths, not the extraction dir's absolute layout.
+    expect(result).not.toContain(dir);
   });
 
   it("reports a malformed education date", async () => {
@@ -108,6 +110,39 @@ describe("validatePersonaTreeDeep", () => {
     const result = await validatePersonaTreeDeep(dir);
     expect(result).toMatch(/experience/);
     expect(result).toMatch(/role/);
+  });
+
+  it("names the localized sidecar file when its frontmatter is invalid", async () => {
+    const dir = writeTree({
+      ...VALID_FILES,
+      "kb/experience/2024-test-co.md":
+        "---\ncompany: Test Co\nrole: Dev\nstart: 2024-01\nend: present\n---\n\nBody.\n",
+      "kb/experience/2024-test-co.fr.md":
+        "---\ncompany: Test Co\nstart: 2024-01\nend: present\n---\n\nCorps.\n",
+    });
+    const result = await validatePersonaTreeDeep(dir);
+    expect(result).toMatch(/2024-test-co\.fr\.md/);
+  });
+
+  it("validates fr sidecars even when the config declares locales [en]", async () => {
+    // The chat endpoint honors a client-supplied language regardless of the
+    // declared locales, so a stray invalid sidecar would still be served.
+    const dir = writeTree({
+      "content.config.yaml":
+        "locales: [en]\ncollections:\n" +
+        "  - { name: profile, kind: yaml, schema: profile, required: true }\n" +
+        "  - { name: public-contact, kind: yaml, schema: public-contact, required: true }\n" +
+        "  - { name: skills, kind: yaml, schema: skills }\n",
+      "persona.yaml": VALID_FILES["persona.yaml"],
+      "prompts/system.md": VALID_FILES["prompts/system.md"],
+      "kb/profile.yaml": VALID_FILES["kb/profile.yaml"],
+      "kb/public-contact.yaml": VALID_FILES["kb/public-contact.yaml"],
+      "kb/skills.yaml": VALID_FILES["kb/skills.yaml"],
+      "kb/skills.fr.yaml": "skills:\n  - name: TypeScript\n    level: 9\n    years: 6\n",
+    });
+    const result = await validatePersonaTreeDeep(dir);
+    expect(result).toMatch(/\[fr\]/);
+    expect(result).toMatch(/skills/);
   });
 });
 
@@ -235,5 +270,32 @@ describeDb("syncFromGitHub — deep validation", () => {
     // tarball must not have been extracted over the served directory.
     expect(readlinkSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current`)).toBe(link);
     expect(readFileSync(path.join(link, "kb/skills.yaml"), "utf8")).toContain("level: 4");
+
+    // The failed staging tree was cleaned up.
+    const entries = readdirSync(`${cacheRoot}/${TEST_ACCOUNT_ID}`).sort();
+    expect(entries).toEqual(["current", FAKE_SHA].sort());
+  });
+
+  it("promotes a same-SHA re-sync cleanly, leaving no staging or old dirs", async () => {
+    const tarball = await makeTarball(VALID_FILES);
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball }));
+    const first = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
+    expect(first.kind).toBe("ok");
+
+    // Same SHA, different (still valid) content — exercises the promotion
+    // swap over a directory the active symlink already points at.
+    const updatedTarball = await makeTarball({
+      ...VALID_FILES,
+      "kb/skills.yaml": "skills:\n  - name: Rust\n    level: 3\n    years: 2\n",
+    });
+    mswServer.resetHandlers();
+    mswServer.use(...happyPathHandlers({ owner: "alex", repo: "queryme-content", tarball: updatedTarball }));
+    const second = await syncFromGitHubForAccount(TEST_ACCOUNT_ID, "https://github.com/alex/queryme-content");
+    expect(second.kind).toBe("ok");
+
+    const link = readlinkSync(`${cacheRoot}/${TEST_ACCOUNT_ID}/current`);
+    expect(readFileSync(path.join(link, "kb/skills.yaml"), "utf8")).toContain("Rust");
+    const entries = readdirSync(`${cacheRoot}/${TEST_ACCOUNT_ID}`).sort();
+    expect(entries).toEqual(["current", FAKE_SHA].sort());
   });
 });

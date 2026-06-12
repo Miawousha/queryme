@@ -140,7 +140,9 @@ async function readMarkdownDir(
     try {
       frontmatter = schema.parse(parsed.data) as Record<string, unknown>;
     } catch (err) {
-      throw new Error(`KB: frontmatter validation failed for ${label} ${file}: ${(err as Error).message}`);
+      // Name the file actually read — for a localized sidecar that's the
+      // .<lang>.md variant, the one the user must fix.
+      throw new Error(`KB: frontmatter validation failed for ${label} ${path.basename(actual)}: ${(err as Error).message}`);
     }
     out.push({
       slug: file.replace(/\.md$/, ""),
