@@ -16,6 +16,12 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   typedRoutes: true,
+  outputFileTracingIncludes: {
+    "/setup-guide.md": [
+      "./docs/agent-setup-preamble.md",
+      "./docs/content-repo-guide.md",
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
