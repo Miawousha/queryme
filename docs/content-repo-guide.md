@@ -510,10 +510,11 @@ OK — KB validates and assembles to 48213 chars.
   …
 ```
 
-> `validate:kb` checks the `kb/` tree (schemas + assembly). The **sync** does an
-> additional check that all [required files](#required-vs-optional) exist
-> (including `persona.yaml`, `prompts/system.md`, and the `.fr.yaml` variants)
-> and validates `persona.yaml`. Running both gives you full coverage.
+> The **sync** runs this same validation itself — [required files](#required-vs-optional),
+> every schema, and assembly, for every declared locale, plus `persona.yaml` —
+> so anything `validate:kb` would catch also fails the sync with the same
+> message. Running it locally just gives you a faster loop (no
+> push-and-sync round-trip).
 
 You can also run your repo against your own copy by setting
 `PERSONA_LOCAL_OVERRIDE` and starting `pnpm dev` to preview the live page.

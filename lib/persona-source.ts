@@ -14,7 +14,9 @@ import { personaSource, type PersonaSource } from "@/lib/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { resetKbCache } from "@/lib/kb/cache";
 import { _resetPromptCache } from "@/lib/prompts";
-import { _resetPersonaCache } from "@/lib/persona";
+import { _resetPersonaCache, parsePersonaFile } from "@/lib/persona";
+import { loadContent } from "@/lib/kb/loader";
+import { assembleContentText } from "@/lib/kb/assembler";
 import {
   loadContentConfig,
   resolveContentConfig,
@@ -82,6 +84,41 @@ export function validatePersonaTree(root: string): string | null {
   );
   if (missing.length === 0) return null;
   return `missing required file(s): ${missing.join(", ")}`;
+}
+
+/**
+ * Deep validation: runs the exact load + assembly the live page (and `pnpm
+ * validate:kb`) runs — persona.yaml parsing plus the full KB load — so schema
+ * errors fail the sync instead of surfacing on the user's page. Validates
+ * every supported language, not just the declared locales: serving honors a
+ * client-requested language regardless, and locale sidecars fall back to the
+ * canonical files, so an undeclared locale is at worst a cheap re-validation.
+ * Reads `root` directly (never the active symlink or PERSONA_LOCAL_OVERRIDE)
+ * and caches nothing. Returns `null` when valid, else the loader's
+ * descriptive error message.
+ */
+export async function validatePersonaTreeDeep(root: string): Promise<string | null> {
+  let message: string | null = null;
+  try {
+    parsePersonaFile(root);
+  } catch (err) {
+    message = `persona.yaml: ${err instanceof Error ? err.message : String(err)}`;
+  }
+  if (message === null) {
+    for (const lang of ["en", "fr"] as const) {
+      try {
+        assembleContentText(await loadContent(root, lang));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        message = lang === "en" ? msg : `[${lang}] ${msg}`;
+        break;
+      }
+    }
+  }
+  if (message === null) return null;
+  // Loader errors embed absolute paths under the extraction dir; relativize
+  // so sync-history errors read like the repo paths the user can act on.
+  return message.replaceAll(`${root}${path.sep}`, "");
 }
 
 /**
@@ -310,6 +347,10 @@ async function refetchFromRecordedForAccount(
   await mkdir(targetDir, { recursive: true });
   await extractTarball(buf, targetDir);
 
+  // Shallow check only — this re-materializes a SHA a past sync already
+  // recorded as "ok". Deep (schema) validation here would brick cold-start
+  // for rows synced before deep validation existed; the sync path is the
+  // schema gate for anything new.
   const missing = validatePersonaTree(targetDir);
   if (missing) throw new Error(`cold-start refetch validation failed: ${missing}`);
 
@@ -347,30 +388,46 @@ async function doSyncForAccount(
   }
 
   const targetDir = path.join(root, sha);
+  // Extract into a staging dir so a failed fetch or validation never touches
+  // the dir the active symlink may be serving from (same-SHA re-sync).
+  const stagingDir = `${targetDir}.staging`;
   try {
     const res = await fetch(
       `https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`,
     );
     if (!res.ok) throw new Error(`tarball fetch returned ${res.status}`);
     const buf = Buffer.from(await res.arrayBuffer());
-    await rm(targetDir, { recursive: true, force: true });
-    await mkdir(targetDir, { recursive: true });
-    await extractTarball(buf, targetDir);
+    await rm(stagingDir, { recursive: true, force: true });
+    await mkdir(stagingDir, { recursive: true });
+    await extractTarball(buf, stagingDir);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await rm(targetDir, { recursive: true, force: true });
+    await rm(stagingDir, { recursive: true, force: true });
     await recordRowForAccount(accountId, repoUrl, branch, sha, "error", message);
     return { kind: "error", message };
   }
 
-  const missing = validatePersonaTree(targetDir);
-  if (missing) {
-    await rm(targetDir, { recursive: true, force: true });
-    await recordRowForAccount(accountId, repoUrl, branch, sha, "error", missing);
-    return { kind: "error", message: missing };
+  const invalid =
+    validatePersonaTree(stagingDir) ?? (await validatePersonaTreeDeep(stagingDir));
+  if (invalid) {
+    await rm(stagingDir, { recursive: true, force: true });
+    await recordRowForAccount(accountId, repoUrl, branch, sha, "error", invalid);
+    return { kind: "error", message: invalid };
   }
 
-  // Atomically flip the per-account symlink.
+  // Promote the validated tree with rename-aside (two metadata-only renames)
+  // so the dir the active symlink may already point at — same-SHA re-sync —
+  // is never absent for the duration of a recursive rm. Orphaned `.old` and
+  // `.staging` dirs from a crash are swept by cleanupOldShasForAccount.
+  const oldDir = `${targetDir}.old`;
+  await rm(oldDir, { recursive: true, force: true });
+  try {
+    await rename(targetDir, oldDir);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
+  await rename(stagingDir, targetDir);
+  await rm(oldDir, { recursive: true, force: true });
   const linkPath = path.join(root, "current");
   const tmpLink = path.join(root, "current.new");
   await rm(tmpLink, { recursive: true, force: true });

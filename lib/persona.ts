@@ -33,12 +33,18 @@ export type Persona = z.infer<typeof PersonaSchema>;
 
 const byRoot = new Map<string, Persona>();
 
+/** Reads and parses `<activeRoot>/persona.yaml` without touching the per-root
+ * cache — sync validation runs this against freshly extracted trees. */
+export function parsePersonaFile(activeRoot: string): Persona {
+  const file = path.join(activeRoot, "persona.yaml");
+  const raw = fs.readFileSync(file, "utf8");
+  return PersonaSchema.parse(parseYaml(raw));
+}
+
 export function loadPersona(activeRoot: string): Persona {
   const cached = byRoot.get(activeRoot);
   if (cached) return cached;
-  const file = path.join(activeRoot, "persona.yaml");
-  const raw = fs.readFileSync(file, "utf8");
-  const persona = PersonaSchema.parse(parseYaml(raw));
+  const persona = parsePersonaFile(activeRoot);
   byRoot.set(activeRoot, persona);
   return persona;
 }
