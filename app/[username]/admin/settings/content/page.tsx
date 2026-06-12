@@ -11,5 +11,10 @@ export default async function ContentSettingsPage({
 }) {
   const { username } = await params;
   const account = await requireAdminAccount(username);
-  return <ContentTab apiBasePath={`/api/a/${account.username}/admin`} />;
+  return (
+    <ContentTab
+      apiBasePath={`/api/a/${account.username}/admin`}
+      username={account.username}
+    />
+  );
 }
