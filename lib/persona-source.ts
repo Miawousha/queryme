@@ -150,6 +150,54 @@ function cacheRoot(): string {
   return process.env.PERSONA_CACHE_ROOT ?? "/tmp/queritae/persona-cache";
 }
 
+const MB = 1024 * 1024;
+const DEFAULT_TARBALL_MAX_BYTES = 50 * MB;
+
+export function tarballMaxBytes(): number {
+  const override = Number(process.env.PERSONA_TARBALL_MAX_BYTES);
+  return Number.isFinite(override) && override > 0 ? override : DEFAULT_TARBALL_MAX_BYTES;
+}
+
+/**
+ * Buffers a tarball response while enforcing a byte cap. The tarball comes
+ * from a tenant-controlled repo, so an unbounded `res.arrayBuffer()` would let
+ * a multi-GB repo OOM the serverless function. Rejects up front when
+ * Content-Length already exceeds the cap, otherwise counts bytes while
+ * streaming and aborts as soon as the cap is crossed.
+ */
+export async function bufferTarballWithLimit(
+  res: Response,
+  maxBytes = tarballMaxBytes(),
+): Promise<Buffer> {
+  const limitLabel = maxBytes % MB === 0 ? `${maxBytes / MB} MB` : `${maxBytes} bytes`;
+  const limitError = () => new Error(`tarball exceeds the ${limitLabel} limit`);
+  // Number(null) is 0, Number("garbage") is NaN — both fall through to streaming.
+  if (Number(res.headers.get("content-length")) > maxBytes) {
+    res.body?.cancel().catch(() => {});
+    throw limitError();
+  }
+  if (!res.body) return Buffer.alloc(0);
+  const reader = res.body.getReader();
+  const chunks: Buffer[] = [];
+  let received = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      if (received > maxBytes) throw limitError();
+      chunks.push(Buffer.from(value));
+    }
+  } catch (err) {
+    // Best-effort cleanup, deliberately not awaited: cancel() never settles on
+    // some intercepted streams (MSW in tests), and the limit error must
+    // propagate either way.
+    reader.cancel().catch(() => {});
+    throw err;
+  }
+  return Buffer.concat(chunks);
+}
+
 export async function extractTarball(buf: Buffer, targetDir: string): Promise<void> {
   const extractor = tar.x({
     cwd: targetDir,
@@ -342,7 +390,7 @@ async function refetchFromRecordedForAccount(
   const targetDir = path.join(root, sha);
   const res = await fetch(`https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`);
   if (!res.ok) throw new Error(`cold-start refetch failed: ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
+  const buf = await bufferTarballWithLimit(res);
   await rm(targetDir, { recursive: true, force: true });
   await mkdir(targetDir, { recursive: true });
   await extractTarball(buf, targetDir);
@@ -396,7 +444,7 @@ async function doSyncForAccount(
       `https://codeload.github.com/${owner}/${repo}/tar.gz/${sha}`,
     );
     if (!res.ok) throw new Error(`tarball fetch returned ${res.status}`);
-    const buf = Buffer.from(await res.arrayBuffer());
+    const buf = await bufferTarballWithLimit(res);
     await rm(stagingDir, { recursive: true, force: true });
     await mkdir(stagingDir, { recursive: true });
     await extractTarball(buf, stagingDir);

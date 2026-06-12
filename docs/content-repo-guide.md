@@ -73,6 +73,11 @@ and `recommendations/` may be empty or absent — a persona doesn't need
 entries in every category. The Markdown `.fr.md` sidecars are also optional
 (see [Localization](#9-localization)).
 
+The repo download (GitHub's gzipped tarball of your branch) must stay under
+**50 MB** — far above any text-only content repo; a sync past the cap fails
+with `tarball exceeds the 50 MB limit`. Keep large binaries (videos, PDFs,
+design sources) out of the content repo.
+
 > **Why French is required:** Queritae ships English and French UI out of the
 > box, and the four core YAML files back UI strings in both languages, so both
 > variants must be present. If you only have English content, the simplest path
