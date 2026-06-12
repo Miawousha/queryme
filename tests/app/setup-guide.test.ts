@@ -6,6 +6,7 @@ describe("GET /setup-guide.md", () => {
     const res = await GET();
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/markdown");
+    expect(res.headers.get("cache-control")).toBe("public, max-age=300, s-maxage=300");
 
     const body = await res.text();
     // Preamble first, schema reference second.
