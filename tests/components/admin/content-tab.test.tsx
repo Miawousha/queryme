@@ -16,8 +16,10 @@ const ACTIVE_ROW = {
 function stubPersonaSource(active: unknown) {
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ active, history: [] }), { status: 200 }),
+    vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ active, history: [] }), { status: 200 }),
+      ),
     ),
   );
 }
@@ -71,5 +73,27 @@ describe("ContentTab", () => {
         expect.objectContaining({ method: "POST" }),
       );
     });
+    // After the refresh GET the view flips to the active source.
+    await screen.findByText(/active source/i);
+  });
+
+  it("keeps the setup steps and shows the error when a sync fails in the empty state", async () => {
+    const fetchMock = vi
+      .fn()
+      // 1st call: initial GET (no active)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ active: null, history: [] }) })
+      // 2nd call: POST fails validation
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: "clone failed" }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ContentTab apiBasePath="/api/a/alex/admin" username="alex" />);
+    const url = await screen.findByLabelText(/repo url/i);
+    await userEvent.type(url, "https://github.com/alex/queritae-content");
+    await userEvent.click(screen.getByRole("button", { name: /^sync$/i }));
+
+    await screen.findByText("clone failed");
+    // The repair loop ("paste the error back into your agent") depends on the
+    // steps and the error being visible together.
+    expect(screen.getByText(/set up your knowledge base/i)).toBeInTheDocument();
   });
 });
