@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from "react";
 import type { PersonaSource } from "@/lib/db/schema";
+import { KbSetupSteps } from "@/components/admin/kb-setup-steps";
 
 type State = { active: PersonaSource | null; history: PersonaSource[] };
 
-export function ContentTab({ apiBasePath }: { apiBasePath: string }) {
+export function ContentTab({
+  apiBasePath,
+  username,
+}: {
+  apiBasePath: string;
+  username: string;
+}) {
   const [state, setState] = useState<State | null>(null);
   const [url, setUrl] = useState("");
   const [branch, setBranch] = useState("main");
@@ -67,47 +74,47 @@ export function ContentTab({ apiBasePath }: { apiBasePath: string }) {
   return (
     <div className="space-y-6 p-4">
       <section>
-        <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
-          Active source
-        </h2>
         {state.active ? (
-          <div className="mt-2 space-y-1 text-sm">
-            <div>
-              <span className="text-[var(--color-text-tertiary)]">repo: </span>
-              <a
-                href={state.active.repoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="underline"
+          <>
+            <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+              Active source
+            </h2>
+            <div className="mt-2 space-y-1 text-sm">
+              <div>
+                <span className="text-[var(--color-text-tertiary)]">repo: </span>
+                <a
+                  href={state.active.repoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  {prettyRepo(state.active.repoUrl)}
+                </a>
+              </div>
+              <div>
+                <span className="text-[var(--color-text-tertiary)]">branch: </span>
+                {state.active.branch}
+              </div>
+              <div>
+                <span className="text-[var(--color-text-tertiary)]">commit: </span>
+                <code className="text-xs">{state.active.commitSha.slice(0, 7)}</code>
+              </div>
+              <div>
+                <span className="text-[var(--color-text-tertiary)]">last synced: </span>
+                {new Date(state.active.syncedAt).toLocaleString()}
+              </div>
+              <button
+                type="button"
+                onClick={resync}
+                disabled={submitting}
+                className="mt-2 rounded border border-[var(--color-border)] px-3 py-1 text-xs"
               >
-                {prettyRepo(state.active.repoUrl)}
-              </a>
+                {submitting ? "Syncing…" : "Resync from current source"}
+              </button>
             </div>
-            <div>
-              <span className="text-[var(--color-text-tertiary)]">branch: </span>
-              {state.active.branch}
-            </div>
-            <div>
-              <span className="text-[var(--color-text-tertiary)]">commit: </span>
-              <code className="text-xs">{state.active.commitSha.slice(0, 7)}</code>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-tertiary)]">last synced: </span>
-              {new Date(state.active.syncedAt).toLocaleString()}
-            </div>
-            <button
-              type="button"
-              onClick={resync}
-              disabled={submitting}
-              className="mt-2 rounded border border-[var(--color-border)] px-3 py-1 text-xs"
-            >
-              {submitting ? "Syncing…" : "Resync from current source"}
-            </button>
-          </div>
+          </>
         ) : (
-          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-            No persona configured yet — paste a public GitHub repo URL below.
-          </p>
+          <KbSetupSteps username={username} />
         )}
         {lastError && <p className="mt-2 text-sm text-red-500">{lastError}</p>}
       </section>
