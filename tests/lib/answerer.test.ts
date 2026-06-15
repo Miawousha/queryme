@@ -107,7 +107,7 @@ describe("answer", () => {
     expect(headerMessage?.providerOptions?.anthropic?.cacheControl).toBeUndefined();
   });
 
-  it("sends only header + kb", async () => {
+  it("sends header + contract + kb as three system messages", async () => {
     let captured: any = null;
     const model = new MockLanguageModelV2({
       doStream: async (options) => {
@@ -130,7 +130,9 @@ describe("answer", () => {
     await answer({ accountId: "local-override", messages: [{ role: "user", content: "Hi" }], kbText: "KB", model }).then((r) => r.text);
     const prompt = (captured as any).prompt as Array<any>;
     const systemMessages = prompt.filter((m) => m.role === "system");
-    expect(systemMessages).toHaveLength(2);
+    expect(systemMessages).toHaveLength(3);
+    // The citation contract reaches the model regardless of the owner's prompt.
+    expect(JSON.stringify(systemMessages)).toContain("Citations (required by the platform)");
   });
 
   it("caps the model's output length (maxOutputTokens) for cost control", async () => {

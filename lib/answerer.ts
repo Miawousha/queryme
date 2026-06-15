@@ -41,19 +41,18 @@ export async function answer(input: AnswerInput) {
     kbText: input.kbText,
   });
 
-  // header: uncached.
+  // header + citation contract: uncached, stable per account.
   // kb: cached with `ephemeral` breakpoint. Anthropic caches the entire prefix
-  //     up to and including this breakpoint (header + kb).
-  const systemMessages: ModelMessage[] = [
-    { role: "system", content: parts[0].text },
-    {
-      role: "system",
-      content: parts[1].text,
-      providerOptions: {
-        anthropic: { cacheControl: { type: "ephemeral" } },
-      },
-    },
-  ];
+  //     up to and including this breakpoint (header + contract + kb).
+  const systemMessages: ModelMessage[] = parts.map((part) =>
+    part.kind === "kb"
+      ? {
+          role: "system",
+          content: part.text,
+          providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+        }
+      : { role: "system", content: part.text },
+  );
 
   return streamText({
     model,
