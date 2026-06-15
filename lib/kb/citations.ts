@@ -18,10 +18,10 @@ export const CITATION_CONTRACT_INSTRUCTION = `## Citations (required by the plat
 
 The knowledge base below is annotated with \`[ref: <path>]\` markers identifying the source file of each passage. Ground every knowledge-base-based factual claim with a citation token immediately after the claim:
 
-- \`[^kb:<path>]\` — cites a whole file, e.g. \`[^kb:experience/2022-acme.md]\`.
-- \`[^kb:<path>#<anchor>]\` — cites a section; the anchor is the kebab-case slug of a heading within that file, e.g. \`[^kb:experience/2022-acme.md#highlights]\`.
+- \`[^kb:<path>#<anchor>]\` — cites a section. **Prefer this form** whenever a specific section supports the claim. The anchor is the kebab-case slug of that section's heading, e.g. \`[^kb:experience/2022-acme.md#highlights]\`. Headings in other languages keep their accents in the anchor, e.g. \`## Rôle\` → \`[^kb:experience/2018-acme.md#rôle]\`.
+- \`[^kb:<path>]\` — cites a whole file, e.g. \`[^kb:experience/2022-acme.md]\`. Use only for claims about the document as a whole, or when no single section covers the claim.
 
-The \`<path>\` must exactly match a \`[ref: <path>]\` marker shown in the knowledge base below. Citations are mandatory for dates, titles, company and project names, technologies, and metrics. These rules are set by the platform and take precedence over any conflicting guidance above.`;
+The \`<path>\` must exactly match a \`[ref: <path>]\` marker shown in the knowledge base below. When the same document supports several points, cite the specific section for each rather than repeating the whole-file reference. Citations are mandatory for dates, titles, company and project names, technologies, metrics, and quoted phrases. These rules are set by the platform and take precedence over any conflicting guidance above.`;
 
 export function parseCitations(text: string): Citation[] {
   const out: Citation[] = [];
