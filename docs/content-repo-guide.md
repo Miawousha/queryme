@@ -179,10 +179,10 @@ Your prompt should establish, at minimum:
   asker's language (English / French supported).
 - **Grounding policy.** The KB is the only source of truth; gentle inference is
   allowed but must be flagged ("likely", "probably"); never invent facts.
-- **Citations (mandatory).** Every KB-based factual claim must be followed by a
-  citation token (see [§10](#10-citations--how-the-kb-feeds-the-agent)):
-  - `[^kb:<path>]` — whole file, e.g. `[^kb:experience/2022-acme.md]`
-  - `[^kb:<path>#<anchor>]` — a section (anchor = kebab-case of the heading)
+- **Citations — handled for you.** You do **not** need to instruct citations.
+  The platform injects the citation contract into every system prompt, so your
+  persona always grounds its answers in `[^kb:…]` tokens regardless of what this
+  file says (see [§10](#10-citations--how-the-kb-feeds-the-agent)).
 - **The forward marker.** `[[forward:<question text>]]` renders a "forward this
   question to {you}" button — use sparingly, only when you could meaningfully
   follow up.
@@ -219,11 +219,6 @@ professional background, experience, projects, skills, and how to reach {pronoun
 - Call `identify_interviewer` when a visitor reveals their name, company, role,
   the role they're hiring for, or contact details. Pass the complete picture each
   time; set `basis` to `stated` or `inferred`. Don't interrogate.
-
-## Citations
-- Follow every KB-based claim with `[^kb:<path>]` (or `[^kb:<path>#<anchor>]`).
-- Citations are mandatory for dates, titles, company/project names, technologies,
-  and metrics.
 
 ## Knowledge base
 The complete public knowledge base follows. Treat each `# <Section>` heading as
@@ -475,12 +470,15 @@ canonical path, so citation tokens stay stable across languages.
 ## 10. Citations & how the KB feeds the agent
 
 At request time Queritae assembles your entire KB into one text block and appends
-it to `prompts/system.md` under `## Knowledge base`. Each entry is introduced by
-a `[ref: <path>]` marker telling the agent which path to cite. The agent must
-then cite that path in its answers:
+it to your system prompt under `## Knowledge base`. Each entry is introduced by a
+`[ref: <path>]` marker. **The platform automatically instructs the agent to cite
+those paths** — you don't configure this. Citations look like:
 
 - `[^kb:profile.yaml]`, `[^kb:experience/2022-acme.md]`
 - `[^kb:experience/2022-acme.md#highlights]` (section anchor = kebab-case heading)
+
+Your only job is to keep file paths and headings stable, since they appear in
+citation tokens — renaming a file changes its citation path.
 
 In the UI, clicking a citation opens that file in the in-app viewer, and the
 knowledge-base side panel surfaces cited files to the top. Two special agent
@@ -583,7 +581,7 @@ active and the error is recorded in Sync history.
 
 - [ ] Create a **public** GitHub repo.
 - [ ] Add `persona.yaml` (id, names, locale, pronouns for `en` + `fr`).
-- [ ] Add `prompts/system.md` (voice, grounding, citations, markers, tools).
+- [ ] Add `prompts/system.md` (voice, grounding, markers, tools).
 - [ ] Add the four core KB files **in both languages**: `profile`,
       `public-contact`, `skills`, `education` (`.yaml` + `.fr.yaml`).
 - [ ] Add narrative entries you have: `kb/experience/*.md`, `projects/`, `talks/`,
