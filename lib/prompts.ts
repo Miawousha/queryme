@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getPersonaStore } from "@/lib/persona/store";
+import { CITATION_CONTRACT_INSTRUCTION } from "@/lib/kb/citations";
 
 export type SystemPromptPart =
   | { kind: "header"; text: string }
+  | { kind: "contract"; text: string }
   | { kind: "kb"; text: string };
 
 const MAX_ACCOUNTS = 50;
@@ -29,9 +31,10 @@ function readHeader(accountId: string): string {
 }
 
 /**
- * Returns the system-prompt parts in send-order: header, then public KB.
- * The header MUST stay stable across requests (it sits before the prompt-cache
- * breakpoint in lib/answerer.ts).
+ * Returns the system-prompt parts in send-order: the owner's header, the
+ * platform-owned citation contract, then the public KB. The header MUST stay
+ * stable across requests (it sits before the prompt-cache breakpoint in
+ * lib/answerer.ts); the contract is a constant so it is cache-stable too.
  */
 export function buildSystemPromptParts(input: {
   accountId: string;
@@ -39,6 +42,7 @@ export function buildSystemPromptParts(input: {
 }): SystemPromptPart[] {
   return [
     { kind: "header", text: readHeader(input.accountId) },
+    { kind: "contract", text: CITATION_CONTRACT_INSTRUCTION },
     { kind: "kb", text: input.kbText },
   ];
 }
