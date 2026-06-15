@@ -99,6 +99,13 @@
       "when": 1781196468471,
       "tag": "0013_easy_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1781537475808,
+      "tag": "0014_safe_juggernaut",
+      "breakpoints": true
     }
   ]
 }

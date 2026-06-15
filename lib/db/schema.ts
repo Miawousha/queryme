@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb, index, uniqueIndex, date, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, index, uniqueIndex, date, integer, boolean } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 /**
@@ -216,3 +216,34 @@ export const accountBilling = pgTable(
 );
 
 export type AccountBilling = typeof accountBilling.$inferSelect;
+
+/**
+ * Per-account auto-sync config. One row per account (unique account_id). This
+ * is CONFIG, not history — persona_source stays the append-only sync log. The
+ * `secret` is the GitHub webhook HMAC signing secret, generated on first
+ * enable and revealed to the owner (like a Stripe endpoint secret). `enabled`
+ * pauses delivery handling without destroying the secret, so re-enabling is
+ * instant and an already-installed GitHub hook keeps working. `webhook_id` is
+ * the seam for a future server-side (OAuth) hook creation: null in manual mode.
+ */
+export const personaAutoSync = pgTable(
+  "persona_auto_sync",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    accountId: uuid("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    enabled: boolean("enabled").notNull().default(false),
+    secret: text("secret").notNull(),
+    webhookId: text("webhook_id"),
+    lastDeliveryAt: timestamp("last_delivery_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    accountUnique: uniqueIndex("persona_auto_sync_account_unique").on(table.accountId),
+  }),
+);
+
+export type PersonaAutoSync = typeof personaAutoSync.$inferSelect;
+export type NewPersonaAutoSync = typeof personaAutoSync.$inferInsert;
