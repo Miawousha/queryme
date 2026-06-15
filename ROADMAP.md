@@ -36,7 +36,7 @@ external `prompts/system.md` remembering to instruct the `[^kb:...]` format. The
 validates or injects it — one owner's prompt without it silently loses citations and
 flatlines their analytics. Make the shell own the contract:
 
-- [ ] **Inject a canonical citation instruction** as an app-controlled system-prompt part in `lib/answerer.ts`, regardless of what the persona repo says. The owner's prompt customizes voice; the platform guarantees grounding.
+- [x] **Inject a canonical citation instruction** as an app-controlled system-prompt part (`CITATION_CONTRACT_INSTRUCTION` in `lib/kb/citations.ts`, injected by `lib/prompts.ts`), regardless of what the persona repo says. The owner's prompt customizes voice; the platform guarantees grounding. (2026-06-15)
 - [ ] **Validate at sync** — extend the required-files check (`lib/persona-source.ts:44`) and `validate-kb` to lint the content repo: citation markers parse, refs resolve to real KB paths. Surface warnings in the admin Content tab.
 - [ ] **Contract tests** — lock the pipeline end-to-end: assembler `[ref:]` → model format → `parseCitations` → renderer.
 
