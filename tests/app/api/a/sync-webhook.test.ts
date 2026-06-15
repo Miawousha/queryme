@@ -141,8 +141,10 @@ describe("POST /api/a/[username]/sync-webhook", () => {
       "x-hub-signature-256": sign(body),
     });
     expect(res.status).toBe(200);
-    // Draining the after() callbacks must not throw out of the route.
-    for (const cb of afterCbs) await Promise.resolve(cb()).catch(() => {});
+    // The route's after() callback swallows a sync rejection itself, so draining
+    // the callbacks here must NOT throw (no outer catch) — proving the route, not
+    // the test, contains the failure.
+    for (const cb of afterCbs) await cb();
     expect(syncSpy).toHaveBeenCalled();
   });
 

@@ -59,7 +59,14 @@ export async function POST(req: Request, { params }: Ctx) {
   // syncFromGitHubForAccount has its own in-flight dedupe + error containment.
   after(async () => {
     await touchLastDelivery(account.id).catch(() => {});
-    await syncFromGitHubForAccount(account.id, active.repoUrl, active.branch);
+    try {
+      await syncFromGitHubForAccount(account.id, active.repoUrl, active.branch);
+    } catch (err) {
+      // The primitive records its own error rows for fetch/validation failures;
+      // this guards the rare promotion-phase throw so it logs gracefully rather
+      // than surfacing as an unhandled rejection inside after().
+      console.error(`auto-sync: background sync threw for account ${account.id}`, err);
+    }
   });
   return NextResponse.json({ ok: true, syncing: true });
 }
