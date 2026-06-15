@@ -20,7 +20,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { parseCitations } from "@/lib/kb/citations";
+import { parseCitations, CITATION_CONTRACT_INSTRUCTION } from "@/lib/kb/citations";
 import { splitOnMarkers, FORWARD_MARKER_RE } from "@/lib/markers";
 import { buildIdentifyTools } from "@/lib/interviewer/tool";
 import { assemblePublicKbText } from "@/lib/kb/assembler";
@@ -239,6 +239,25 @@ describe("prompts/system.md ↔ implementation contract", () => {
       // test trivially green.
       expect(PROMPT.length).toBeGreaterThan(500);
       expect(PROMPT_PATH).toMatch(/prompts\/system\.md$/);
+    });
+  });
+
+  describe("Shell-owned citation contract (CITATION_CONTRACT_INSTRUCTION)", () => {
+    it("advertises both documented token shapes", () => {
+      expect(CITATION_CONTRACT_INSTRUCTION).toMatch(/\[\^kb:<path>\]/);
+      expect(CITATION_CONTRACT_INSTRUCTION).toMatch(/\[\^kb:<path>#<anchor>\]/);
+    });
+
+    it("every literal [^kb:...] example in the instruction parses", () => {
+      // Skip the format-description placeholders (anything containing `<`).
+      const literalRe = /\[\^kb:[^\]<]+\]/g;
+      const examples = CITATION_CONTRACT_INSTRUCTION.match(literalRe) ?? [];
+      expect(examples.length).toBeGreaterThan(0);
+      for (const ex of examples) {
+        const parsed = parseCitations(ex);
+        expect(parsed, `instruction example ${ex} did not parse`).toHaveLength(1);
+        expect(parsed[0].token).toBe(ex);
+      }
     });
   });
 });
