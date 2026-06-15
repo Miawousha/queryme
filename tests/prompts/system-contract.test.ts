@@ -4,7 +4,10 @@
  * The system prompt documents four policy tokens that downstream TypeScript
  * code parses or implements:
  *
- *   1. `[^kb:<path>]` citation format    → lib/kb/citations.ts (parseCitations)
+ *   1. `[^kb:<path>]` citation format    → lib/kb/citations.ts
+ *        (CITATION_CONTRACT_INSTRUCTION, injected by lib/prompts.ts — the
+ *         platform owns this contract, not the owner's prompt; parseCitations
+ *         reads it back)
  *   2. `[[forward:<question>]]` marker   → lib/markers.ts (splitOnMarkers)
  *   3. `identify_interviewer` tool       → lib/interviewer/tool.ts (buildIdentifyTools)
  *   4. `[ref: <path>]` grounding marker  → lib/kb/assembler.ts (assemblePublicKbText)
@@ -33,32 +36,27 @@ const FIXTURE_DIR = path.resolve(__dirname, "../fixtures/kb");
 
 describe("prompts/system.md ↔ implementation contract", () => {
   describe("Citation format [^kb:<path>]", () => {
-    it("the prompt advertises the [^kb:<path>] token", () => {
-      // If this line disappears from the prompt, the LLM may stop emitting
+    it("the contract advertises the [^kb:<path>] token", () => {
+      // If these shapes disappear from the contract, the LLM may stop emitting
       // citations in the format `parseCitations` knows how to read.
-      expect(PROMPT).toMatch(/\[\^kb:<path>\]/);
-      expect(PROMPT).toMatch(/\[\^kb:<path>#<anchor>\]/);
+      expect(CITATION_CONTRACT_INSTRUCTION).toMatch(/\[\^kb:<path>\]/);
+      expect(CITATION_CONTRACT_INSTRUCTION).toMatch(/\[\^kb:<path>#<anchor>\]/);
     });
 
-    it("every literal [^kb:...] example in the prompt parses", () => {
+    it("every literal [^kb:...] example in the contract parses", () => {
       // Match `[^kb:...]` but skip the format-description placeholders
       // (anything containing `<`, e.g. `[^kb:<path>]`).
       const literalRe = /\[\^kb:[^\]<]+\]/g;
-      const examples = PROMPT.match(literalRe) ?? [];
-      // The prompt currently contains exactly one literal example
-      // (`[^kb:experience/2022-maxwell.md]`). If you add another, it must
-      // also be a parseable token.
+      const examples = CITATION_CONTRACT_INSTRUCTION.match(literalRe) ?? [];
       expect(examples.length).toBeGreaterThan(0);
       for (const ex of examples) {
         const parsed = parseCitations(ex);
-        expect(parsed, `prompt example ${ex} did not parse`).toHaveLength(1);
+        expect(parsed, `contract example ${ex} did not parse`).toHaveLength(1);
         expect(parsed[0].token).toBe(ex);
       }
     });
 
-    it("anchor slugs use kebab-case as the prompt promises", () => {
-      // Prompt says: "the anchor is a kebab-case slug of the section heading".
-      // Ensure the regex actually accepts kebab-case (letters + `-`).
+    it("anchor slugs use kebab-case as the contract promises", () => {
       const sample = "[^kb:experience/2022-maxwell.md#highlights-and-impact]";
       const parsed = parseCitations(sample);
       expect(parsed).toHaveLength(1);
@@ -239,25 +237,6 @@ describe("prompts/system.md ↔ implementation contract", () => {
       // test trivially green.
       expect(PROMPT.length).toBeGreaterThan(500);
       expect(PROMPT_PATH).toMatch(/prompts\/system\.md$/);
-    });
-  });
-
-  describe("Shell-owned citation contract (CITATION_CONTRACT_INSTRUCTION)", () => {
-    it("advertises both documented token shapes", () => {
-      expect(CITATION_CONTRACT_INSTRUCTION).toMatch(/\[\^kb:<path>\]/);
-      expect(CITATION_CONTRACT_INSTRUCTION).toMatch(/\[\^kb:<path>#<anchor>\]/);
-    });
-
-    it("every literal [^kb:...] example in the instruction parses", () => {
-      // Skip the format-description placeholders (anything containing `<`).
-      const literalRe = /\[\^kb:[^\]<]+\]/g;
-      const examples = CITATION_CONTRACT_INSTRUCTION.match(literalRe) ?? [];
-      expect(examples.length).toBeGreaterThan(0);
-      for (const ex of examples) {
-        const parsed = parseCitations(ex);
-        expect(parsed, `instruction example ${ex} did not parse`).toHaveLength(1);
-        expect(parsed[0].token).toBe(ex);
-      }
     });
   });
 });
