@@ -1,0 +1,120 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+const ACCOUNT = { id: "acct-1", username: "alex" };
+
+function mockAuth(ok = true) {
+  vi.doMock("@/app/[username]/admin/resolve", () => ({
+    resolveAccountAdmin: async () =>
+      ok ? { kind: "ok", account: ACCOUNT } : { kind: "not-found" },
+  }));
+}
+
+const repo = {
+  getAutoSyncConfig: vi.fn(),
+  enableAutoSync: vi.fn(),
+  disableAutoSync: vi.fn(),
+  regenerateSecret: vi.fn(),
+};
+
+function mockRepo() {
+  vi.doMock("@/lib/auto-sync/repo", () => repo);
+  vi.doMock("@/lib/auto-sync/url", () => ({
+    webhookUrlFor: (u: string) => `https://queritae.com/api/a/${u}/sync-webhook`,
+  }));
+}
+
+async function callGet() {
+  const { GET } = await import("@/app/api/a/[username]/admin/auto-sync/route");
+  return GET(new Request("http://localhost"), { params: Promise.resolve({ username: "alex" }) });
+}
+
+async function callPost(action: unknown) {
+  const { POST } = await import("@/app/api/a/[username]/admin/auto-sync/route");
+  const req = new Request("http://localhost", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+  return POST(req, { params: Promise.resolve({ username: "alex" }) });
+}
+
+describe("/api/a/[username]/admin/auto-sync", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    Object.values(repo).forEach((f) => f.mockReset());
+  });
+
+  it("GET 404s when not authorized", async () => {
+    mockAuth(false);
+    mockRepo();
+    expect((await callGet()).status).toBe(404);
+  });
+
+  it("POST 404s when not authorized and mutates nothing", async () => {
+    mockAuth(false);
+    mockRepo();
+    expect((await callPost("enable")).status).toBe(404);
+    expect(repo.enableAutoSync).not.toHaveBeenCalled();
+  });
+
+  it("GET returns the view with revealed secret + webhook URL", async () => {
+    mockAuth();
+    mockRepo();
+    repo.getAutoSyncConfig.mockResolvedValue({
+      enabled: true,
+      secret: "deadbeef",
+      lastDeliveryAt: null,
+    });
+    const res = await callGet();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      enabled: true,
+      configured: true,
+      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
+      secret: "deadbeef",
+      lastDeliveryAt: null,
+    });
+  });
+
+  it("GET reports not-configured when no row exists", async () => {
+    mockAuth();
+    mockRepo();
+    repo.getAutoSyncConfig.mockResolvedValue(null);
+    const body = await (await callGet()).json();
+    expect(body).toMatchObject({ enabled: false, configured: false, secret: null });
+  });
+
+  it("POST enable calls enableAutoSync and returns the view", async () => {
+    mockAuth();
+    mockRepo();
+    repo.enableAutoSync.mockResolvedValue({ enabled: true, secret: "newsecret", lastDeliveryAt: null });
+    const res = await callPost("enable");
+    expect(res.status).toBe(200);
+    expect(repo.enableAutoSync).toHaveBeenCalledWith("acct-1");
+    expect(await res.json()).toMatchObject({ enabled: true, secret: "newsecret" });
+  });
+
+  it("POST disable calls disableAutoSync", async () => {
+    mockAuth();
+    mockRepo();
+    repo.disableAutoSync.mockResolvedValue({ enabled: false, secret: "kept", lastDeliveryAt: null });
+    const res = await callPost("disable");
+    expect(repo.disableAutoSync).toHaveBeenCalledWith("acct-1");
+    expect(await res.json()).toMatchObject({ enabled: false, secret: "kept" });
+  });
+
+  it("POST regenerate calls regenerateSecret", async () => {
+    mockAuth();
+    mockRepo();
+    repo.regenerateSecret.mockResolvedValue({ enabled: true, secret: "rotated", lastDeliveryAt: null });
+    const res = await callPost("regenerate");
+    expect(repo.regenerateSecret).toHaveBeenCalledWith("acct-1");
+    expect(await res.json()).toMatchObject({ secret: "rotated" });
+  });
+
+  it("POST 400s on an unknown action", async () => {
+    mockAuth();
+    mockRepo();
+    expect((await callPost("frobnicate")).status).toBe(400);
+  });
+});
