@@ -79,6 +79,8 @@ export function pushMatchesSource(
     return false;
   }
   return (
+    // owner/repo is case-insensitive on GitHub, but branch names are NOT —
+    // keep the ref comparison exact (do not lowercase `sourceBranch`).
     repoFullName.toLowerCase() === `${owner}/${repo}`.toLowerCase() &&
     ref === `refs/heads/${sourceBranch}`
   );
