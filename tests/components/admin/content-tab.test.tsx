@@ -96,4 +96,25 @@ describe("ContentTab", () => {
     // steps and the error being visible together.
     expect(screen.getByText(/set up your knowledge base/i)).toBeInTheDocument();
   });
+
+  it("exposes the manual change-source form only under an Advanced disclosure when a source exists", async () => {
+    stubPersonaSource(ACTIVE_ROW);
+    render(<ContentTab apiBasePath="/api/a/alex/admin" username="alex" />);
+    const url = await screen.findByLabelText(/repo url/i);
+    expect(url.closest("details")).not.toBeNull();
+    expect(screen.getByText(/advanced: change source manually/i)).toBeInTheDocument();
+  });
+
+  it("passes appInstallUrl down to the empty-state Connect CTA", async () => {
+    stubPersonaSource(null);
+    render(
+      <ContentTab
+        apiBasePath="/api/a/alex/admin"
+        username="alex"
+        appInstallUrl="https://github.com/apps/queritae/installations/new"
+      />,
+    );
+    const link = await screen.findByRole("link", { name: /connect with github app/i });
+    expect(link).toHaveAttribute("href", "https://github.com/apps/queritae/installations/new");
+  });
 });
