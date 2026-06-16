@@ -9,6 +9,7 @@ type View = {
   secret: string | null;
   lastDeliveryAt: string | null;
   connectedViaApp: boolean;
+  manageUrl: string | null;
   appInstallUrl: string | null;
 };
 
@@ -51,117 +52,189 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
 
   if (!view) return null;
 
-  const ghCommand = view.secret
-    ? `gh api repos/:owner/:repo/hooks -f name=web -F active=true -f 'events[]=push' ` +
-      `-f config[url]='${view.webhookUrl}' -f config[content_type]=json -f config[secret]='${view.secret}'`
-    : "";
+  const toggle = (
+    <button
+      type="button"
+      onClick={() => act(view.enabled ? "disable" : "enable")}
+      disabled={busy}
+      className="rounded border border-[var(--color-border)] px-3 py-1 text-xs"
+    >
+      {view.enabled ? "Disable" : "Enable"}
+    </button>
+  );
+
+  const webhook =
+    view.enabled && view.secret ? (
+      <ManualWebhook
+        webhookUrl={view.webhookUrl}
+        secret={view.secret}
+        lastDeliveryAt={view.lastDeliveryAt}
+        copied={copied}
+        copy={copy}
+        busy={busy}
+        onRegenerate={() => act("regenerate")}
+      />
+    ) : null;
+
+  const advancedWebhook = webhook && (
+    <details>
+      <summary className="cursor-pointer font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+        Advanced: manual webhook
+      </summary>
+      {webhook}
+    </details>
+  );
 
   return (
     <div className="space-y-4 border-t border-[var(--color-border)] p-4">
-      {view.appInstallUrl && (
-        <div className="space-y-1">
-          <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
-            GitHub App
-          </h2>
-          {view.connectedViaApp ? (
-            <p className="text-sm text-[var(--color-accent)]">Connected via GitHub App ✓</p>
-          ) : (
-            <>
-              <a
-                href={view.appInstallUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-block rounded border border-[var(--color-border)] px-3 py-1 text-xs"
-              >
-                Connect with GitHub App (recommended)
-              </a>
-              <p className="text-[10px] text-[var(--color-text-tertiary)]">
-                One click installs auto-sync on your repo — no webhook setup below needed.
-              </p>
-            </>
-          )}
-        </div>
-      )}
       <div className="flex items-center justify-between">
         <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
-          Auto-sync on push
+          Auto-sync
         </h2>
-        <button
-          type="button"
-          onClick={() => act(view.enabled ? "disable" : "enable")}
-          disabled={busy}
-          className="rounded border border-[var(--color-border)] px-3 py-1 text-xs"
-        >
-          {view.enabled ? "Disable" : "Enable"}
-        </button>
+        {toggle}
       </div>
 
-      {view.enabled && view.secret ? (
-        <div className="space-y-3 text-sm">
-          <p className="text-[var(--color-text-tertiary)]">
-            Add a GitHub webhook to your content repo so each push auto-syncs your page.
+      {view.connectedViaApp ? (
+        <div className="space-y-2 text-sm">
+          <p className="text-[var(--color-accent)]">
+            {view.enabled
+              ? "Connected via GitHub App ✓"
+              : "Connected via GitHub App — paused"}
           </p>
-
-          <CopyRow
-            id="url"
-            label="Payload URL"
-            value={view.webhookUrl}
-            copied={copied}
-            onCopy={() => copy("url", view.webhookUrl)}
-          />
-          <CopyRow
-            id="secret"
-            label="Secret"
-            value={view.secret}
-            copied={copied}
-            onCopy={() => copy("secret", view.secret!)}
-          />
-
-          <ol className="list-decimal space-y-1 pl-5 text-xs text-[var(--color-text-tertiary)]">
-            <li>Repo → Settings → Webhooks → Add webhook</li>
-            <li>
-              Paste the Payload URL, set Content type to <code>application/json</code>
-            </li>
-            <li>Paste the Secret, choose "Just the push event", save</li>
-          </ol>
-
-          <div>
-            <div className="text-xs text-[var(--color-text-tertiary)]">Or run (gh CLI)</div>
-            <div className="mt-1">
-              <button
-                type="button"
-                onClick={() => copy("gh", ghCommand)}
-                className="rounded border border-[var(--color-border)] px-2 py-1 text-[10px]"
-              >
-                {copied === "gh" ? "Copied gh command" : "Copy gh command"}
-              </button>
-              <span className="ml-2 text-[10px] text-[var(--color-text-tertiary)]">
-                (copies the full <code>gh api</code> invocation to your clipboard)
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => act("regenerate")}
-            disabled={busy}
-            className="rounded border border-[var(--color-border)] px-3 py-1 text-xs"
-          >
-            Regenerate secret
-          </button>
-          <p className="text-[10px] text-[var(--color-text-tertiary)]">
-            Regenerating invalidates the old secret — update the webhook in GitHub afterward.
+          <p className="text-xs text-[var(--color-text-tertiary)]">
+            {view.enabled
+              ? "Every push to your repo syncs automatically."
+              : "Re-enable to resume syncing on push."}
           </p>
-
+          {view.manageUrl && (
+            <a
+              href={view.manageUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block rounded border border-[var(--color-border)] px-3 py-1 text-xs"
+            >
+              Manage on GitHub
+            </a>
+          )}
           {view.lastDeliveryAt && (
             <p className="text-[10px] text-[var(--color-text-tertiary)]">
               Last delivery: {new Date(view.lastDeliveryAt).toLocaleString()}
             </p>
           )}
+          {advancedWebhook}
+        </div>
+      ) : view.appInstallUrl ? (
+        <div className="space-y-2 text-sm">
+          <a
+            href={view.appInstallUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block rounded border border-[var(--color-border)] px-3 py-1 text-xs"
+          >
+            Connect with GitHub App (recommended)
+          </a>
+          <p className="text-[10px] text-[var(--color-text-tertiary)]">
+            One click installs auto-sync on your repo — no webhook setup needed.
+          </p>
+          {advancedWebhook ??
+            (!view.enabled ? (
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                Off — connect the App above, or enable a manual webhook.
+              </p>
+            ) : null)}
         </div>
       ) : (
-        <p className="text-xs text-[var(--color-text-tertiary)]">
-          Off — the live page only updates on a manual Sync. Enable to auto-sync on every push.
+        <div className="space-y-3 text-sm">
+          {webhook ?? (
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              Off — the live page only updates on a manual Sync. Enable to
+              auto-sync on every push.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManualWebhook({
+  webhookUrl,
+  secret,
+  lastDeliveryAt,
+  copied,
+  copy,
+  busy,
+  onRegenerate,
+}: {
+  webhookUrl: string;
+  secret: string;
+  lastDeliveryAt: string | null;
+  copied: string | null;
+  copy: (label: string, text: string) => void;
+  busy: boolean;
+  onRegenerate: () => void;
+}) {
+  const ghCommand =
+    `gh api repos/:owner/:repo/hooks -f name=web -F active=true -f 'events[]=push' ` +
+    `-f config[url]='${webhookUrl}' -f config[content_type]=json -f config[secret]='${secret}'`;
+
+  return (
+    <div className="mt-2 space-y-3 text-sm">
+      <p className="text-[var(--color-text-tertiary)]">
+        Add a GitHub webhook to your content repo so each push auto-syncs your page.
+      </p>
+
+      <CopyRow
+        id="url"
+        label="Payload URL"
+        value={webhookUrl}
+        copied={copied}
+        onCopy={() => copy("url", webhookUrl)}
+      />
+      <CopyRow
+        id="secret"
+        label="Secret"
+        value={secret}
+        copied={copied}
+        onCopy={() => copy("secret", secret)}
+      />
+
+      <ol className="list-decimal space-y-1 pl-5 text-xs text-[var(--color-text-tertiary)]">
+        <li>Repo → Settings → Webhooks → Add webhook</li>
+        <li>
+          Paste the Payload URL, set Content type to <code>application/json</code>
+        </li>
+        <li>Paste the Secret, choose "Just the push event", save</li>
+      </ol>
+
+      <div>
+        <div className="text-xs text-[var(--color-text-tertiary)]">Or run (gh CLI)</div>
+        <div className="mt-1">
+          <button
+            type="button"
+            onClick={() => copy("gh", ghCommand)}
+            className="rounded border border-[var(--color-border)] px-2 py-1 text-[10px]"
+          >
+            {copied === "gh" ? "Copied gh command" : "Copy gh command"}
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onRegenerate}
+        disabled={busy}
+        className="rounded border border-[var(--color-border)] px-3 py-1 text-xs"
+      >
+        Regenerate secret
+      </button>
+      <p className="text-[10px] text-[var(--color-text-tertiary)]">
+        Regenerating invalidates the old secret — update the webhook in GitHub afterward.
+      </p>
+
+      {lastDeliveryAt && (
+        <p className="text-[10px] text-[var(--color-text-tertiary)]">
+          Last delivery: {new Date(lastDeliveryAt).toLocaleString()}
         </p>
       )}
     </div>
