@@ -141,4 +141,21 @@ describe("AutoSyncPanel", () => {
     expect(screen.getByText("deadbeefsecret").closest("details")).toBeNull();
     expect(screen.queryByRole("link", { name: /connect with github app/i })).not.toBeInTheDocument();
   });
+
+  it("not connected, disabled, install URL present: shows the Connect CTA and the Off fallback", async () => {
+    stubFetch({
+      enabled: false,
+      configured: false,
+      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
+      secret: null,
+      lastDeliveryAt: null,
+      connectedViaApp: false,
+      manageUrl: null,
+      appInstallUrl: "https://github.com/apps/queritae/installations/new",
+    });
+    render(<AutoSyncPanel apiBasePath="/api/a/alex/admin" />);
+    await screen.findByRole("link", { name: /connect with github app/i });
+    // With no webhook node, advancedWebhook is null (not false), so the ?? fallback renders.
+    expect(screen.getByText(/off — connect the app above/i)).toBeInTheDocument();
+  });
 });
