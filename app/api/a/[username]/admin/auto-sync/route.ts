@@ -7,6 +7,7 @@ import {
   regenerateSecret,
 } from "@/lib/auto-sync/repo";
 import { webhookUrlFor } from "@/lib/auto-sync/url";
+import { appInstallUrl } from "@/lib/github-app/url";
 import type { PersonaAutoSync } from "@/lib/db/schema";
 
 export const runtime = "nodejs";
@@ -21,6 +22,8 @@ function view(username: string, config: PersonaAutoSync | null) {
     webhookUrl: webhookUrlFor(username),
     secret: config?.secret ?? null,
     lastDeliveryAt: config?.lastDeliveryAt ?? null,
+    connectedViaApp: Boolean(config?.installationId),
+    appInstallUrl: appInstallUrl(),
   };
 }
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 const ACCOUNT = { id: "acct-1", username: "alex" };
 
@@ -43,6 +43,11 @@ describe("/api/a/[username]/admin/auto-sync", () => {
     vi.resetModules();
     Object.values(repo).forEach((f) => f.mockReset());
   });
+  // GITHUB_APP_SLUG is read by appInstallUrl(); clear it after each test so a
+  // test that sets it can't leak the install URL into later tests.
+  afterEach(() => {
+    delete process.env.GITHUB_APP_SLUG;
+  });
 
   it("GET 404s when not authorized", async () => {
     mockAuth(false);
@@ -58,12 +63,14 @@ describe("/api/a/[username]/admin/auto-sync", () => {
   });
 
   it("GET returns the view with revealed secret + webhook URL", async () => {
+    process.env.GITHUB_APP_SLUG = "queritae";
     mockAuth();
     mockRepo();
     repo.getAutoSyncConfig.mockResolvedValue({
       enabled: true,
       secret: "deadbeef",
       lastDeliveryAt: null,
+      installationId: "inst-9",
     });
     const res = await callGet();
     expect(res.status).toBe(200);
@@ -73,6 +80,8 @@ describe("/api/a/[username]/admin/auto-sync", () => {
       webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
       secret: "deadbeef",
       lastDeliveryAt: null,
+      connectedViaApp: true,
+      appInstallUrl: "https://github.com/apps/queritae/installations/new",
     });
   });
 

@@ -8,6 +8,8 @@ type View = {
   webhookUrl: string;
   secret: string | null;
   lastDeliveryAt: string | null;
+  connectedViaApp: boolean;
+  appInstallUrl: string | null;
 };
 
 type Action = "enable" | "disable" | "regenerate";
@@ -56,6 +58,30 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
 
   return (
     <div className="space-y-4 border-t border-[var(--color-border)] p-4">
+      {view.appInstallUrl && (
+        <div className="space-y-1">
+          <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+            GitHub App
+          </h2>
+          {view.connectedViaApp ? (
+            <p className="text-sm text-[var(--color-accent)]">Connected via GitHub App ✓</p>
+          ) : (
+            <>
+              <a
+                href={view.appInstallUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block rounded border border-[var(--color-border)] px-3 py-1 text-xs"
+              >
+                Connect with GitHub App (recommended)
+              </a>
+              <p className="text-[10px] text-[var(--color-text-tertiary)]">
+                One click installs auto-sync on your repo — no webhook setup below needed.
+              </p>
+            </>
+          )}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
           Auto-sync on push
