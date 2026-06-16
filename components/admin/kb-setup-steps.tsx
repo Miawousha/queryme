@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { ManualSyncForm } from "@/components/admin/manual-sync-form";
 
 function buildPrompt(username: string, origin: string): string {
   return [
@@ -10,10 +11,21 @@ function buildPrompt(username: string, origin: string): string {
   ].join("\n");
 }
 
-// Empty-state onboarding for the Content tab: the quickest path to a KB is
-// letting a coding agent build the content repo. Rendered only client-side
-// (ContentTab shows it after its initial fetch), so window is available.
-export function KbSetupSteps({ username }: { username: string }) {
+// Empty-state onboarding for the Content tab: build the content repo with a
+// coding agent, then connect it — one-click via the GitHub App when available,
+// or by pasting the repo URL. Rendered only client-side (ContentTab shows it
+// after its initial fetch), so window is available.
+export function KbSetupSteps({
+  username,
+  apiBasePath,
+  appInstallUrl,
+  onSynced,
+}: {
+  username: string;
+  apiBasePath: string;
+  appInstallUrl?: string | null;
+  onSynced: () => void | Promise<void>;
+}) {
   const [feedback, setFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prompt = buildPrompt(username, window.location.origin);
@@ -23,7 +35,6 @@ export function KbSetupSteps({ username }: { username: string }) {
       await navigator.clipboard.writeText(prompt);
       setFeedback("copied");
     } catch {
-      // Clipboard can be unavailable or denied; the <pre> stays selectable.
       setFeedback("failed");
     }
     if (resetTimer.current) clearTimeout(resetTimer.current);
@@ -39,10 +50,10 @@ export function KbSetupSteps({ username }: { username: string }) {
         The quickest way to build your KB is to let a coding agent do it —
         Claude Code, or any assistant that can fetch a URL and push to GitHub.
       </p>
-      <ol className="list-decimal space-y-3 pl-5 text-sm">
+      <ol className="list-decimal space-y-4 pl-5 text-sm">
         <li>
-          <span className="font-medium">Copy this prompt</span> into your
-          coding agent.
+          <span className="font-medium">Build your content repo.</span> Copy this
+          prompt into your coding agent.
           <div className="mt-2 rounded border border-[var(--color-border)] p-2">
             <pre
               data-testid="setup-prompt"
@@ -66,22 +77,41 @@ export function KbSetupSteps({ username }: { username: string }) {
           </div>
         </li>
         <li>
-          <span className="font-medium">The agent builds your content repo</span>{" "}
-          from your CV plus a short interview, and pushes it to GitHub (public).
-        </li>
-        <li>
-          <span className="font-medium">Paste the repo URL below and Sync.</span>{" "}
-          If the sync fails, paste the error back into your agent.
+          <span className="font-medium">Connect it.</span>
+          {appInstallUrl ? (
+            <div className="mt-2 space-y-2">
+              <a
+                href={appInstallUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block rounded border border-[var(--color-border)] px-3 py-1 text-xs"
+              >
+                Connect with GitHub App
+              </a>
+              <p className="text-[10px] text-[var(--color-text-tertiary)]">
+                One click installs auto-sync and syncs your repo automatically.
+              </p>
+              <details>
+                <summary className="cursor-pointer text-xs text-[var(--color-text-tertiary)]">
+                  or paste the repo URL manually
+                </summary>
+                <ManualSyncForm apiBasePath={apiBasePath} onSynced={onSynced} />
+              </details>
+            </div>
+          ) : (
+            <div className="mt-2">
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                Paste the repo URL and Sync. If the sync fails, paste the error
+                back into your agent.
+              </p>
+              <ManualSyncForm apiBasePath={apiBasePath} onSynced={onSynced} />
+            </div>
+          )}
         </li>
       </ol>
       <p className="text-xs text-[var(--color-text-tertiary)]">
         Prefer to write it by hand?{" "}
-        <a
-          href="/setup-guide.md"
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-        >
+        <a href="/setup-guide.md" target="_blank" rel="noreferrer" className="underline">
           Read the setup guide
         </a>
         .
