@@ -81,6 +81,7 @@ describe("/api/a/[username]/admin/auto-sync", () => {
       secret: "deadbeef",
       lastDeliveryAt: null,
       connectedViaApp: true,
+      manageUrl: "https://github.com/settings/installations/inst-9",
       appInstallUrl: "https://github.com/apps/queritae/installations/new",
     });
   });
@@ -90,7 +91,7 @@ describe("/api/a/[username]/admin/auto-sync", () => {
     mockRepo();
     repo.getAutoSyncConfig.mockResolvedValue(null);
     const body = await (await callGet()).json();
-    expect(body).toMatchObject({ enabled: false, configured: false, secret: null });
+    expect(body).toMatchObject({ enabled: false, configured: false, secret: null, manageUrl: null });
   });
 
   it("POST enable calls enableAutoSync and returns the view", async () => {

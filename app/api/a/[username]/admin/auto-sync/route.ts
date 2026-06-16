@@ -23,6 +23,9 @@ function view(username: string, config: PersonaAutoSync | null) {
     secret: config?.secret ?? null,
     lastDeliveryAt: config?.lastDeliveryAt ?? null,
     connectedViaApp: Boolean(config?.installationId),
+    manageUrl: config?.installationId
+      ? `https://github.com/settings/installations/${config.installationId}`
+      : null,
     appInstallUrl: appInstallUrl(),
   };
 }
