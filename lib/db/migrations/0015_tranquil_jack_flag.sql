@@ -1,0 +1,2 @@
+ALTER TABLE "persona_auto_sync" ADD COLUMN "installation_id" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "persona_auto_sync_installation_unique" ON "persona_auto_sync" USING btree ("installation_id") WHERE installation_id IS NOT NULL;

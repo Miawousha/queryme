@@ -236,12 +236,19 @@ export const personaAutoSync = pgTable(
     enabled: boolean("enabled").notNull().default(false),
     secret: text("secret").notNull(),
     webhookId: text("webhook_id"),
+    // GitHub App installation id (stored as text; numeric but never used in
+    // arithmetic). Set when the account connects via the GitHub App; null for
+    // manual-webhook accounts. Unique-when-present.
+    installationId: text("installation_id"),
     lastDeliveryAt: timestamp("last_delivery_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
     accountUnique: uniqueIndex("persona_auto_sync_account_unique").on(table.accountId),
+    installationUnique: uniqueIndex("persona_auto_sync_installation_unique")
+      .on(table.installationId)
+      .where(sql`installation_id IS NOT NULL`),
   }),
 );
 
