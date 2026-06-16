@@ -232,7 +232,8 @@ Register the "Queritae" GitHub App in GitHub:
 - Webhook URL `https://queritae.com/api/github/app`, a generated webhook secret.
 - Setup URL `https://queritae.com/api/github/app/callback`.
 - Permissions: **Contents: Read-only**, **Metadata: Read-only**. Subscribe to
-  **Push** and **Installation** events.
+  the **Push** event. (The `installation` / `installation_repositories` lifecycle
+  events are delivered to every GitHub App automatically — no subscription.)
 - No private key is used in v1 (deliveries are signed with the webhook secret;
   content is fetched from the public tarball).
 - New env (local + Vercel): `GITHUB_APP_SLUG` (for the install URL),
