@@ -1,4 +1,5 @@
-import type { Conversation } from "@/lib/db/schema";
+import type { ConversationTurn } from "@/lib/db/schema";
+import type { ConversationListItem } from "@/lib/admin/data";
 import { Badge, Field, LABEL } from "@/components/admin/ui";
 import { fmt } from "@/lib/admin/format";
 
@@ -7,9 +8,17 @@ import { fmt } from "@/lib/admin/format";
  * an interviewer-identity block is shown above the transcript — the same record
  * serves both the "Conversations" and "Interviewers" views, so there is no
  * cross-link to a separate conversation panel.
+ *
+ * The transcript is fetched on demand by the parent section (the list payload
+ * omits it), so `transcript` is `null` while that request is in flight.
  */
-export function ConversationDetail({ conversation }: { conversation: Conversation }) {
-  const turns = conversation.transcript ?? [];
+export function ConversationDetail({
+  conversation,
+  transcript,
+}: {
+  conversation: ConversationListItem;
+  transcript: ConversationTurn[] | null;
+}) {
   const identity = conversation.interviewer;
 
   return (
@@ -19,7 +28,7 @@ export function ConversationDetail({ conversation }: { conversation: Conversatio
         {conversation.language && <Badge>{conversation.language}</Badge>}
         {identity && <Badge>{identity.basis}</Badge>}
         <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
-          {turns.length} turns
+          {conversation.turnCount} turns
         </span>
       </div>
 
@@ -51,11 +60,15 @@ export function ConversationDetail({ conversation }: { conversation: Conversatio
         {fmt(conversation.lastMessageAt)}
       </p>
 
-      {turns.length === 0 ? (
+      {transcript === null ? (
+        <p className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+          Loading transcript…
+        </p>
+      ) : transcript.length === 0 ? (
         <p className="text-xs text-[var(--color-text-tertiary)]">Empty transcript.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          {turns.map((t, i) => (
+          {transcript.map((t, i) => (
             <div key={i} className="flex flex-col gap-1">
               <span className={LABEL}>
                 {t.role} · {fmt(t.at)}

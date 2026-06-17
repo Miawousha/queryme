@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QuestionsSection } from "@/components/admin/sections/questions-section";
+import { QUESTION_LIMIT } from "@/lib/admin/data";
 import type { ForwardedQuestion } from "@/lib/db/schema";
 
 const nav = vi.hoisted(() => ({
@@ -41,6 +42,14 @@ describe("QuestionsSection", () => {
     render(<QuestionsSection questions={[q({})]} apiBasePath="/api/a/alex/admin" adminBasePath="/alex/admin" />);
     await userEvent.click(screen.getByText("What is your notice period?"));
     expect(nav.push).toHaveBeenCalledWith("/alex/admin/questions?q=q1");
+  });
+
+  it("notes when the most-recent cap is reached", () => {
+    const many = Array.from({ length: QUESTION_LIMIT }, (_, i) => q({ id: `q${i}` }));
+    render(
+      <QuestionsSection questions={many} apiBasePath="/api/a/alex/admin" adminBasePath="/alex/admin" />,
+    );
+    expect(screen.getByText(/showing most recent 200/i)).toBeInTheDocument();
   });
 
   it("cross-links to the conversation on the admin index route", async () => {

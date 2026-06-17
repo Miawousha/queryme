@@ -1,4 +1,4 @@
-import type { Conversation } from "@/lib/db/schema";
+import type { ConversationListItem } from "@/lib/admin/data";
 import { Badge } from "@/components/admin/ui";
 import { fmt } from "@/lib/admin/format";
 
@@ -8,8 +8,8 @@ import { fmt } from "@/lib/admin/format";
  * role/company; otherwise it shows channel + turn count. One component serves
  * both the "All" and "Interviewers" segments of the Conversations list.
  */
-export function ConversationRow({ conversation }: { conversation: Conversation }) {
-  const turns = conversation.transcript ?? [];
+export function ConversationRow({ conversation }: { conversation: ConversationListItem }) {
+  const turns = conversation.turnCount;
   const identity = conversation.interviewer;
 
   if (identity) {
@@ -38,7 +38,7 @@ export function ConversationRow({ conversation }: { conversation: Conversation }
       <Badge>{conversation.channel}</Badge>
       {conversation.language && <Badge>{conversation.language}</Badge>}
       <span className="ml-auto flex items-center gap-3 text-[var(--color-text-tertiary)]">
-        <span>{turns.length} turns</span>
+        <span>{turns} turns</span>
         <span>{fmt(conversation.lastMessageAt)}</span>
       </span>
     </div>

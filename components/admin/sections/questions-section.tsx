@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import type { ForwardedQuestion } from "@/lib/db/schema";
+import { QUESTION_LIMIT } from "@/lib/admin/data";
 import { RecordList } from "@/components/admin/record-list";
 import { DetailSidebar } from "@/components/admin/detail-sidebar";
 import { QuestionRow } from "@/components/admin/rows/question-row";
@@ -37,6 +38,11 @@ export function QuestionsSection({
 
   return (
     <>
+      {questions.length === QUESTION_LIMIT && (
+        <p className="mb-3 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+          Showing most recent {QUESTION_LIMIT}
+        </p>
+      )}
       <RecordList
         items={questions}
         getId={(q) => q.id}

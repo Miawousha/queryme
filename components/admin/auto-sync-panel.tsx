@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fmt } from "@/lib/admin/format";
 
 type View = {
   enabled: boolean;
@@ -104,7 +105,7 @@ export function AutoSyncPanel({
 
   const lastDelivery = view.lastDeliveryAt ? (
     <p className="text-[10px] text-[var(--color-text-tertiary)]">
-      Last delivery: {new Date(view.lastDeliveryAt).toLocaleString()}
+      Last delivery: {fmt(view.lastDeliveryAt)}
     </p>
   ) : null;
 

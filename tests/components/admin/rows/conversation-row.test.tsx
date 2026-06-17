@@ -1,18 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ConversationRow } from "@/components/admin/rows/conversation-row";
-import type { Conversation } from "@/lib/db/schema";
+import type { ConversationListItem } from "@/lib/admin/data";
 
-function conv(overrides: Partial<Conversation>): Conversation {
+function conv(overrides: Partial<ConversationListItem>): ConversationListItem {
   return {
     id: "c1",
     channel: "chat",
     language: null,
-    transcript: [],
     interviewer: null,
     startedAt: new Date(0),
     lastMessageAt: new Date(0),
     accountId: null,
+    turnCount: 0,
     ...overrides,
   };
 }
@@ -42,7 +42,7 @@ describe("ConversationRow", () => {
       <ConversationRow
         conversation={conv({
           channel: "mcp",
-          transcript: [{ role: "user", text: "hi", at: "2026-05-22T00:00:00.000Z" }],
+          turnCount: 1,
         })}
       />,
     );

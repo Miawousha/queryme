@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import type { PersonaSource } from "@/lib/db/schema";
 import { KbSetupSteps } from "@/components/admin/kb-setup-steps";
 import { ManualSyncForm } from "@/components/admin/manual-sync-form";
+import { Field, LABEL } from "@/components/admin/ui";
+import { fmt } from "@/lib/admin/format";
 
 type State = { active: PersonaSource | null; history: PersonaSource[] };
 
@@ -48,56 +50,50 @@ export function ContentTab({
   };
 
   if (!state) {
-    return <div className="p-4 text-sm text-[var(--color-text-tertiary)]">Loading…</div>;
+    return <p className={`p-4 ${LABEL}`}>Loading…</p>;
   }
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="flex flex-col gap-6 p-4">
       {state.active ? (
         <>
-          <section>
-            <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
-              Active source
-            </h2>
-            <div className="mt-2 space-y-1 text-sm">
-              <div>
-                <span className="text-[var(--color-text-tertiary)]">repo: </span>
+          <section className="flex flex-col gap-2">
+            <span className={LABEL}>Active source</span>
+            <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/60 p-4">
+              <div className="flex items-center justify-between gap-3">
                 <a
                   href={state.active.repoUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="underline"
+                  className="truncate font-display text-sm text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
                 >
                   {prettyRepo(state.active.repoUrl)}
                 </a>
+                <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                  synced {fmt(state.active.syncedAt)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Branch" value={state.active.branch} />
+                <Field label="Commit" value={state.active.commitSha.slice(0, 7)} />
               </div>
               <div>
-                <span className="text-[var(--color-text-tertiary)]">branch: </span>
-                {state.active.branch}
+                <button
+                  type="button"
+                  onClick={resync}
+                  disabled={resyncing}
+                  className="rounded border border-[var(--color-border)] px-3 py-1 text-xs disabled:opacity-60"
+                >
+                  {resyncing ? "Syncing…" : "Resync from current source"}
+                </button>
+                {resyncError && <p className="mt-2 text-sm text-red-500">{resyncError}</p>}
               </div>
-              <div>
-                <span className="text-[var(--color-text-tertiary)]">commit: </span>
-                <code className="text-xs">{state.active.commitSha.slice(0, 7)}</code>
-              </div>
-              <div>
-                <span className="text-[var(--color-text-tertiary)]">last synced: </span>
-                {new Date(state.active.syncedAt).toLocaleString()}
-              </div>
-              <button
-                type="button"
-                onClick={resync}
-                disabled={resyncing}
-                className="mt-2 rounded border border-[var(--color-border)] px-3 py-1 text-xs"
-              >
-                {resyncing ? "Syncing…" : "Resync from current source"}
-              </button>
-              {resyncError && <p className="mt-2 text-sm text-red-500">{resyncError}</p>}
             </div>
           </section>
 
           <section>
             <details>
-              <summary className="cursor-pointer font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+              <summary className={`cursor-pointer ${LABEL}`}>
                 Advanced: change source manually
               </summary>
               <ManualSyncForm
@@ -119,23 +115,33 @@ export function ContentTab({
         </section>
       )}
 
-      <section>
-        <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
-          Sync history
-        </h2>
-        <ul className="mt-2 space-y-1 text-xs">
-          {state.history.map((row) => (
-            <li key={row.id} className="flex gap-3">
-              <span>{new Date(row.syncedAt).toLocaleString()}</span>
-              <span className={row.status === "ok" ? "text-emerald-500" : "text-red-500"}>
-                {row.status}
-              </span>
-              {row.error && (
-                <span className="text-[var(--color-text-tertiary)]">{row.error}</span>
-              )}
-            </li>
-          ))}
-        </ul>
+      <section className="flex flex-col gap-2">
+        <span className={LABEL}>Sync history</span>
+        {state.history.length === 0 ? (
+          <p className="text-xs text-[var(--color-text-tertiary)]">No syncs yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-1.5 text-xs">
+            {state.history.map((row) => (
+              <li key={row.id} className="flex items-baseline gap-3">
+                <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                  {fmt(row.syncedAt)}
+                </span>
+                <span
+                  className={
+                    row.status === "ok"
+                      ? "font-mono text-[10px] uppercase text-emerald-500"
+                      : "font-mono text-[10px] uppercase text-red-500"
+                  }
+                >
+                  {row.status}
+                </span>
+                {row.error && (
+                  <span className="truncate text-[var(--color-text-tertiary)]">{row.error}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

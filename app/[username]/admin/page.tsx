@@ -14,5 +14,10 @@ export default async function ConversationsPage({
   const { username } = await params;
   const account = await requireAdminAccount(username);
   const conversations = await loadConversations(getDb(), account.id);
-  return <ConversationsSection conversations={conversations} />;
+  return (
+    <ConversationsSection
+      conversations={conversations}
+      apiBasePath={`/api/a/${account.username}/admin`}
+    />
+  );
 }

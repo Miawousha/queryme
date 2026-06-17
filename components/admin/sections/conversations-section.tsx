@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
-import type { Conversation } from "@/lib/db/schema";
-import { CONVERSATION_LIMIT } from "@/lib/admin/data";
+import type { ConversationTurn } from "@/lib/db/schema";
+import { CONVERSATION_LIMIT, type ConversationListItem } from "@/lib/admin/data";
 import { RecordList } from "@/components/admin/record-list";
 import { DetailSidebar } from "@/components/admin/detail-sidebar";
 import { ConversationRow } from "@/components/admin/rows/conversation-row";
@@ -13,12 +13,19 @@ import { cn } from "@/lib/utils";
 
 type Segment = "all" | "interviewers";
 
-export function ConversationsSection({ conversations }: { conversations: Conversation[] }) {
+export function ConversationsSection({
+  conversations,
+  apiBasePath,
+}: {
+  conversations: ConversationListItem[];
+  apiBasePath: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const selectedId = params.get("c");
   const [segment, setSegment] = useState<Segment>("all");
+  const [transcript, setTranscript] = useState<ConversationTurn[] | null>(null);
 
   const interviewers = useMemo(
     () => conversations.filter((c) => c.interviewer != null),
@@ -26,6 +33,28 @@ export function ConversationsSection({ conversations }: { conversations: Convers
   );
   const shown = segment === "interviewers" ? interviewers : conversations;
   const selected = selectedId ? conversations.find((c) => c.id === selectedId) ?? null : null;
+
+  // The list payload omits transcripts; fetch the selected one on demand. While
+  // it loads, `transcript` is null and the detail body shows a loading state.
+  useEffect(() => {
+    if (!selectedId) {
+      setTranscript(null);
+      return;
+    }
+    let cancelled = false;
+    setTranscript(null);
+    fetch(`${apiBasePath}/conversations/${selectedId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d: { transcript: ConversationTurn[] }) => {
+        if (!cancelled) setTranscript(d.transcript ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setTranscript([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, apiBasePath]);
 
   function select(id: string | null) {
     const next = new URLSearchParams(params.toString());
@@ -67,15 +96,15 @@ export function ConversationsSection({ conversations }: { conversations: Convers
         eyebrow={selected?.interviewer ? "Interviewer" : "Conversation"}
         title={selected ? detailTitle(selected) : ""}
       >
-        {selected && <ConversationDetail conversation={selected} />}
+        {selected && <ConversationDetail conversation={selected} transcript={transcript} />}
       </DetailSidebar>
     </>
   );
 }
 
-function detailTitle(c: Conversation): string {
+function detailTitle(c: ConversationListItem): string {
   if (c.interviewer) return c.interviewer.name ?? "Unknown name";
-  return `${c.channel} · ${(c.transcript ?? []).length} turns`;
+  return `${c.channel} · ${c.turnCount} turns`;
 }
 
 function SegmentButton({
