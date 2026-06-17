@@ -8,10 +8,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ContentSettingsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ app?: string }>;
 }) {
   const { username } = await params;
+  const { app } = await searchParams;
   const account = await requireAdminAccount(username);
   const apiBasePath = `/api/a/${account.username}/admin`;
   return (
@@ -21,7 +24,7 @@ export default async function ContentSettingsPage({
         username={account.username}
         appInstallUrl={appInstallUrl()}
       />
-      <AutoSyncPanel apiBasePath={apiBasePath} />
+      <AutoSyncPanel apiBasePath={apiBasePath} justInstalled={app === "installed"} />
     </>
   );
 }

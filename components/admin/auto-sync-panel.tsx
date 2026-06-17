@@ -15,10 +15,20 @@ type View = {
 
 type Action = "enable" | "disable" | "regenerate";
 
-export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
+export function AutoSyncPanel({
+  apiBasePath,
+  justInstalled = false,
+}: {
+  apiBasePath: string;
+  justInstalled?: boolean;
+}) {
   const [view, setView] = useState<View | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  // After a fresh App install the install→account mapping is done by the
+  // webhook, which can land a beat after the post-install redirect. Show a
+  // "finishing setup" hint until one delayed re-fetch settles the connection.
+  const [settling, setSettling] = useState(justInstalled);
 
   const load = async () => {
     const res = await fetch(`${apiBasePath}/auto-sync`);
@@ -28,6 +38,14 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+    if (!justInstalled) return;
+    const t = setTimeout(() => {
+      void load().finally(() => setSettling(false));
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [justInstalled]);
 
   const act = async (action: Action) => {
     setBusy(true);
@@ -68,7 +86,6 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
       <ManualWebhook
         webhookUrl={view.webhookUrl}
         secret={view.secret}
-        lastDeliveryAt={view.lastDeliveryAt}
         copied={copied}
         copy={copy}
         busy={busy}
@@ -85,6 +102,12 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
     </details>
   );
 
+  const lastDelivery = view.lastDeliveryAt ? (
+    <p className="text-[10px] text-[var(--color-text-tertiary)]">
+      Last delivery: {new Date(view.lastDeliveryAt).toLocaleString()}
+    </p>
+  ) : null;
+
   return (
     <div className="space-y-4 border-t border-[var(--color-border)] p-4">
       <div className="flex items-center justify-between">
@@ -93,6 +116,12 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
         </h2>
         {toggle}
       </div>
+
+      {settling && !view.connectedViaApp && (
+        <p className="text-xs text-[var(--color-text-tertiary)]">
+          Finishing setup… connecting your GitHub App install.
+        </p>
+      )}
 
       {view.connectedViaApp ? (
         <div className="space-y-2 text-sm">
@@ -116,11 +145,7 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
               Manage on GitHub
             </a>
           )}
-          {view.lastDeliveryAt && (
-            <p className="text-[10px] text-[var(--color-text-tertiary)]">
-              Last delivery: {new Date(view.lastDeliveryAt).toLocaleString()}
-            </p>
-          )}
+          {lastDelivery}
           {advancedWebhook}
         </div>
       ) : view.appInstallUrl ? (
@@ -142,6 +167,7 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
                 Off — connect the App above, or enable a manual webhook.
               </p>
             ) : null)}
+          {lastDelivery}
         </div>
       ) : (
         <div className="space-y-3 text-sm">
@@ -151,6 +177,7 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
               auto-sync on every push.
             </p>
           )}
+          {lastDelivery}
         </div>
       )}
     </div>
@@ -160,7 +187,6 @@ export function AutoSyncPanel({ apiBasePath }: { apiBasePath: string }) {
 function ManualWebhook({
   webhookUrl,
   secret,
-  lastDeliveryAt,
   copied,
   copy,
   busy,
@@ -168,7 +194,6 @@ function ManualWebhook({
 }: {
   webhookUrl: string;
   secret: string;
-  lastDeliveryAt: string | null;
   copied: string | null;
   copy: (label: string, text: string) => void;
   busy: boolean;
@@ -231,12 +256,6 @@ function ManualWebhook({
       <p className="text-[10px] text-[var(--color-text-tertiary)]">
         Regenerating invalidates the old secret — update the webhook in GitHub afterward.
       </p>
-
-      {lastDeliveryAt && (
-        <p className="text-[10px] text-[var(--color-text-tertiary)]">
-          Last delivery: {new Date(lastDeliveryAt).toLocaleString()}
-        </p>
-      )}
     </div>
   );
 }
