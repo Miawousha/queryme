@@ -8,10 +8,9 @@ import { getPersonaStore } from "@/lib/persona/store";
 import { parseKbLocale, type KbFileType, type KbLocale } from "@/lib/kb/file-type";
 import type { KbGroup } from "@/lib/kb/meta-format";
 
-/** `cv` is a synthesized type that never appears in the on-disk manifest, so
- * its absence from this map is safe — the CV is rendered in a dedicated modal
- * without ever hitting this route. */
-const CONTENT_TYPE: Record<Exclude<KbFileType, "cv">, string> = {
+/** Maps each on-disk artifact type to the response content-type used when
+ * streaming the file back from this route. */
+const CONTENT_TYPE: Record<KbFileType, string> = {
   md: "text/plain; charset=utf-8",
   yaml: "text/plain; charset=utf-8",
   html: "text/html; charset=utf-8",
@@ -79,10 +78,6 @@ export async function handleKbFile(req: NextRequest, accountId: string): Promise
       }
     }
     return path.join(KB_DIR, entry!.path);
-  }
-
-  if (entry.type === "cv") {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   try {
