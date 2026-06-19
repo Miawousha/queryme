@@ -32,4 +32,28 @@ describe("CvDocumentView", () => {
       "https://github.com/ada/note-g",
     );
   });
+
+  it("shows total years for a closed role and only the period for an ongoing one", () => {
+    const kb = makeKb({
+      experience: [
+        {
+          slug: "closed-role",
+          relativePath: "experience/closed-role.md",
+          frontmatter: { company: "Acme", role: "Engineer", start: "2016-01", end: "2020-01" },
+          body: "",
+        },
+        {
+          slug: "ongoing-role",
+          relativePath: "experience/ongoing-role.md",
+          frontmatter: { company: "Now Inc", role: "Lead", start: "2022-01", end: "present" },
+          body: "",
+        },
+      ],
+    });
+    render(<CvDocumentView kb={kb} lang="en" />);
+    // Jan 2016 – Jan 2020 spans 4 whole years.
+    expect(screen.getByText(/4 yrs/)).toBeInTheDocument();
+    // Ongoing role shows "present" and no computed year total.
+    expect(screen.getByText(/present/i)).toBeInTheDocument();
+  });
 });

@@ -112,6 +112,7 @@ export function AppTopBar({
             onClick={onOpenCv}
             aria-label={cvButtonLabel}
             title={cvButtonLabel}
+            aria-haspopup="dialog"
             className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20"
           >
             <CvIcon />

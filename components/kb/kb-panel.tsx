@@ -5,12 +5,11 @@ import { useKb } from "@/components/kb/kb-context";
 import { KbTree } from "@/components/kb/kb-tree";
 import { KbViewer } from "@/components/kb/kb-viewer";
 import { breadcrumbFor, resolveGroups } from "@/lib/kb/tree";
-import type { UiLang } from "@/lib/language";
 
 /** Shared top-band style — matches the chat pane's status header height. */
 const BAND = "flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4";
 
-export function KbPanel({ onLangChange }: { onLangChange: (next: UiLang) => void }) {
+export function KbPanel() {
   const {
     strings,
     lang,

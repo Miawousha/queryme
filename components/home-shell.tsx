@@ -76,7 +76,7 @@ export function HomeShell({
           collapsed={kbCollapsed}
           onCollapsedChange={onKbCollapsedChange}
           chat={<Chat t={t} lang={lang} onLangChange={onLangChange} apiBasePath={apiBasePath} />}
-          panel={<KbPanel onLangChange={onLangChange} />}
+          panel={<KbPanel />}
         />
       </div>
 

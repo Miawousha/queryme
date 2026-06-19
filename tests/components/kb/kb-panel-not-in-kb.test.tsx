@@ -28,7 +28,7 @@ describe("KbPanel — notInKb dead-end", () => {
       makeKbContext({ openTarget: { path: "missing/doc.md", anchor: null }, manifest: [] }),
     );
 
-    render(<KbPanel onLangChange={vi.fn()} />);
+    render(<KbPanel />);
 
     expect(screen.getByText("That document isn't in the knowledge base.")).toBeInTheDocument();
   });
@@ -38,7 +38,7 @@ describe("KbPanel — notInKb dead-end", () => {
       makeKbContext({ openTarget: { path: "missing/doc.md", anchor: null }, manifest: [] }),
     );
 
-    render(<KbPanel onLangChange={vi.fn()} />);
+    render(<KbPanel />);
 
     // The button label is "‹ files" (strings.back prefixed with ‹ and a space).
     const btn = screen.getByRole("button", { name: "Back to the file list" });
@@ -58,7 +58,7 @@ describe("KbPanel — notInKb dead-end", () => {
       }),
     );
 
-    render(<KbPanel onLangChange={vi.fn()} />);
+    render(<KbPanel />);
 
     await user.click(screen.getByRole("button", { name: "Back to the file list" }));
     expect(closeFile).toHaveBeenCalledOnce();
@@ -69,7 +69,7 @@ describe("KbPanel — notInKb dead-end", () => {
       makeKbContext({ openTarget: null, manifest: [] }),
     );
 
-    render(<KbPanel onLangChange={vi.fn()} />);
+    render(<KbPanel />);
 
     expect(screen.queryByRole("button", { name: "Back to the file list" })).toBeNull();
     // The title band is shown instead.
