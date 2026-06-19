@@ -24,6 +24,11 @@ export function buildUiStrings(persona: Persona) {
       agentLabel: "agent",
       statusThinking: "thinking",
       statusReady: "ready",
+      clearChat: {
+        action: "Clear chat",
+        confirm: "Confirm?",
+        cancel: "Cancel",
+      },
       thinking: {
         generic: "Thinking…",
       },
@@ -169,6 +174,11 @@ export function buildUiStrings(persona: Persona) {
       agentLabel: "agent",
       statusThinking: "réflexion",
       statusReady: "prêt",
+      clearChat: {
+        action: "Effacer",
+        confirm: "Confirmer ?",
+        cancel: "Annuler",
+      },
       thinking: {
         generic: "Réflexion…",
       },

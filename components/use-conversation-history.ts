@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import {
   historyCitationKeys,
   turnsToUiMessages,
@@ -80,6 +80,13 @@ export function useConversationHistory({
 }: UseConversationHistoryArgs): {
   conversationId: string;
   conversationIdRef: RefObject<string>;
+  /**
+   * Start a fresh conversation: mint a new id, persist it under the same
+   * per-account key, and adopt it immediately so the next chat POST opens a new
+   * server-side thread instead of appending to the old one. A reload won't
+   * rehydrate the previous transcript — the id that pointed at it is gone.
+   */
+  resetConversation: () => void;
 } {
   const [conversationId, setConversationId] = useState("");
   const conversationIdRef = useRef("");
@@ -149,5 +156,16 @@ export function useConversationHistory({
     })();
   }, [conversationId, apiBasePath, onLangChange, seenAutoReveal, setMessages, threadStateRef]);
 
-  return { conversationId, conversationIdRef };
+  const resetConversation = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const fresh = crypto.randomUUID();
+    window.localStorage.setItem(conversationIdKey(apiBasePath), fresh);
+    // A fresh id has no server-side history — mark the guard so the rehydration
+    // effect's re-run (triggered by the id change below) skips its fetch.
+    historyAttemptedRef.current = true;
+    conversationIdRef.current = fresh;
+    setConversationId(fresh);
+  }, [apiBasePath]);
+
+  return { conversationId, conversationIdRef, resetConversation };
 }

@@ -123,6 +123,16 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
     langRef.current = lang;
   }, [lang]);
   const [forwardToast, setForwardToast] = useState<string | null>(null);
+  // Two-step "clear chat": the first click arms the confirm, a second confirms.
+  // The arm auto-reverts so an abandoned confirm doesn't linger in the header.
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    },
+    [],
+  );
 
   // The transport is created ONCE. `useChat` does not adopt a new transport
   // instance after mount, so the body callback must read the conversation id
@@ -163,7 +173,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
   const threadStateRef = useRef({ empty: true, idle: true });
   threadStateRef.current = { empty: messages.length === 0, idle: status === "ready" };
 
-  const { conversationId, conversationIdRef } = useConversationHistory({
+  const { conversationId, conversationIdRef, resetConversation } = useConversationHistory({
     apiBasePath,
     setMessages,
     onLangChange,
@@ -249,6 +259,32 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
     setTimeout(() => setForwardToast(null), 4000);
   }
 
+  function cancelClearConfirm() {
+    setConfirmingClear(false);
+    if (clearTimerRef.current) {
+      clearTimeout(clearTimerRef.current);
+      clearTimerRef.current = null;
+    }
+  }
+
+  function requestClear() {
+    setConfirmingClear(true);
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    // Same 4s cadence as the forward toast: an unconfirmed clear quietly resets.
+    clearTimerRef.current = setTimeout(() => setConfirmingClear(false), 4000);
+  }
+
+  // Start a fresh thread: drop the live messages and rotate the stored
+  // conversation id (so a reload won't rehydrate the old transcript). The
+  // identity chip and KB citation tree both derive from `messages`, so they
+  // clear on their own.
+  function clearChat() {
+    cancelClearConfirm();
+    setMessages([]);
+    resetConversation();
+    setForwardToast(null);
+  }
+
   function messageText(m: (typeof messages)[number]): string {
     return m.parts
       .filter((p): p is { type: "text"; text: string } => p.type === "text")
@@ -311,12 +347,46 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
             {isBusy ? t.statusThinking : t.statusReady}
           </span>
         </div>
-        <span
-          className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
-          style={{ letterSpacing: "0.3em" }}
-        >
-          /chat
-        </span>
+        <div className="flex items-center gap-3">
+          {messages.length > 0 &&
+            (confirmingClear ? (
+              <span
+                className="flex items-center gap-2 font-mono text-[10px] uppercase"
+                style={{ letterSpacing: "0.18em" }}
+              >
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  className="text-[var(--color-accent)] transition-colors hover:brightness-125"
+                >
+                  {t.clearChat.confirm}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelClearConfirm}
+                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)]"
+                >
+                  {t.clearChat.cancel}
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={requestClear}
+                disabled={isBusy}
+                className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)] disabled:cursor-not-allowed disabled:opacity-40"
+                style={{ letterSpacing: "0.18em" }}
+              >
+                {t.clearChat.action}
+              </button>
+            ))}
+          <span
+            className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+            style={{ letterSpacing: "0.3em" }}
+          >
+            /chat
+          </span>
+        </div>
       </header>
 
       {identitySummary && (
@@ -416,7 +486,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
         </div>
       )}
 
-      {error && planLimited && (
+      {error && planLimited && messages.length > 0 && (
         <PlanLimitNotice
           strings={t.planLimit}
           initialQuestion={lastSentRef.current}
@@ -424,7 +494,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
         />
       )}
 
-      {error && !planLimited && (
+      {error && !planLimited && messages.length > 0 && (
         <div
           role="alert"
           className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"
