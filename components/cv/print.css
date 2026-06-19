@@ -42,7 +42,25 @@
     background: #fff !important;
   }
 
-  /* Honor section background fills / accent colors in print. */
+  /* Classic light document. On screen the CV inherits the app's (dark) theme;
+     for print we flip it to ink-on-paper by redefining the CV's color tokens,
+     scoped to `.cv-page` so only the CV adopts the print palette. Every
+     `var(--color-*)` inside the document resolves to these values — no markup
+     changes — which also guarantees legibility regardless of the active theme. */
+  .cv-page {
+    --color-text-primary: #161616;
+    --color-text-secondary: #2f2f2f;
+    --color-text-tertiary: #6a6a6a;
+    --color-border: #dadada;
+    --color-surface: #ffffff;
+    --color-card: #ffffff;
+    --color-accent: #1a1a1a;
+    color: var(--color-text-secondary);
+    padding: 0 !important;
+    max-width: none;
+  }
+
+  /* Apply the redefined token values (backgrounds, accents) faithfully. */
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -55,6 +73,11 @@
     display: none !important;
   }
 
+  /* Skill chips read as hairline outlines on paper, not filled pills. */
+  .cv-page li.cv-entry {
+    background: transparent !important;
+  }
+
   /* Keep entries and section headers from splitting across pages. */
   .cv-section {
     break-inside: avoid;
@@ -62,14 +85,9 @@
   .cv-entry {
     break-inside: avoid;
   }
-  h2 {
+  h2,
+  h3 {
     break-after: avoid;
-  }
-
-  /* Let the document use the full print column. */
-  .cv-page {
-    padding: 0 !important;
-    max-width: none;
   }
 
   /* Body prose sized for physical parity with screen. */
