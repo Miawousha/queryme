@@ -1,14 +1,23 @@
-/* Readable prose for the printable CV — body sized to ~10.5pt on print and
-   ~14px on screen so the two render at comparable physical sizes. */
+/* Screen: tasteful document column. The cv-page owns its own rhythm.
+   Body prose is sized to ~14px on screen and ~10.5pt on print so the two
+   render at comparable physical sizes. */
 .cv-prose ul {
   margin: 0.25rem 0;
   padding-left: 1.1rem;
   list-style: disc;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .cv-prose li {
-  margin: 0 0 0.2rem 0;
+  margin-top: 0.15rem;
+}
+.cv-prose li::marker {
+  color: var(--color-accent);
+}
+.cv-prose p {
+  margin: 0.25rem 0;
+  font-size: 14px;
+  line-height: 1.55;
 }
 .cv-prose strong {
   color: var(--color-text-primary);
@@ -19,21 +28,55 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.cv-prose p {
-  margin: 0.25rem 0;
-  font-size: 14px;
-  line-height: 1.5;
-}
 
 @media print {
-  @page { size: A4; margin: 14mm 16mm; }
-  body { background: #fff !important; color: #000 !important; font-size: 10.5pt; }
-  a { color: #000 !important; text-decoration: none !important; }
-  nav, footer, .no-print { display: none !important; }
-  .cv-page { padding: 0 !important; max-width: none !important; }
-  .cv-section { break-inside: avoid; }
-  .cv-entry { break-inside: avoid; }
-  h1, h2, h3 { break-after: avoid; }
-  .cv-prose p, .cv-prose ul, .cv-prose li { font-size: 10.5pt; line-height: 1.4; }
-  .cv-prose strong { color: #000; }
+  /* A4 with comfortable margins; remove the browser's default header/footer
+     by keeping content within the page box. */
+  @page {
+    size: A4;
+    margin: 14mm 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  /* Honor section background fills / accent colors in print. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide app chrome (top bar, buttons) when printing the standalone page. */
+  nav,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Keep entries and section headers from splitting across pages. */
+  .cv-section {
+    break-inside: avoid;
+  }
+  .cv-entry {
+    break-inside: avoid;
+  }
+  h2 {
+    break-after: avoid;
+  }
+
+  /* Let the document use the full print column. */
+  .cv-page {
+    padding: 0 !important;
+    max-width: none;
+  }
+
+  /* Body prose sized for physical parity with screen. */
+  .cv-prose p,
+  .cv-prose ul,
+  .cv-prose li {
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
 }

@@ -38,69 +38,115 @@ function firstBulletList(body: string, max: number): string {
   return out.join("\n");
 }
 
+/** Consistent section header: an accent tick, a mono label, and a hairline rule
+ * that gives every section the same opening cadence. */
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex items-center gap-3">
+      <span aria-hidden className="h-2 w-2 shrink-0 rounded-[1px] bg-[var(--color-accent)]" />
+      <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[var(--color-text-secondary)]">
+        {children}
+      </h2>
+      <span aria-hidden className="h-px flex-1 bg-[var(--color-border)]" />
+    </div>
+  );
+}
+
+/** A period / meta marker rendered in the same mono tertiary treatment across
+ * experience, education, projects and talks. */
+function MetaMarker({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="shrink-0 whitespace-nowrap font-mono text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+      {children}
+    </span>
+  );
+}
+
 export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
   const t = CV_STRINGS[lang];
   const fmt = (start: string, end: string) => formatPeriod(start, end, t.monthFormat, t.present);
   const repos = allRepos(kb);
 
   return (
-    <article className="cv-page">
-      <header className="cv-section mb-7 border-b border-[var(--color-border)] pb-5">
-        <h1 className="font-display text-[28px] font-semibold leading-tight text-[var(--color-text-primary)]">
+    <article className="cv-page text-[var(--color-text-secondary)]">
+      <header className="cv-section relative mb-9 pb-6">
+        <h1 className="font-display text-[32px] font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
           {kb.profile.name}
         </h1>
-        <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">{kb.profile.headline}</p>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[var(--color-text-tertiary)]">
+        {kb.profile.headline && (
+          <p className="mt-1.5 font-display text-[16px] leading-snug text-[var(--color-text-secondary)]">
+            {kb.profile.headline}
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[12px] text-[var(--color-text-tertiary)]">
           {kb.profile.location && <span>{kb.profile.location}</span>}
           {kb.publicContact.email && (
-            <a href={`mailto:${kb.publicContact.email}`} className="hover:text-[var(--color-accent)]">
+            <a
+              href={`mailto:${kb.publicContact.email}`}
+              className="transition-colors hover:text-[var(--color-accent)]"
+            >
               {kb.publicContact.email}
             </a>
           )}
           {kb.publicContact.links?.linkedin && (
-            <a href={kb.publicContact.links.linkedin} className="hover:text-[var(--color-accent)]">
+            <a
+              href={kb.publicContact.links.linkedin}
+              className="transition-colors hover:text-[var(--color-accent)]"
+            >
               LinkedIn
             </a>
           )}
           {kb.publicContact.links?.github && (
-            <a href={kb.publicContact.links.github} className="hover:text-[var(--color-accent)]">
+            <a
+              href={kb.publicContact.links.github}
+              className="transition-colors hover:text-[var(--color-accent)]"
+            >
               GitHub
             </a>
           )}
           {kb.publicContact.links?.website && (
-            <a href={kb.publicContact.links.website} className="hover:text-[var(--color-accent)]">
+            <a
+              href={kb.publicContact.links.website}
+              className="transition-colors hover:text-[var(--color-accent)]"
+            >
               {kb.publicContact.links.website.replace(/^https?:\/\//, "")}
             </a>
           )}
         </div>
+        {/* Accent keyline anchoring the identity block. */}
+        <span
+          aria-hidden
+          className="absolute bottom-0 left-0 h-[2px] w-16 rounded-full bg-[var(--color-accent)]"
+        />
+        <span aria-hidden className="absolute bottom-0 left-0 h-px w-full bg-[var(--color-border)]" />
       </header>
 
       {kb.experience.length > 0 && (
-        <section className="cv-section mb-7">
-          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
-            {t.sections.experience}
-          </h2>
-          <div className="flex flex-col gap-5">
+        <section className="cv-section mb-9">
+          <SectionHeading>{t.sections.experience}</SectionHeading>
+          <div className="flex flex-col gap-6">
             {kb.experience.map((e) => {
               const fallbackBullets = firstBulletList(e.body, 4);
               return (
                 <div key={e.slug} className="cv-entry">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                    <h3 className="font-display text-[16px] font-semibold text-[var(--color-text-primary)]">
-                      {e.frontmatter.role} · {e.frontmatter.company}
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                    <h3 className="font-display text-[16px] font-semibold leading-snug text-[var(--color-text-primary)]">
+                      {e.frontmatter.role}
+                      <span className="text-[var(--color-text-tertiary)]"> · </span>
+                      <span className="text-[var(--color-text-secondary)]">{e.frontmatter.company}</span>
                     </h3>
-                    <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)] whitespace-nowrap">
+                    <MetaMarker>
                       {fmt(e.frontmatter.start, e.frontmatter.end)}
                       {e.frontmatter.location && <> · {e.frontmatter.location}</>}
-                    </span>
+                    </MetaMarker>
                   </div>
                   {e.frontmatter.summary && (
-                    <p className="mt-1 text-[14px] leading-snug text-[var(--color-text-secondary)]">
+                    <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
                       {e.frontmatter.summary}
                     </p>
                   )}
                   {e.frontmatter.highlights && e.frontmatter.highlights.length > 0 ? (
-                    <ul className="cv-prose mt-2 text-[var(--color-text-secondary)]">
+                    <ul className="cv-prose mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
                       {e.frontmatter.highlights.map((h, i) => (
                         <li key={i}>
                           <ReactMarkdown
@@ -114,14 +160,14 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
                     </ul>
                   ) : (
                     fallbackBullets && (
-                      <div className="cv-prose mt-2 text-[var(--color-text-secondary)]">
+                      <div className="cv-prose mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{fallbackBullets}</ReactMarkdown>
                       </div>
                     )
                   )}
                   {e.frontmatter.stack && e.frontmatter.stack.length > 0 && (
-                    <p className="mt-2 font-mono text-[12px] text-[var(--color-text-tertiary)]">
-                      {e.frontmatter.stack.join(" · ")}
+                    <p className="mt-2.5 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+                      {e.frontmatter.stack.join("  ·  ")}
                     </p>
                   )}
                 </div>
@@ -132,26 +178,23 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
       )}
 
       {kb.education.entries.length > 0 && (
-        <section className="cv-section mb-7">
-          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
-            {t.sections.education}
-          </h2>
-          <div className="flex flex-col gap-2">
+        <section className="cv-section mb-9">
+          <SectionHeading>{t.sections.education}</SectionHeading>
+          <div className="flex flex-col gap-2.5">
             {kb.education.entries.map((ed, i) => (
               <div
                 key={i}
-                className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 text-[14px] leading-snug"
+                className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 text-[14px] leading-snug"
               >
                 <span>
                   <span className="font-display font-semibold text-[var(--color-text-primary)]">
                     {ed.degree}
                   </span>
-                  <span className="text-[var(--color-text-secondary)]"> · {ed.institution}</span>
+                  <span className="text-[var(--color-text-tertiary)]"> · </span>
+                  <span className="text-[var(--color-text-secondary)]">{ed.institution}</span>
                   {ed.notes && <span className="text-[var(--color-text-tertiary)]"> — {ed.notes}</span>}
                 </span>
-                <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)] whitespace-nowrap">
-                  {fmt(ed.start, ed.end)}
-                </span>
+                <MetaMarker>{fmt(ed.start, ed.end)}</MetaMarker>
               </div>
             ))}
           </div>
@@ -159,31 +202,39 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
       )}
 
       {kb.skills.skills.length > 0 && (
-        <section className="cv-section mb-7">
-          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
-            {t.sections.skills}
-          </h2>
-          <p className="text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+        <section className="cv-section mb-9">
+          <SectionHeading>{t.sections.skills}</SectionHeading>
+          <ul className="flex flex-wrap gap-x-2 gap-y-2">
             {[...kb.skills.skills]
               .sort((a, b) => b.level - a.level || b.years - a.years)
-              .map((s) => s.name)
-              .join(" · ")}
-          </p>
+              .map((s) => (
+                <li
+                  key={s.name}
+                  className="cv-entry rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-mono text-[12px] text-[var(--color-text-secondary)]"
+                >
+                  {s.name}
+                </li>
+              ))}
+          </ul>
         </section>
       )}
 
       {kb.projects.length > 0 && (
-        <section className="cv-section mb-7">
-          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
-            {t.sections.projects}
-          </h2>
-          <ul className="flex flex-col gap-1.5 text-[14px] leading-snug">
+        <section className="cv-section mb-9">
+          <SectionHeading>{t.sections.projects}</SectionHeading>
+          <ul className="flex flex-col gap-2 text-[14px] leading-snug">
             {kb.projects.map((p) => (
-              <li key={p.slug} className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4">
+              <li
+                key={p.slug}
+                className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+              >
                 <span>
                   <span className="font-display font-semibold text-[var(--color-text-primary)]">
                     {p.frontmatter.url ? (
-                      <a href={p.frontmatter.url} className="hover:text-[var(--color-accent)]">
+                      <a
+                        href={p.frontmatter.url}
+                        className="transition-colors hover:text-[var(--color-accent)]"
+                      >
                         {p.frontmatter.name}
                       </a>
                     ) : (
@@ -192,16 +243,12 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
                   </span>
                   {p.frontmatter.stack && p.frontmatter.stack.length > 0 && (
                     <span className="font-mono text-[12px] text-[var(--color-text-tertiary)]">
-                      {" · "}
+                      {"  ·  "}
                       {p.frontmatter.stack.join(" · ")}
                     </span>
                   )}
                 </span>
-                {p.frontmatter.year && (
-                  <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)] whitespace-nowrap">
-                    {p.frontmatter.year}
-                  </span>
-                )}
+                {p.frontmatter.year && <MetaMarker>{p.frontmatter.year}</MetaMarker>}
               </li>
             ))}
           </ul>
@@ -209,17 +256,21 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
       )}
 
       {kb.talks.length > 0 && (
-        <section className="cv-section mb-7">
-          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
-            {t.sections.talks}
-          </h2>
-          <ul className="flex flex-col gap-1.5 text-[14px] leading-snug">
+        <section className="cv-section mb-9">
+          <SectionHeading>{t.sections.talks}</SectionHeading>
+          <ul className="flex flex-col gap-2 text-[14px] leading-snug">
             {kb.talks.map((tk) => (
-              <li key={tk.slug} className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4">
+              <li
+                key={tk.slug}
+                className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+              >
                 <span>
                   <span className="text-[var(--color-text-primary)]">
                     {tk.frontmatter.url ? (
-                      <a href={tk.frontmatter.url} className="hover:text-[var(--color-accent)]">
+                      <a
+                        href={tk.frontmatter.url}
+                        className="transition-colors hover:text-[var(--color-accent)]"
+                      >
                         {tk.frontmatter.title}
                       </a>
                     ) : (
@@ -228,9 +279,7 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
                   </span>
                   <span className="text-[var(--color-text-tertiary)]"> · {tk.frontmatter.venue}</span>
                 </span>
-                <span className="font-mono text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)] whitespace-nowrap">
-                  {tk.frontmatter.year}
-                </span>
+                <MetaMarker>{tk.frontmatter.year}</MetaMarker>
               </li>
             ))}
           </ul>
@@ -238,17 +287,15 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
       )}
 
       {repos.length > 0 && (
-        <section className="cv-section mb-3">
-          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
-            {t.sections.code}
-          </h2>
-          <ul className="flex flex-col gap-1.5 text-[14px] leading-snug">
+        <section className="cv-section mb-4">
+          <SectionHeading>{t.sections.code}</SectionHeading>
+          <ul className="flex flex-col gap-2 text-[14px] leading-snug">
             {repos.map((o, i) => (
               <li key={`${o.name}-${i}`} className="cv-entry">
                 {o.url ? (
                   <a
                     href={o.url}
-                    className="font-display font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
+                    className="font-display font-semibold text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent)]"
                   >
                     {o.name}
                   </a>
