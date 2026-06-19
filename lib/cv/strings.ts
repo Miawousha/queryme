@@ -14,6 +14,8 @@ export const CV_STRINGS = {
       code: "Open source",
     },
     present: "present",
+    yr: "yr",
+    yrs: "yrs",
     monthFormat: "en-US" as const,
   },
   fr: {
@@ -29,6 +31,8 @@ export const CV_STRINGS = {
       code: "Open source",
     },
     present: "présent",
+    yr: "an",
+    yrs: "ans",
     monthFormat: "fr-FR" as const,
   },
 } as const satisfies Record<KbLang, unknown>;
