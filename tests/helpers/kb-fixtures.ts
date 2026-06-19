@@ -50,6 +50,8 @@ export const KB_STRINGS: KbStrings = {
   downloadAria: "Download document",
   print: "Print",
   printAria: "Print or save as PDF",
+  share: "Share",
+  shareAria: "Share a link to this CV",
   cv: "Curriculum Vitae",
   openCv: "Open CV",
   filterPlaceholder: "Filter…",
