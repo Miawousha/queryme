@@ -7,7 +7,7 @@ import { useKb } from "@/components/kb/kb-context";
 import { makeKbContext } from "@/tests/helpers/kb-fixtures";
 
 // ---------------------------------------------------------------------------
-// Mock the KB context — keep CV_VIRTUAL_PATH real, stub useKb.
+// Mock the KB context — keep the real module exports, stub useKb.
 // ---------------------------------------------------------------------------
 vi.mock("@/components/kb/kb-context", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/kb/kb-context")>();

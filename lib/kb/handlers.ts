@@ -9,8 +9,8 @@ import { parseKbLocale, type KbFileType, type KbLocale } from "@/lib/kb/file-typ
 import type { KbGroup } from "@/lib/kb/meta-format";
 
 /** `cv` is a synthesized type that never appears in the on-disk manifest, so
- * its absence from this map is safe — the panel renders the CV from
- * `<CvPanelView>` without ever hitting this route. */
+ * its absence from this map is safe — the CV is rendered in a dedicated modal
+ * without ever hitting this route. */
 const CONTENT_TYPE: Record<Exclude<KbFileType, "cv">, string> = {
   md: "text/plain; charset=utf-8",
   yaml: "text/plain; charset=utf-8",

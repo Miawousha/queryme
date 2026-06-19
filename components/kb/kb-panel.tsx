@@ -1,8 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef } from "react";
-import { CV_VIRTUAL_PATH, useKb } from "@/components/kb/kb-context";
-import { CvPanelView } from "@/components/cv/cv-panel-view";
+import { useKb } from "@/components/kb/kb-context";
 import { KbTree } from "@/components/kb/kb-tree";
 import { KbViewer } from "@/components/kb/kb-viewer";
 import { breadcrumbFor, resolveGroups } from "@/lib/kb/tree";
@@ -49,15 +48,6 @@ export function KbPanel({ onLangChange }: { onLangChange: (next: UiLang) => void
       /* storage unavailable */
     }
   }, [openTarget, scrollKey]);
-
-  // The synthesized CV doc isn't a real file — render the dedicated view.
-  if (openTarget?.path === CV_VIRTUAL_PATH) {
-    return (
-      <aside className="flex h-full flex-col overflow-hidden">
-        <CvPanelView onLangChange={onLangChange} />
-      </aside>
-    );
-  }
 
   const openFileEntry = openTarget ? manifest.find((f) => f.path === openTarget.path) ?? null : null;
 

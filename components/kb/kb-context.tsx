@@ -16,11 +16,6 @@ import type { KbGroup } from "@/lib/kb/meta-format";
 import type { KbStrings, UiLang } from "@/lib/language";
 import type { CitedRef } from "@/lib/kb/cited-paths";
 
-/** Reserved manifest path for the synthesized printable CV document. The
- * panel viewer special-cases this path and renders the CV component instead
- * of fetching `/api/kb/file`. */
-export const CV_VIRTUAL_PATH = "_virtual/cv";
-
 /** The document + optional section the viewer should show. */
 export type KbOpenTarget = { path: string; anchor: string | null };
 
@@ -29,7 +24,7 @@ type KbContextValue = {
   lang: UiLang;
   /** Localized KB UI strings for the active language. */
   strings: KbStrings;
-  /** Every public KB file plus the synthesized CV entry pinned at the top. */
+  /** Every public KB file in the manifest. */
   manifest: KbFile[];
   /** Markdown directory groups in display order (from the content config). */
   groups: KbGroup[];
@@ -136,22 +131,11 @@ export function KbProvider({
   );
   const closeFile = useCallback(() => setOpenTarget(null), []);
 
-  // Synthetic CV entry, pinned to the top of the file list. Title flips with
-  // language so the entry reads naturally in either locale.
-  const manifestWithCv = useMemo<KbFile[]>(() => {
-    const cvEntry: KbFile = {
-      path: CV_VIRTUAL_PATH,
-      title: strings.cv,
-      type: "cv",
-    };
-    return [cvEntry, ...manifest];
-  }, [manifest, strings.cv]);
-
   const value = useMemo(
     () => ({
       lang,
       strings,
-      manifest: manifestWithCv,
+      manifest,
       groups,
       citedRefs,
       setCitedRefs,
@@ -164,7 +148,7 @@ export function KbProvider({
       cvPrintBase,
       seenAutoReveal,
     }),
-    [lang, strings, manifestWithCv, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, seenAutoReveal],
+    [lang, strings, manifest, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, seenAutoReveal],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

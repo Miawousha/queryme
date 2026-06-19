@@ -3,7 +3,9 @@
 import { AppTopBar } from "@/components/app-top-bar";
 import { AboutPopover } from "@/components/about-popover";
 import { Chat } from "@/components/chat";
-import { CV_VIRTUAL_PATH, useKb } from "@/components/kb/kb-context";
+import { useKb } from "@/components/kb/kb-context";
+import { CvModal } from "@/components/cv/cv-modal";
+import { useState } from "react";
 import { KbPanel } from "@/components/kb/kb-panel";
 import { KbLayout } from "@/components/kb/kb-layout";
 import { McpModal } from "@/components/mcp-modal";
@@ -47,12 +49,8 @@ export function HomeShell({
   apiBasePath = "/api",
   isRootAccount = true,
 }: Props) {
-  const { openFile, cvPrintBase } = useKb();
-
-  const openCv = () => {
-    onKbCollapsedChange(false);
-    openFile(CV_VIRTUAL_PATH);
-  };
+  const { cvPrintBase } = useKb();
+  const [cvOpen, setCvOpen] = useState(false);
 
   return (
     <>
@@ -67,7 +65,7 @@ export function HomeShell({
           onOpenAbout={() => onAboutOpenChange(true)}
           sourceRepo={contentRepoUrl ? { url: contentRepoUrl, label: t.sourceRepoLabel } : null}
           cvButtonLabel={t.kb.openCv}
-          onOpenCv={openCv}
+          onOpenCv={() => setCvOpen(true)}
           kbCollapsed={kbCollapsed}
           onToggleKb={() => onKbCollapsedChange((c) => !c)}
           kbShowLabel={t.kbPanel.show}
@@ -102,6 +100,7 @@ export function HomeShell({
         branch={REPO_BRANCH}
         cvHref={`${cvPrintBase}/cv?lang=${lang}`}
       />
+      <CvModal open={cvOpen} onClose={() => setCvOpen(false)} onLangChange={onLangChange} />
     </>
   );
 }
