@@ -350,21 +350,18 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
         <div className="flex items-center gap-3">
           {messages.length > 0 &&
             (confirmingClear ? (
-              <span
-                className="flex items-center gap-2 font-mono text-[10px] uppercase"
-                style={{ letterSpacing: "0.18em" }}
-              >
+              <span className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={clearChat}
-                  className="text-[var(--color-accent)] transition-colors hover:brightness-125"
+                  className="rounded-full border border-[var(--color-accent)] bg-[rgba(var(--color-accent-rgb),0.12)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-accent)] transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.22)]"
                 >
                   {t.clearChat.confirm}
                 </button>
                 <button
                   type="button"
                   onClick={cancelClearConfirm}
-                  className="text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)]"
+                  className="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--color-text-secondary)] hover:text-[var(--color-text-secondary)]"
                 >
                   {t.clearChat.cancel}
                 </button>
@@ -374,9 +371,9 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
                 type="button"
                 onClick={requestClear}
                 disabled={isBusy}
-                className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)] disabled:cursor-not-allowed disabled:opacity-40"
-                style={{ letterSpacing: "0.18em" }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-border)] disabled:hover:text-[var(--color-text-secondary)]"
               >
+                <ClearChatIcon />
                 {t.clearChat.action}
               </button>
             ))}
@@ -531,5 +528,27 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
         </div>
       </form>
     </section>
+  );
+}
+
+/** Counter-clockwise "reset" mark on the clear-chat control — starting a fresh
+ * thread, not a destructive delete. Inherits `currentColor`. */
+function ClearChatIcon() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="shrink-0"
+    >
+      <polyline points="1 4 1 10 7 10" />
+      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+    </svg>
   );
 }
