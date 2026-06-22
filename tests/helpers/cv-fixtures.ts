@@ -72,6 +72,20 @@ export function makeKb(overrides?: Partial<Kb>): Kb {
         body: "",
       },
     ],
+    publications: [
+      {
+        slug: "1843-notes-on-the-engine",
+        relativePath: "publications/1843-notes-on-the-engine.md",
+        frontmatter: {
+          title: "Notes on the Analytical Engine",
+          authors: "A. Lovelace",
+          venue: "Taylor's Scientific Memoirs",
+          year: 1843,
+          type: "Journal article",
+        },
+        body: "",
+      },
+    ],
     recommendations: [],
     ...overrides,
   };

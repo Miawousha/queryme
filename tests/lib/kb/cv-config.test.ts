@@ -56,6 +56,7 @@ function kbWithProjects(projects: ProjectEntry[]): Kb {
     experience: [],
     projects,
     talks: [],
+    publications: [],
     recommendations: [],
   };
 }

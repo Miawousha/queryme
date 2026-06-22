@@ -38,6 +38,18 @@ export type ProjectEntry = GenericEntry<ProjectFrontmatter>;
 export type TalkEntry = GenericEntry<TalkFrontmatter>;
 export type RecommendationEntry = GenericEntry<RecommendationFrontmatter>;
 
+/** Publications ride on the `generic` markdown schema (no preset Zod shape), so
+ * this is a loose contract over the frontmatter the CV reads, not a validated
+ * type — only `title` is guaranteed by convention. */
+export type PublicationFrontmatter = {
+  title: string;
+  authors?: string;
+  venue?: string;
+  year?: number;
+  type?: string;
+};
+export type PublicationEntry = GenericEntry<PublicationFrontmatter>;
+
 export type LoadedCollection =
   | { kind: "markdown"; config: ResolvedCollection; entries: GenericEntry[] }
   | { kind: "yaml"; config: ResolvedCollection; relativePath: string; data: unknown; raw: string };
@@ -57,6 +69,7 @@ export type Kb = {
   experience: ExperienceEntry[];
   projects: ProjectEntry[];
   talks: TalkEntry[];
+  publications: PublicationEntry[];
   recommendations: RecommendationEntry[];
 };
 
@@ -251,6 +264,9 @@ export function toResumeKb(content: LoadedContent): Kb {
     experience: mdEntries<ExperienceFrontmatter>("experience", "experience"),
     projects: mdEntries<ProjectFrontmatter>("projects", "project"),
     talks: mdEntries<TalkFrontmatter>("talks", "talk"),
+    // Declared in content.config.yaml as a `generic` markdown collection
+    // (sorted year-desc by the loader). Absent for repos that don't ship it → [].
+    publications: mdEntries<PublicationFrontmatter>("publications", "generic"),
     recommendations: mdEntries<RecommendationFrontmatter>("recommendations", "recommendation"),
   };
 }

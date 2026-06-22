@@ -12,8 +12,33 @@ describe("assembleCvMarkdown", () => {
     expect(md).toContain("## Education");
     expect(md).toContain("## Skills");
     expect(md).toContain("## Projects");
+    expect(md).toContain("## Publications");
+    expect(md).toContain("- **Notes on the Analytical Engine** — A. Lovelace · Taylor's Scientific Memoirs · 1843");
     expect(md).toContain("## Open source");
     expect(md).toContain("note-g");
+  });
+
+  it("includes the bio and a Selected achievements section when the profile has them", () => {
+    const kb = makeKb({
+      profile: {
+        name: "Ada Lovelace",
+        headline: "Computing pioneer",
+        bio: "Mathematician who wrote the first published algorithm.",
+        achievements: ["**First algorithm** intended for a machine."],
+      },
+    });
+    const md = assembleCvMarkdown(kb, "en");
+    expect(md).toContain("Mathematician who wrote the first published algorithm.");
+    expect(md).toContain("## Selected achievements");
+    expect(md).toContain("- **First algorithm** intended for a machine.");
+
+    const fr = assembleCvMarkdown(kb, "fr");
+    expect(fr).toContain("## Réalisations clés");
+  });
+
+  it("omits the bio and achievements section when the profile lacks them", () => {
+    const md = assembleCvMarkdown(makeKb(), "en");
+    expect(md).not.toContain("## Selected achievements");
   });
 
   it("uses curated highlights when present, body bullets otherwise", () => {

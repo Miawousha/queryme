@@ -29,6 +29,13 @@
   text-underline-offset: 2px;
 }
 
+/* "Selected achievements" band: bold leads lift to the primary ink, matching
+   the `.cv-prose strong` treatment used in experience bullets. */
+.cv-achievements strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
 @media print {
   /* A4 with comfortable margins; remove the browser's default header/footer
      by keeping content within the page box. */
@@ -76,6 +83,12 @@
   /* Skill chips read as hairline outlines on paper, not filled pills. */
   .cv-page li.cv-entry {
     background: transparent !important;
+  }
+
+  /* Keep the achievements band at two columns on paper regardless of the
+     print viewport width (screen relies on the `sm:` breakpoint). */
+  .cv-achievements {
+    grid-template-columns: 1fr 1fr;
   }
 
   /* Keep entries and section headers from splitting across pages. */

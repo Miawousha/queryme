@@ -12,7 +12,7 @@ describe("CvDocumentView", () => {
 
   it("renders each section heading when its data is present", () => {
     render(<CvDocumentView kb={makeKb()} lang="en" />);
-    for (const h of ["Experience", "Education", "Skills", "Selected projects", "Talks", "Open source"]) {
+    for (const h of ["Experience", "Education", "Skills", "Selected projects", "Talks", "Publications", "Open source"]) {
       expect(screen.getByRole("heading", { name: h })).toBeInTheDocument();
     }
   });
@@ -23,6 +23,35 @@ describe("CvDocumentView", () => {
     expect(screen.queryByRole("heading", { name: "Selected projects" })).toBeNull();
     // Experience still present
     expect(screen.getByRole("heading", { name: "Experience" })).toBeInTheDocument();
+  });
+
+  it("renders the bio and the Selected achievements band when the profile has them", () => {
+    const kb = makeKb({
+      profile: {
+        name: "Ada Lovelace",
+        headline: "Computing pioneer",
+        bio: "Mathematician who wrote the first published algorithm.",
+        achievements: ["**First algorithm** intended for a machine.", "Founding figure of computing."],
+      },
+    });
+    render(<CvDocumentView kb={kb} lang="en" />);
+    expect(screen.getByText("Mathematician who wrote the first published algorithm.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Selected achievements" })).toBeInTheDocument();
+    // The markdown bold lead renders as <strong>.
+    expect(screen.getByText("First algorithm", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.getByText("Founding figure of computing.", { selector: "span" })).toBeInTheDocument();
+  });
+
+  it("omits the bio and achievements band when the profile lacks them", () => {
+    render(<CvDocumentView kb={makeKb()} lang="en" />);
+    expect(screen.queryByRole("heading", { name: "Selected achievements" })).toBeNull();
+  });
+
+  it("renders publications with a title and an authors · venue · year meta line", () => {
+    render(<CvDocumentView kb={makeKb()} lang="en" />);
+    expect(screen.getByText("Notes on the Analytical Engine")).toBeInTheDocument();
+    expect(screen.getByText("A. Lovelace")).toBeInTheDocument();
+    expect(screen.getByText(/Taylor's Scientific Memoirs · 1843/)).toBeInTheDocument();
   });
 
   it("lists public repos under Open source", () => {

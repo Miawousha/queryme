@@ -11,7 +11,7 @@ import type { Kb, ProjectEntry } from "@/lib/kb/loader";
  *   - `{ include: [...] }`  → whitelist; order preserved from the array
  *
  * Identifiers:
- *   - experience / projects / talks → file slug
+ *   - experience / projects / talks / publications → file slug
  *     (`kb/experience/2025-altergo.md` → `2025-altergo`)
  *   - skills      → `skill.name` (case-insensitive exact match)
  *   - education   → `institution` (case-insensitive exact match)
@@ -27,6 +27,7 @@ const CvConfigSchema = z
     skills: SectionFilterSchema,
     projects: SectionFilterSchema,
     talks: SectionFilterSchema,
+    publications: SectionFilterSchema,
   })
   .strict();
 
@@ -108,6 +109,7 @@ export function filterKbForCv(kb: Kb, config: CvConfig | null): Kb {
     experience: whitelist(config.experience, kb.experience, (e) => e.slug, "experience"),
     projects: whitelist(config.projects, projects, (p) => p.slug, "projects"),
     talks: whitelist(config.talks, kb.talks, (t) => t.slug, "talks"),
+    publications: whitelist(config.publications, kb.publications, (p) => p.slug, "publications"),
     skills: {
       skills: whitelist(config.skills, kb.skills.skills, (s) => s.name, "skills"),
     },

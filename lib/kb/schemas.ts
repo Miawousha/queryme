@@ -11,6 +11,11 @@ const DateOrPresent = z.union([
 export const ProfileSchema = z.object({
   name: z.string().min(1),
   headline: z.string().min(1),
+  // Optional professional summary shown as a paragraph under the headline on the CV.
+  bio: z.string().optional(),
+  // Optional "Selected achievements" band on the CV — short, impact-led bullets
+  // (markdown allowed for a bold lead). Absent → the band is not rendered.
+  achievements: z.array(z.string().min(1)).optional(),
   location: z.string().optional(),
   languages: z.array(LanguageCode).optional(),
   photo: z.string().optional(),

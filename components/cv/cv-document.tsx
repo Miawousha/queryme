@@ -130,6 +130,11 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
             {kb.profile.headline}
           </p>
         )}
+        {kb.profile.bio && (
+          <p className="mt-3 max-w-[64ch] font-display text-[14px] leading-relaxed text-[var(--color-text-tertiary)]">
+            {kb.profile.bio}
+          </p>
+        )}
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12px] text-[var(--color-text-tertiary)]">
           {kb.profile.location && (
             <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
@@ -162,6 +167,30 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
         />
         <span aria-hidden className="absolute bottom-0 left-0 h-px w-full bg-[var(--color-border)]" />
       </header>
+
+      {kb.profile.achievements && kb.profile.achievements.length > 0 && (
+        <section className="cv-section mb-9">
+          <SectionHeading>{t.sections.achievements}</SectionHeading>
+          <ul className="cv-achievements grid grid-cols-1 gap-x-8 gap-y-2.5 sm:grid-cols-2">
+            {kb.profile.achievements.map((a, i) => (
+              <li key={i} className="cv-entry flex gap-2.5 text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                <span
+                  aria-hidden
+                  className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-[1px] bg-[var(--color-accent)]"
+                />
+                <span>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{ p: ({ children }) => <>{children}</> }}
+                  >
+                    {a}
+                  </ReactMarkdown>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {kb.experience.length > 0 && (
         <section className="cv-section mb-9">
@@ -333,6 +362,33 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
                 <MetaMarker>{tk.frontmatter.year}</MetaMarker>
               </li>
             ))}
+          </ul>
+        </section>
+      )}
+
+      {kb.publications.length > 0 && (
+        <section className="cv-section mb-9">
+          <SectionHeading>{t.sections.publications}</SectionHeading>
+          <ul className="flex flex-col gap-2.5 text-[14px] leading-snug">
+            {kb.publications.map((pub) => {
+              const sub = [pub.frontmatter.venue, pub.frontmatter.year].filter(Boolean).join(" · ");
+              return (
+                <li key={pub.slug} className="cv-entry">
+                  <p className="font-display text-[14px] font-semibold leading-snug text-[var(--color-text-primary)]">
+                    {pub.frontmatter.title}
+                  </p>
+                  {(pub.frontmatter.authors || sub) && (
+                    <p className="mt-0.5 text-[12.5px] leading-snug text-[var(--color-text-tertiary)]">
+                      {pub.frontmatter.authors && (
+                        <span className="text-[var(--color-text-secondary)]">{pub.frontmatter.authors}</span>
+                      )}
+                      {pub.frontmatter.authors && sub && <span> · </span>}
+                      {sub}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

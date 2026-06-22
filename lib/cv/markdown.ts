@@ -10,6 +10,7 @@ export function assembleCvMarkdown(kb: Kb, lang: UiLang): string {
   lines.push(`# ${kb.profile.name}`);
   lines.push("");
   lines.push(kb.profile.headline);
+  if (kb.profile.bio) lines.push(kb.profile.bio);
   if (kb.profile.location) lines.push(kb.profile.location);
   const contact: string[] = [];
   if (kb.publicContact.email) contact.push(kb.publicContact.email);
@@ -17,6 +18,12 @@ export function assembleCvMarkdown(kb: Kb, lang: UiLang): string {
   if (kb.publicContact.links?.github) contact.push(kb.publicContact.links.github);
   if (contact.length > 0) lines.push(contact.join("  ·  "));
   lines.push("");
+
+  if (kb.profile.achievements?.length) {
+    lines.push(`## ${lang === "fr" ? "Réalisations clés" : "Selected achievements"}`);
+    for (const a of kb.profile.achievements) lines.push(`- ${a}`);
+    lines.push("");
+  }
 
   const expLabel = lang === "fr" ? "Expérience" : "Experience";
   lines.push(`## ${expLabel}`);
@@ -55,6 +62,17 @@ export function assembleCvMarkdown(kb: Kb, lang: UiLang): string {
       const url = p.frontmatter.url ? ` (${p.frontmatter.url})` : "";
       const year = p.frontmatter.year ? `, ${p.frontmatter.year}` : "";
       lines.push(`- **${p.frontmatter.name}**${url}${year}`);
+    }
+  }
+
+  if (kb.publications.length > 0) {
+    lines.push("");
+    lines.push(`## Publications`);
+    for (const pub of kb.publications) {
+      const meta = [pub.frontmatter.authors, pub.frontmatter.venue, pub.frontmatter.year]
+        .filter(Boolean)
+        .join(" · ");
+      lines.push(`- **${pub.frontmatter.title}**${meta ? ` — ${meta}` : ""}`);
     }
   }
 

@@ -20,6 +20,7 @@ function kbWithRepos(repos: Repo[]): Kb {
     experience: [],
     projects: [{ slug: "p", relativePath: "projects/p.md", frontmatter: { name: "p", repos }, body: "" }],
     talks: [],
+    publications: [],
     recommendations: [],
   };
 }
