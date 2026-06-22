@@ -227,7 +227,7 @@ export function CvDocumentView({
               const fallbackBullets = firstBulletList(e.body, 4);
               const dur = durationLabel(e.frontmatter.start, e.frontmatter.end, t);
               return (
-                <div key={e.slug} className="cv-entry">
+                <div key={e.slug} className="cv-entry cv-entry--flow">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
                     <h3 className="font-display text-[16px] font-semibold leading-snug text-[var(--color-text-primary)]">
                       {e.frontmatter.role}

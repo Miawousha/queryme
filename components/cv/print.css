@@ -54,12 +54,27 @@ ul.cv-prose {
      by keeping content within the page box. */
   @page {
     size: A4;
-    margin: 14mm 16mm;
+    margin: 16mm 18mm;
   }
 
+  /* Force a light canvas on paper. The app sets `color-scheme: dark` on <html>
+     (globals.css), which makes the browser paint a *dark* page canvas in the
+     margin band when "Background graphics" is on — so the printed page has no
+     clean white margin. Flip the scheme for print and paint html/body white. */
+  html {
+    color-scheme: light;
+  }
   html,
   body {
     background: #fff !important;
+  }
+
+  /* The screen wrapper around the CV keeps `px-6 py-10` for the on-screen
+     column; on paper the page margins are owned by @page, so drop that padding
+     to avoid double-insetting the content. */
+  main:has(.cv-page) {
+    padding: 0 !important;
+    max-width: none !important;
   }
 
   /* Classic light document. On screen the CV inherits the app's (dark) theme;
@@ -104,16 +119,30 @@ ul.cv-prose {
     grid-template-columns: 1fr 1fr;
   }
 
-  /* Keep entries and section headers from splitting across pages. */
-  .cv-section {
-    break-inside: avoid;
-  }
+  /* Keep individual entries together and never orphan a heading, but let a
+     section itself flow across a page boundary. Avoiding breaks on the whole
+     `.cv-section` forced tall sections (e.g. all of Experience) to jump to the
+     next page wholesale, leaving large blank gaps; entry-level avoidance keeps
+     a single job/role intact without wasting half a page. */
   .cv-entry {
     break-inside: avoid;
+  }
+  /* Long experience roles are allowed to flow across a page boundary — keeping
+     each whole job atomic would push a tall role wholesale to the next page and
+     leave ~40% of the prior page blank. The heading rules below keep the role
+     title attached to its body, and orphans/widows stop a single dangling line. */
+  .cv-entry--flow {
+    break-inside: auto;
   }
   h2,
   h3 {
     break-after: avoid;
+  }
+  .cv-prose ul,
+  ul.cv-prose,
+  .cv-prose p {
+    orphans: 2;
+    widows: 2;
   }
 
   /* Body prose sized for physical parity with screen. */
