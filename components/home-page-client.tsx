@@ -36,7 +36,14 @@ export function HomePageClient({
   const t = strings[lang] as UiStrings;
 
   return (
-    <KbProvider lang={lang} kbStrings={t.kb} apiBasePath={apiBasePath} cvPrintBase={cvPrintBase}>
+    <KbProvider
+      lang={lang}
+      kbStrings={t.kb}
+      apiBasePath={apiBasePath}
+      cvPrintBase={cvPrintBase}
+      contentRepoUrl={contentRepoUrl}
+      contentRepoBranch={contentRepoBranch}
+    >
       <GridBackground />
       <HomeShell
         t={t}

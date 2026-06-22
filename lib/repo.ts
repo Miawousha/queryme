@@ -7,3 +7,8 @@ export const REPO_URL =
   process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/Miawousha/queryme";
 
 export const REPO_BRANCH = process.env.NEXT_PUBLIC_REPO_BRANCH ?? "main";
+
+/** Strip a trailing slash and/or `.git` so deep links concatenate cleanly. */
+export function normalizeRepoUrl(url: string): string {
+  return url.replace(/\/$/, "").replace(/\.git$/, "");
+}

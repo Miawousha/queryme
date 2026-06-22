@@ -127,6 +127,8 @@ export function makeKbContext(overrides?: Partial<ReturnType<typeof useKb>>): Kb
     },
     apiBasePath: "/api",
     cvPrintBase: "",
+    contentRepoUrl: null,
+    contentRepoBranch: null,
     ...overrides,
   };
 

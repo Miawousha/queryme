@@ -63,6 +63,13 @@ type KbContextValue = {
   apiBasePath: string;
   /** Account page base for CV links: "" (→ /cv) or "/{username}". */
   cvPrintBase: string;
+  /**
+   * GitHub URL of the active persona content repo (which hosts the KB), or null
+   * if none is configured. Used to deep-link a doc to its source on GitHub.
+   */
+  contentRepoUrl: string | null;
+  /** Branch of the active persona content repo, or null if none configured. */
+  contentRepoBranch: string | null;
 };
 
 const KbContext = createContext<KbContextValue | null>(null);
@@ -78,6 +85,8 @@ export function KbProvider({
   kbStrings,
   apiBasePath = "/api",
   cvPrintBase = "",
+  contentRepoUrl = null,
+  contentRepoBranch = null,
   children,
 }: {
   lang: UiLang;
@@ -86,6 +95,10 @@ export function KbProvider({
   apiBasePath?: string;
   /** Account page base for CV links. Defaults to "" (→ /cv). */
   cvPrintBase?: string;
+  /** GitHub URL of the active persona content repo. Defaults to null. */
+  contentRepoUrl?: string | null;
+  /** Branch of the active persona content repo. Defaults to null. */
+  contentRepoBranch?: string | null;
   children: ReactNode;
 }) {
   const strings = kbStrings;
@@ -146,9 +159,11 @@ export function KbProvider({
       onJumpToMessage,
       apiBasePath,
       cvPrintBase,
+      contentRepoUrl,
+      contentRepoBranch,
       seenAutoReveal,
     }),
-    [lang, strings, manifest, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, seenAutoReveal],
+    [lang, strings, manifest, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, contentRepoUrl, contentRepoBranch, seenAutoReveal],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

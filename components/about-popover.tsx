@@ -1,6 +1,7 @@
 "use client";
 
 import { useDialog } from "@/lib/use-dialog";
+import { normalizeRepoUrl } from "@/lib/repo";
 
 export type AboutPopoverStrings = {
   title: string;
@@ -29,11 +30,6 @@ export type AboutPopoverProps = {
   contentRepoBranch: string | null;
   cvHref: string;
 };
-
-/** Strip a trailing slash and/or `.git` so deep links concatenate cleanly. */
-function normalizeRepoUrl(url: string): string {
-  return url.replace(/\/$/, "").replace(/\.git$/, "");
-}
 
 /**
  * "About this project" modal. Holds the transparency note and the repo links

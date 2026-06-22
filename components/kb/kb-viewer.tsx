@@ -21,7 +21,7 @@ import {
   type KbDocAction,
 } from "@/components/kb/kb-doc-toolbar";
 import { useDialog } from "@/lib/use-dialog";
-import { REPO_URL, REPO_BRANCH } from "@/lib/repo";
+import { normalizeRepoUrl } from "@/lib/repo";
 import { cn } from "@/lib/utils";
 
 /** Strips a leading YAML frontmatter block so it never reaches the renderer. */
@@ -59,7 +59,7 @@ export function KbViewer({
   breadcrumb?: string[];
   onBack: () => void;
 }) {
-  const { strings, apiBasePath, lang } = useKb();
+  const { strings, apiBasePath, lang, contentRepoUrl, contentRepoBranch } = useKb();
   const contentRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -201,21 +201,23 @@ export function KbViewer({
         },
       });
     }
-    list.push({
-      key: "github",
-      label: strings.github,
-      ariaLabel: strings.github,
-      icon: <GithubIcon />,
-      onClick: () => {
-        window.open(
-          `${REPO_URL.replace(/\/$/, "")}/blob/${REPO_BRANCH}/kb/${file.path}`,
-          "_blank",
-          "noopener",
-        );
-      },
-    });
+    // The KB lives in the persona's content repo, so this deep-links there —
+    // dropped entirely when no content repo is configured (it would 404).
+    if (contentRepoUrl) {
+      const base = normalizeRepoUrl(contentRepoUrl);
+      const ref = contentRepoBranch ?? "HEAD";
+      list.push({
+        key: "github",
+        label: strings.github,
+        ariaLabel: strings.github,
+        icon: <GithubIcon />,
+        onClick: () => {
+          window.open(`${base}/blob/${ref}/kb/${file.path}`, "_blank", "noopener");
+        },
+      });
+    }
     return list;
-  }, [needsText, text, file, strings, showMeta]);
+  }, [needsText, text, file, strings, showMeta, contentRepoUrl, contentRepoBranch]);
 
   return (
     <div
