@@ -16,7 +16,7 @@ function readOverrides(key: string): Record<string, boolean> {
 }
 
 /**
- * Expansion, filter, lens, and citation auto-reveal state for the KB tree.
+ * Expansion and citation auto-reveal state for the KB tree.
  * Expansion is an override map (id → open?) on top of the default
  * "collections open, everything else closed". Overrides persist for the
  * session, and an explicit `false` blocks auto-reveal from re-opening a
@@ -43,8 +43,6 @@ export function useKbTreeState({
   const [overrides, setOverrides] = useState<Record<string, boolean>>(() =>
     readOverrides(storageKey),
   );
-  const [filter, setFilter] = useState("");
-  const [lens, setLens] = useState(false);
   const [pulseId, setPulseId] = useState<string | null>(null);
   const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -112,5 +110,5 @@ export function useKbTreeState({
     [],
   );
 
-  return { isExpanded, toggle, filter, setFilter, lens, setLens, pulseId };
+  return { isExpanded, toggle, pulseId };
 }

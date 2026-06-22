@@ -331,14 +331,17 @@ export function KbTree({
   manifest,
   citedRefs,
   onOpen,
+  filter = "",
+  lens = false,
 }: {
   manifest: KbFile[];
   citedRefs: CitedRef[];
   onOpen: (path: string, anchor?: string | null) => void;
+  filter?: string;
+  lens?: boolean;
 }) {
   const { strings, lang, groups: configGroups, apiBasePath, seenAutoReveal, jumpToMessage } =
     useKb();
-  const filterRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const pinned = manifest.filter((f) => f.path.startsWith("_virtual/"));
@@ -363,7 +366,7 @@ export function KbTree({
     [groups],
   );
 
-  const { isExpanded, toggle, filter, setFilter, lens, setLens, pulseId } = useKbTreeState({
+  const { isExpanded, toggle, pulseId } = useKbTreeState({
     storageKey: `queritae:kbTree:${apiBasePath}`,
     files,
     citedRefs,
@@ -393,13 +396,6 @@ export function KbTree({
   // are visible without clicks. Normal mode uses the expansion overrides.
   const searchMode = filter.trim() !== "" || lens;
 
-  // Only count refs whose path exists in the manifest — refs to unknown paths
-  // are not browseable and shouldn't count toward the lens enable condition.
-  const lensCount = useMemo(
-    () => citedRefs.filter((r) => files.some((f) => f.path === r.path)).length,
-    [citedRefs, files],
-  );
-
   const ctx: RowCtx = {
     searchMode,
     isExpanded,
@@ -416,11 +412,6 @@ export function KbTree({
   };
 
   const containerKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "/" && document.activeElement !== filterRef.current) {
-      e.preventDefault();
-      filterRef.current?.focus();
-      return;
-    }
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       const rows = Array.from(
         containerRef.current?.querySelectorAll<HTMLElement>("[data-kb-row]") ?? [],
@@ -437,45 +428,6 @@ export function KbTree({
   return (
     <>
     <div ref={containerRef} className="flex flex-col gap-2" onKeyDown={containerKeyDown}>
-      {/* Filter row: text input + cited-lens toggle */}
-      <div className="flex gap-2">
-        <input
-          ref={filterRef}
-          type="text"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder={strings.filterPlaceholder}
-          aria-label={strings.filterPlaceholder}
-          onKeyDown={(e) => {
-            // Consume Escape only when it clears an active filter, so a
-            // second Escape still closes the mobile drawer dialog.
-            if (e.key === "Escape" && filter !== "") {
-              e.stopPropagation();
-              setFilter("");
-            }
-          }}
-          className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-1 text-xs text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-border-hover)] focus:outline-none"
-        />
-        <button
-          type="button"
-          aria-pressed={lens}
-          aria-label={strings.referencedLensAria}
-          disabled={lensCount === 0}
-          onClick={() => setLens(!lens)}
-          className={cn(
-            "shrink-0 rounded border px-2 py-1 font-mono text-2xs transition-colors",
-            LABEL,
-            lens
-              ? "border-[rgba(var(--color-accent-rgb),0.6)] bg-[rgba(var(--color-accent-rgb),0.1)] text-[var(--color-accent)]"
-              : "border-[var(--color-border)] hover:border-[var(--color-border-hover)]",
-            lensCount === 0 && "cursor-not-allowed opacity-40",
-          )}
-          style={LABEL_STYLE}
-        >
-          {strings.referencedLens} · {lensCount}
-        </button>
-      </div>
-
       {/* Pinned (_virtual/) rows — hidden while filter/lens is active */}
       {!searchMode && pinned.length > 0 && (
         <div className="flex flex-col gap-1 border-b border-[var(--color-border)] pb-2">
@@ -513,15 +465,6 @@ export function KbTree({
       ) : searchMode ? (
         <div className="flex flex-col gap-2 px-1 py-1">
           <p className="text-xs text-[var(--color-text-tertiary)]">{strings.noMatches}</p>
-          {filter !== "" && (
-            <button
-              type="button"
-              onClick={() => setFilter("")}
-              className="w-fit text-xs text-[var(--color-accent)] hover:underline"
-            >
-              {strings.clearFilter}
-            </button>
-          )}
         </div>
       ) : null}
     </div>
