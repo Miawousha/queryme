@@ -1,13 +1,15 @@
-import type { Kb } from "./loader";
-import type { Repo } from "./schemas";
+// Kept free of node-only imports so it is safe to import from client components.
+// The `import type` below is erased at build time, so it must NOT pull
+// `lib/kb/loader` (which uses node:fs) into the client bundle.
+import type { ProjectEntry } from "./loader";
 
-/** Every repo hosted across all projects, sorted year desc then name. Used by
- * the aggregated "Repositories" view on the CV / KB panel. This module is kept
- * free of node-only imports so it is safe to import from client components
- * (importing it must NOT pull `lib/kb/loader` — which uses node:fs — into the
- * client bundle). */
-export function allRepos(kb: Kb): Repo[] {
-  return kb.projects
-    .flatMap((p) => p.frontmatter.repos ?? [])
-    .sort((a, b) => (b.year ?? 0) - (a.year ?? 0) || a.name.localeCompare(b.name));
+/** The single public link for a project's CV row. Defensively privacy-safe
+ * regardless of caller — it does NOT rely on `withPublicReposOnly` having run,
+ * so a private repo url can never become a link:
+ *   1. the author's canonical `frontmatter.url`, else
+ *   2. the first public, linkable repo's url, else
+ *   3. `undefined` — the row renders the name as plain text. */
+export function projectLink(p: ProjectEntry): string | undefined {
+  if (p.frontmatter.url) return p.frontmatter.url;
+  return (p.frontmatter.repos ?? []).find((r) => r.visibility === "public" && r.url)?.url;
 }

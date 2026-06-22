@@ -39,6 +39,7 @@ describe("assemblePublicKbText", () => {
     expect(text).toContain("# Projects");
     expect(text).toContain("## Fixture Project (2025)");
     expect(text).toContain("[ref: projects/fixture-project.md]");
+    expect(text).toContain("Description: A fixture project used across CV render tests.");
     expect(text).toContain("### Repositories");
     expect(text).toContain("- queryme — An agent-driven CV.");
     expect(text).toContain("- sample-indexed");

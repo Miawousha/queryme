@@ -102,6 +102,11 @@ describe("ProjectFrontmatterSchema", () => {
     expect(ProjectFrontmatterSchema.parse(data)).toEqual(data);
   });
 
+  it("keeps an optional one-line description", () => {
+    const data = { name: "Queryme", description: "An agent-driven CV." };
+    expect(ProjectFrontmatterSchema.parse(data)).toEqual(data);
+  });
+
   it("accepts a project with a nested repos array", () => {
     const data = {
       name: "Queryme",

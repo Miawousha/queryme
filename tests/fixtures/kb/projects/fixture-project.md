@@ -1,5 +1,6 @@
 ---
 name: Fixture Project
+description: A fixture project used across CV render tests.
 year: 2025
 stack: [TypeScript]
 tags: [test]
