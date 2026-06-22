@@ -7,7 +7,8 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("qrSvg", () => {
   it("returns an svg string with dark modules themed to currentColor", async () => {
-    toString.mockResolvedValue('<svg viewBox="0 0 5 5"><path fill="#000000" d="M0 0h1v1H0z"/></svg>');
+    // Mirror qrcode@1.5.4's real SVG output, which strokes (not fills) the modules.
+    toString.mockResolvedValue('<svg viewBox="0 0 5 5"><path stroke="#000000" d="M0 0h1v1H0z"/></svg>');
     const { qrSvg } = await import("@/lib/cv/qr");
     const out = await qrSvg("https://x.com");
     expect(out).toContain("<svg");
