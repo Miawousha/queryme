@@ -272,7 +272,7 @@ export function KbViewer({
         )}
 
         {file.type === "yaml" && text !== null && (
-          <pre className="overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]/40 p-3 font-mono text-[12px] leading-relaxed text-[var(--color-text-primary)]">
+          <pre className="overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]/40 p-3 font-mono text-xs leading-relaxed text-[var(--color-text-primary)]">
             {text}
           </pre>
         )}

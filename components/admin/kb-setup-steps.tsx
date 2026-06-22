@@ -43,7 +43,7 @@ export function KbSetupSteps({
 
   return (
     <div className="space-y-4">
-      <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+      <h2 className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
         Set up your knowledge base
       </h2>
       <p className="text-sm text-[var(--color-text-secondary)]">
@@ -88,7 +88,7 @@ export function KbSetupSteps({
               >
                 Connect with GitHub App
               </a>
-              <p className="text-[10px] text-[var(--color-text-tertiary)]">
+              <p className="text-2xs text-[var(--color-text-tertiary)]">
                 One click installs auto-sync and syncs your repo automatically.
               </p>
               <details>

@@ -96,7 +96,7 @@ export function AutoSyncPanel({
 
   const advancedWebhook = webhook && (
     <details>
-      <summary className="cursor-pointer font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+      <summary className="cursor-pointer font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
         Advanced: manual webhook
       </summary>
       {webhook}
@@ -104,7 +104,7 @@ export function AutoSyncPanel({
   );
 
   const lastDelivery = view.lastDeliveryAt ? (
-    <p className="text-[10px] text-[var(--color-text-tertiary)]">
+    <p className="text-2xs text-[var(--color-text-tertiary)]">
       Last delivery: {fmt(view.lastDeliveryAt)}
     </p>
   ) : null;
@@ -112,7 +112,7 @@ export function AutoSyncPanel({
   return (
     <div className="space-y-4 border-t border-[var(--color-border)] p-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+        <h2 className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
           Auto-sync
         </h2>
         {toggle}
@@ -159,7 +159,7 @@ export function AutoSyncPanel({
           >
             Connect with GitHub App (recommended)
           </a>
-          <p className="text-[10px] text-[var(--color-text-tertiary)]">
+          <p className="text-2xs text-[var(--color-text-tertiary)]">
             One click installs auto-sync on your repo — no webhook setup needed.
           </p>
           {advancedWebhook ??
@@ -239,7 +239,7 @@ function ManualWebhook({
           <button
             type="button"
             onClick={() => copy("gh", ghCommand)}
-            className="rounded border border-[var(--color-border)] px-2 py-1 text-[10px]"
+            className="rounded border border-[var(--color-border)] px-2 py-1 text-2xs"
           >
             {copied === "gh" ? "Copied gh command" : "Copy gh command"}
           </button>
@@ -254,7 +254,7 @@ function ManualWebhook({
       >
         Regenerate secret
       </button>
-      <p className="text-[10px] text-[var(--color-text-tertiary)]">
+      <p className="text-2xs text-[var(--color-text-tertiary)]">
         Regenerating invalidates the old secret — update the webhook in GitHub afterward.
       </p>
     </div>
@@ -284,7 +284,7 @@ function CopyRow({
         <button
           type="button"
           onClick={onCopy}
-          className="shrink-0 rounded border border-[var(--color-border)] px-2 py-1 text-[10px]"
+          className="shrink-0 rounded border border-[var(--color-border)] px-2 py-1 text-2xs"
         >
           {copied === id ? "Copied" : "Copy"}
         </button>

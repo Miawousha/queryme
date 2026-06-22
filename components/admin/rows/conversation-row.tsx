@@ -22,19 +22,19 @@ export function ConversationRow({ conversation }: { conversation: ConversationLi
           </span>
           <Badge>{identity.basis}</Badge>
           <Badge>{conversation.channel}</Badge>
-          <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          <span className="ml-auto font-mono text-2xs text-[var(--color-text-tertiary)]">
             {fmt(conversation.lastMessageAt)}
           </span>
         </div>
         {subtitle && (
-          <span className="text-[12px] text-[var(--color-text-tertiary)]">{subtitle}</span>
+          <span className="text-xs text-[var(--color-text-tertiary)]">{subtitle}</span>
         )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+    <div className="flex flex-wrap items-center gap-2 text-control text-[var(--color-text-secondary)]">
       <Badge>{conversation.channel}</Badge>
       {conversation.language && <Badge>{conversation.language}</Badge>}
       <span className="ml-auto flex items-center gap-3 text-[var(--color-text-tertiary)]">

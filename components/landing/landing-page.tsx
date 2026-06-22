@@ -57,7 +57,7 @@ function GitHubMark() {
   );
 }
 
-const MONO_LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
+const MONO_LABEL = "font-mono text-2xs uppercase text-[var(--color-text-tertiary)]";
 
 /** The public content-repo tree, annotated. Rendered as styled mono text. */
 function RepoTree() {
@@ -65,7 +65,7 @@ function RepoTree() {
   const file = "text-[var(--color-text-secondary)]";
   const note = "text-[var(--color-accent)]";
   return (
-    <pre className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/70 p-5 font-mono text-[12px] leading-[1.9] backdrop-blur-sm sm:text-[12.5px]">
+    <pre className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/70 p-5 font-mono text-xs leading-[1.9] backdrop-blur-sm sm:text-[12.5px]">
       <code>
         <span className="text-[var(--color-text-primary)]">you/cv-content</span>
         {"\n"}
@@ -108,12 +108,12 @@ function DomainCard() {
     <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/70 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.55)] backdrop-blur-sm">
       <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
         <span
-          className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+          className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
           style={{ letterSpacing: "0.22em" }}
         >
           your dns · one record
         </span>
-        <span className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase text-[var(--color-accent)]" style={{ letterSpacing: "0.18em" }}>
+        <span className="inline-flex items-center gap-1.5 font-mono text-3xs uppercase text-[var(--color-accent)]" style={{ letterSpacing: "0.18em" }}>
           <span
             aria-hidden
             className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]"
@@ -122,7 +122,7 @@ function DomainCard() {
           verified
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-4 font-mono text-[12px] sm:text-[12.5px]">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-4 font-mono text-xs sm:text-[12.5px]">
         <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)]/60 px-2 py-0.5 text-[var(--color-text-secondary)]">
           CNAME
         </span>
@@ -148,7 +148,7 @@ function DomainCard() {
             https://cv.yourname.com
           </span>
           <span
-            className="ml-auto hidden shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] sm:inline"
+            className="ml-auto hidden shrink-0 font-mono text-3xs uppercase text-[var(--color-text-tertiary)] sm:inline"
             style={{ letterSpacing: "0.18em" }}
           >
             your page · your cv
@@ -188,7 +188,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           </span>
           <a
             href="/api/auth/github/login"
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/60 px-3.5 py-1.5 text-[13px] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/60 px-3.5 py-1.5 text-control text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
           >
             <GitHubMark />
             Sign in with GitHub
@@ -216,7 +216,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           </h1>
 
           <p
-            className="fade-up mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-secondary)] sm:text-base"
+            className="fade-up mt-5 max-w-xl text-cozy leading-relaxed text-[var(--color-text-secondary)] sm:text-base"
             style={{ animationDelay: "0.2s" }}
           >
             Your experience lives as plain files in a GitHub repo you own. queritae
@@ -232,7 +232,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             {seeItLiveUsername && (
               <a
                 href={`/${seeItLiveUsername}`}
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-[14px] font-medium text-white transition-all duration-200 hover:brightness-110"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:brightness-110"
                 style={{ boxShadow: "0 8px 30px -8px rgba(var(--color-primary-rgb),0.6)" }}
               >
                 See it live
@@ -245,7 +245,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
               href={REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-[14px] text-[var(--color-text-secondary)] transition-colors duration-200 hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm text-[var(--color-text-secondary)] transition-colors duration-200 hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
             >
               <GitHubMark />
               How it&apos;s built
@@ -278,7 +278,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                 <h3 className="mt-3 font-display text-lg font-medium text-[var(--color-text-primary)]">
                   {s.title}
                 </h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                   {s.body}
                 </p>
               </div>
@@ -300,7 +300,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                 </span>{" "}
                 yours.
               </h2>
-              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+              <p className="mt-4 max-w-md text-cozy leading-relaxed text-[var(--color-text-secondary)]">
                 Recruiters increasingly read CVs through agents, not eyes. Every
                 queritae account ships a first-class MCP server — point Claude,
                 Cursor, or any MCP client at the endpoint and it gets the same
@@ -311,7 +311,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                   (chip) => (
                     <span
                       key={chip}
-                      className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-[11px] text-[var(--color-text-secondary)]"
+                      className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-2xs text-[var(--color-text-secondary)]"
                     >
                       {chip}
                     </span>
@@ -340,7 +340,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                 </span>{" "}
                 address.
               </h2>
-              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+              <p className="mt-4 max-w-md text-cozy leading-relaxed text-[var(--color-text-secondary)]">
                 Your page and printable CV don&apos;t have to live on ours — host
                 them at cv.yourname.com. Add the domain in your admin, create one
                 CNAME record, and verification and TLS happen automatically.
@@ -349,7 +349,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                 {["one CNAME record", "auto TLS", "up to 3 domains"].map((chip) => (
                   <span
                     key={chip}
-                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-[11px] text-[var(--color-text-secondary)]"
+                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-3 py-1 font-mono text-2xs text-[var(--color-text-secondary)]"
                   >
                     {chip}
                   </span>
@@ -376,7 +376,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                 </span>
                 .
               </h2>
-              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+              <p className="mt-4 max-w-md text-cozy leading-relaxed text-[var(--color-text-secondary)]">
                 The agent&apos;s entire world is a public repo: structured facts,
                 narrative stories, and the system prompt itself. Edit, commit,
                 re-sync — the version history is the paper trail.
@@ -395,7 +395,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
                 <h3 className="font-display text-base font-medium text-[var(--color-text-primary)]">
                   {v.title}
                 </h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                   {v.body}
                 </p>
               </div>
@@ -412,7 +412,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             </span>
             .
           </h2>
-          <p className="mx-auto mt-4 max-w-md text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+          <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[var(--color-text-secondary)]">
             Create an account with GitHub and point it at a content repo. New
             accounts are reviewed by hand — your page goes public as soon as
             it&apos;s approved.
@@ -420,7 +420,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
               href="/api/auth/github/login"
-              className="group inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-[14px] font-medium text-white transition-all duration-200 hover:brightness-110"
+              className="group inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:brightness-110"
               style={{ boxShadow: "0 8px 30px -8px rgba(var(--color-primary-rgb),0.6)" }}
             >
               <GitHubMark />
@@ -429,7 +429,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             {seeItLiveUsername && (
               <a
                 href={`/${seeItLiveUsername}`}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-[14px] text-[var(--color-text-secondary)] transition-colors duration-200 hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm text-[var(--color-text-secondary)] transition-colors duration-200 hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
               >
                 Interview the live agent →
               </a>
@@ -446,7 +446,7 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)]"
+            className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)]"
             style={{ letterSpacing: "0.22em" }}
           >
             source on github →

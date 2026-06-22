@@ -39,7 +39,7 @@ export function QuestionsSection({
   return (
     <>
       {questions.length === QUESTION_LIMIT && (
-        <p className="mb-3 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+        <p className="mb-3 font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
           Showing most recent {QUESTION_LIMIT}
         </p>
       )}

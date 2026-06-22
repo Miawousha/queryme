@@ -87,14 +87,14 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
             value={hostname}
             onChange={(e) => setHostname(e.target.value)}
             placeholder="cv.yourname.com"
-            className="flex-1 rounded-md border border-[var(--color-border)] bg-transparent px-2 py-1.5 text-[13px]"
+            className="flex-1 rounded-md border border-[var(--color-border)] bg-transparent px-2 py-1.5 text-control"
           />
           <button
             type="button"
             disabled={busy || !hostname.trim()}
             onClick={add}
             className={cn(
-              "rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-[10px] uppercase",
+              "rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-2xs uppercase",
               "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
               "disabled:cursor-not-allowed disabled:opacity-50",
             )}
@@ -110,18 +110,18 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
         {domains.length === 0 && (
           <div className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] p-4">
             <span className={LABEL}>How to connect your domain</span>
-            <ol className="flex flex-col gap-2 text-[13px] text-[var(--color-text-secondary)]">
+            <ol className="flex flex-col gap-2 text-control text-[var(--color-text-secondary)]">
               <li>
                 <span className="text-[var(--color-text-primary)]">1. Enter a subdomain</span> — e.g.{" "}
-                <code className="font-mono text-[12px]">cv.yourname.com</code>. Bare domains like{" "}
-                <code className="font-mono text-[12px]">yourname.com</code> aren&apos;t supported yet — use
+                <code className="font-mono text-xs">cv.yourname.com</code>. Bare domains like{" "}
+                <code className="font-mono text-xs">yourname.com</code> aren&apos;t supported yet — use
                 a subdomain.
               </li>
               <li>
                 <span className="text-[var(--color-text-primary)]">2. Add a DNS record</span> at your
-                domain provider — a <code className="font-mono text-[12px]">CNAME</code> from your
+                domain provider — a <code className="font-mono text-xs">CNAME</code> from your
                 subdomain to{" "}
-                <code className="font-mono text-[12px]">cname.vercel-dns.com</code>. The exact record
+                <code className="font-mono text-xs">cname.vercel-dns.com</code>. The exact record
                 appears on the domain below once you add it.
               </li>
               <li>
@@ -146,10 +146,10 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
             className="flex flex-col gap-2 rounded-md border border-[var(--color-border)] p-3"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[13px] text-[var(--color-text-primary)]">{d.hostname}</span>
+              <span className="text-control text-[var(--color-text-primary)]">{d.hostname}</span>
               <span
                 className={cn(
-                  "rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase",
+                  "rounded-full border px-2 py-0.5 font-mono text-3xs uppercase",
                   STATUS_STYLE[d.status],
                 )}
                 style={{ letterSpacing: "0.16em" }}
@@ -160,7 +160,7 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
                 <button
                   type="button"
                   onClick={() => verify(d.id)}
-                  className="rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-[10px] uppercase hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  className="rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-2xs uppercase hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                   style={{ letterSpacing: "0.18em" }}
                 >
                   Verify
@@ -168,7 +168,7 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
                 <button
                   type="button"
                   onClick={() => remove(d.id)}
-                  className="rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-[10px] uppercase hover:border-red-400 hover:text-red-400"
+                  className="rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-2xs uppercase hover:border-red-400 hover:text-red-400"
                   style={{ letterSpacing: "0.18em" }}
                 >
                   Remove
@@ -176,7 +176,7 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
               </span>
             </div>
             {d.status !== "active" && (
-              <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+              <p className="font-mono text-2xs text-[var(--color-text-tertiary)]">
                 Set a {d.instructions.type} record: {d.instructions.name} →{" "}
                 <span className="text-[var(--color-text-secondary)]">{d.instructions.value}</span>
               </p>

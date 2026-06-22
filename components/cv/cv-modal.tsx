@@ -99,7 +99,7 @@ export function CvModal({
         <div className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4">
           <h2
             id="cv-modal-title"
-            className="min-w-0 flex-1 truncate font-display text-[14px] font-semibold text-[var(--color-text-primary)]"
+            className="min-w-0 flex-1 truncate font-display text-sm font-semibold text-[var(--color-text-primary)]"
           >
             {strings.cv}
           </h2>

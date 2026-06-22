@@ -9,7 +9,7 @@ import { useKbTreeState } from "@/components/kb/use-kb-tree-state";
 import { buildKbTree, resolveGroups, type KbChip, type KbTreeNode } from "@/lib/kb/tree";
 import { cn } from "@/lib/utils";
 
-const LABEL = "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
+const LABEL = "font-mono text-2xs uppercase text-[var(--color-text-tertiary)]";
 const LABEL_STYLE = { letterSpacing: "0.24em" };
 
 /**
@@ -164,7 +164,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       <span className="flex min-w-0 flex-1 flex-col">
         <span
           className={cn(
-            "truncate text-[13px]",
+            "truncate text-control",
             isCited
               ? "text-[var(--color-text-primary)]"
               : "text-[var(--color-text-secondary)]",
@@ -173,7 +173,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
           {highlightMatch(node.label, ctx.needle)}
         </span>
         {node.subtitle && (
-          <span className="truncate text-[11px] text-[var(--color-text-tertiary)]">
+          <span className="truncate text-2xs text-[var(--color-text-tertiary)]">
             {highlightMatch(node.subtitle, ctx.needle)}
           </span>
         )}
@@ -187,7 +187,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
     );
     const typeBadge = (
       <span
-        className="ml-1 shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)]"
+        className="ml-1 shrink-0 font-mono text-3xs uppercase text-[var(--color-text-tertiary)]"
         style={{ letterSpacing: "0.16em" }}
       >
         {node.fileType}
@@ -276,12 +276,12 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       onClick={() => ctx.onOpen(node.path!, node.anchor ?? null)}
       onKeyDown={rowKeyDown}
     >
-      <span aria-hidden className="shrink-0 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+      <span aria-hidden className="shrink-0 font-mono text-2xs text-[var(--color-text-tertiary)]">
         #
       </span>
       <span
         className={cn(
-          "min-w-0 flex-1 truncate text-[12px]",
+          "min-w-0 flex-1 truncate text-xs",
           isCited
             ? "text-[var(--color-text-primary)]"
             : "text-[var(--color-text-secondary)]",
@@ -423,7 +423,7 @@ export function KbTree({
               setFilter("");
             }
           }}
-          className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-1 text-[12px] text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-border-hover)] focus:outline-none"
+          className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-1 text-xs text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-border-hover)] focus:outline-none"
         />
         <button
           type="button"
@@ -432,7 +432,7 @@ export function KbTree({
           disabled={lensCount === 0}
           onClick={() => setLens(!lens)}
           className={cn(
-            "shrink-0 rounded border px-2 py-1 font-mono text-[10px] transition-colors",
+            "shrink-0 rounded border px-2 py-1 font-mono text-2xs transition-colors",
             LABEL,
             lens
               ? "border-[rgba(var(--color-accent-rgb),0.6)] bg-[rgba(var(--color-accent-rgb),0.1)] text-[var(--color-accent)]"
@@ -456,11 +456,11 @@ export function KbTree({
               className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[rgba(var(--color-primary-rgb),0.07)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]"
               onClick={() => onOpen(f.path, null)}
             >
-              <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-secondary)]">
+              <span className="min-w-0 flex-1 truncate text-control text-[var(--color-text-secondary)]">
                 {f.title}
               </span>
               <span
-                className="shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)]"
+                className="shrink-0 font-mono text-3xs uppercase text-[var(--color-text-tertiary)]"
                 style={{ letterSpacing: "0.16em" }}
               >
                 {f.type}
@@ -481,12 +481,12 @@ export function KbTree({
         </div>
       ) : searchMode ? (
         <div className="flex flex-col gap-2 px-1 py-1">
-          <p className="text-[12px] text-[var(--color-text-tertiary)]">{strings.noMatches}</p>
+          <p className="text-xs text-[var(--color-text-tertiary)]">{strings.noMatches}</p>
           {filter !== "" && (
             <button
               type="button"
               onClick={() => setFilter("")}
-              className="w-fit text-[12px] text-[var(--color-accent)] hover:underline"
+              className="w-fit text-xs text-[var(--color-accent)] hover:underline"
             >
               {strings.clearFilter}
             </button>

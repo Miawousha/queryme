@@ -21,7 +21,7 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
             type="button"
             onClick={() => onChange(lang)}
             className={cn(
-              "rounded-full px-3 py-1 font-mono text-[10px] uppercase transition-all duration-200",
+              "rounded-full px-3 py-1 font-mono text-2xs uppercase transition-all duration-200",
               active
                 ? "bg-[rgba(var(--color-accent-rgb),0.18)] text-[var(--color-accent)]"
                 : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]",

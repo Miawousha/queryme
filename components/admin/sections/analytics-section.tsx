@@ -24,7 +24,7 @@ export function AnalyticsSection({ apiBasePath }: { apiBasePath: string }) {
   if (error) return <p className="text-xs text-red-400">{error}</p>;
   if (!data)
     return (
-      <p className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">Loading…</p>
+      <p className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">Loading…</p>
     );
 
   const maxDay = Math.max(1, ...data.perDay.map((d) => d.count));
@@ -53,13 +53,13 @@ export function AnalyticsSection({ apiBasePath }: { apiBasePath: string }) {
           )}
           {data.topics.map((t) => (
             <div key={t.topic} className="flex items-center gap-3">
-              <span className="w-24 font-mono text-[10px] uppercase text-[var(--color-text-secondary)]">
+              <span className="w-24 font-mono text-2xs uppercase text-[var(--color-text-secondary)]">
                 {t.topic}
               </span>
               <div className="h-2 flex-1 rounded bg-[var(--color-border)]">
                 <div className="h-2 rounded bg-[var(--color-primary)]" style={{ width: `${(t.count / maxTopic) * 100}%` }} />
               </div>
-              <span className="w-8 text-right font-mono text-[10px] text-[var(--color-text-tertiary)]">
+              <span className="w-8 text-right font-mono text-2xs text-[var(--color-text-tertiary)]">
                 {t.count}
               </span>
             </div>
@@ -69,9 +69,9 @@ export function AnalyticsSection({ apiBasePath }: { apiBasePath: string }) {
 
       <section className="flex flex-col gap-2">
         <span className={LABEL}>Citation density per conversation</span>
-        <table className="w-full border-collapse text-[12px]">
+        <table className="w-full border-collapse text-xs">
           <thead>
-            <tr className="border-b border-[var(--color-border)] text-left font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+            <tr className="border-b border-[var(--color-border)] text-left font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
               <th className="py-1.5 pr-3">Conversation</th>
               <th className="py-1.5 pr-3">Assistant turns</th>
               <th className="py-1.5">Avg citations</th>
@@ -80,7 +80,7 @@ export function AnalyticsSection({ apiBasePath }: { apiBasePath: string }) {
           <tbody>
             {data.density.map((d) => (
               <tr key={d.conversationId} className="border-b border-[var(--color-border)]/40">
-                <td className="py-1.5 pr-3 font-mono text-[10px] text-[var(--color-text-secondary)]">
+                <td className="py-1.5 pr-3 font-mono text-2xs text-[var(--color-text-secondary)]">
                   {d.conversationId.slice(0, 8)}
                 </td>
                 <td className="py-1.5 pr-3">{d.assistantTurns}</td>

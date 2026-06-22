@@ -106,13 +106,13 @@ export function DetailSidebar({
           <div className="flex min-w-0 flex-col gap-1">
             {eyebrow && (
               <span
-                className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+                className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
                 style={{ letterSpacing: "0.18em" }}
               >
                 {eyebrow}
               </span>
             )}
-            <h2 className="truncate font-display text-[15px] font-medium text-[var(--color-text-primary)]">
+            <h2 className="truncate font-display text-cozy font-medium text-[var(--color-text-primary)]">
               {title}
             </h2>
           </div>
@@ -122,7 +122,7 @@ export function DetailSidebar({
             aria-label="Close detail panel"
             className={cn(
               "shrink-0 rounded-md border border-[var(--color-border)] px-2 py-1",
-              "font-mono text-[10px] uppercase text-[var(--color-text-secondary)] transition-colors",
+              "font-mono text-2xs uppercase text-[var(--color-text-secondary)] transition-colors",
               "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
               "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
             )}

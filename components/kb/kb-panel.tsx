@@ -77,7 +77,7 @@ export function KbPanel() {
             type="button"
             onClick={closeFile}
             aria-label={strings.backToList}
-            className="shrink-0 whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+            className="shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
             style={{ letterSpacing: "0.2em" }}
           >
             ‹ {strings.back}
@@ -85,12 +85,12 @@ export function KbPanel() {
         ) : (
           <>
             <span
-              className="font-mono text-[10px] uppercase text-[var(--color-primary)]"
+              className="font-mono text-2xs uppercase text-[var(--color-primary)]"
               style={{ letterSpacing: "0.32em" }}
             >
               {strings.title}
             </span>
-            <span className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+            <span className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
               {manifest.length}
             </span>
           </>

@@ -56,13 +56,13 @@ export function AppTopBar({
         {/* Name hidden on mobile — the controls cluster needs the full row width. */}
         <div className="hidden flex-col leading-tight sm:flex">
           <span
-            className="whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-primary)]"
+            className="whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-primary)]"
             style={{ letterSpacing: "0.32em" }}
           >
             Alexandre Collet
           </span>
           <span
-            className="whitespace-nowrap font-display text-[14px] font-medium text-[var(--color-text-primary)]"
+            className="whitespace-nowrap font-display text-sm font-medium text-[var(--color-text-primary)]"
             style={{ letterSpacing: "-0.01em" }}
           >
             Queryable CV
@@ -113,7 +113,7 @@ export function AppTopBar({
             aria-label={cvButtonLabel}
             title={cvButtonLabel}
             aria-haspopup="dialog"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 font-mono text-2xs font-medium uppercase tracking-[0.14em] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20"
           >
             <CvIcon />
             <span>CV</span>

@@ -66,7 +66,7 @@ export function AdminRail({
                     href={it.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors",
+                      "flex items-center justify-between rounded-md px-2 py-1.5 text-control transition-colors",
                       active
                         ? "bg-[var(--color-card)] text-[var(--color-accent)]"
                         : "text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]",
@@ -76,7 +76,7 @@ export function AdminRail({
                     {it.count != null && (
                       <span
                         className={cn(
-                          "font-mono text-[10px]",
+                          "font-mono text-2xs",
                           it.accentCount
                             ? "text-[var(--color-accent)]"
                             : "text-[var(--color-text-tertiary)]",

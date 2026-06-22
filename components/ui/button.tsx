@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const buttonVariants = cva(
   [
     "group relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
-    "rounded-full font-display text-[13px] font-medium tracking-tight",
+    "rounded-full font-display text-control font-medium tracking-tight",
     "transition-all duration-200 outline-none",
     "focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]",
     "disabled:pointer-events-none disabled:opacity-40",
@@ -33,8 +33,8 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-10 px-5",
-        sm: "h-8 px-3.5 text-[12px]",
-        lg: "h-11 px-6 text-[14px]",
+        sm: "h-8 px-3.5 text-xs",
+        lg: "h-11 px-6 text-sm",
         icon: "h-9 w-9",
       },
     },

@@ -76,7 +76,7 @@ export function ConversationsSection({
         />
       </div>
       {conversations.length === CONVERSATION_LIMIT && (
-        <p className="mb-3 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+        <p className="mb-3 font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
           Showing most recent {CONVERSATION_LIMIT}
         </p>
       )}
@@ -124,7 +124,7 @@ function SegmentButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] uppercase transition-colors",
+        "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-2xs uppercase transition-colors",
         active
           ? "border-[var(--color-accent)] text-[var(--color-accent)]"
           : "border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]",
