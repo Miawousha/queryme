@@ -6,6 +6,9 @@ import type { KbFile } from "@/lib/kb/manifest";
 import type { CitedRef } from "@/lib/kb/cited-paths";
 import { useKb } from "@/components/kb/kb-context";
 import { useKbTreeState } from "@/components/kb/use-kb-tree-state";
+import { useKbPeek } from "@/lib/kb/use-kb-peek";
+import { KbPeek } from "@/components/kb/kb-peek";
+import type { PeekTarget } from "@/lib/kb/peek-extract";
 import { buildKbTree, resolveGroups, type KbChip, type KbTreeNode } from "@/lib/kb/tree";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +106,10 @@ type RowCtx = {
   citationJumpLabel: string;
   /** Trimmed, lowercased filter text; empty string when filter is off. */
   needle: string;
+  /** Hover/focus intent → show the peek card for this node's doc/section. */
+  peekShow: (el: HTMLElement, node: KbTreeNode) => void;
+  /** Pointer/focus left a peekable row → schedule the card's dismissal. */
+  peekHide: () => void;
 };
 
 function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCtx }) {
@@ -232,6 +239,10 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
             )}
             onClick={() => ctx.onOpen(node.path!, null)}
             onKeyDown={rowKeyDown}
+            onMouseEnter={(e) => ctx.peekShow(e.currentTarget, node)}
+            onMouseLeave={ctx.peekHide}
+            onFocus={(e) => ctx.peekShow(e.currentTarget, node)}
+            onBlur={ctx.peekHide}
           >
             {label}
             {!isCited && (
@@ -275,6 +286,10 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       )}
       onClick={() => ctx.onOpen(node.path!, node.anchor ?? null)}
       onKeyDown={rowKeyDown}
+      onMouseEnter={(e) => ctx.peekShow(e.currentTarget, node)}
+      onMouseLeave={ctx.peekHide}
+      onFocus={(e) => ctx.peekShow(e.currentTarget, node)}
+      onBlur={ctx.peekHide}
     >
       <span aria-hidden className="shrink-0 font-mono text-2xs text-[var(--color-text-tertiary)]">
         #
@@ -356,6 +371,19 @@ export function KbTree({
     seenAutoReveal,
   });
 
+  const { active: peekActive, show: rawShow, hide: peekHide } = useKbPeek(apiBasePath, lang);
+  const peekShow = useCallback(
+    (el: HTMLElement, node: KbTreeNode) => {
+      if (!node.path) return;
+      const target: PeekTarget = node.kind === "section" && node.anchor
+        ? { kind: "section", slug: node.anchor }
+        : { kind: "doc" };
+      const file = files.find((f) => f.path === node.path);
+      if (file) rawShow(el, file, target);
+    },
+    [files, rawShow],
+  );
+
   const tree = useMemo(
     () => buildKbTree({ files, groups, citedRefs, filter, lens }),
     [files, groups, citedRefs, filter, lens],
@@ -383,6 +411,8 @@ export function KbTree({
     collapseLabel: strings.collapseGroup,
     citationJumpLabel: strings.citationJump,
     needle: filter.trim().toLowerCase(),
+    peekShow,
+    peekHide,
   };
 
   const containerKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -405,6 +435,7 @@ export function KbTree({
   }, []);
 
   return (
+    <>
     <div ref={containerRef} className="flex flex-col gap-2" onKeyDown={containerKeyDown}>
       {/* Filter row: text input + cited-lens toggle */}
       <div className="flex gap-2">
@@ -494,5 +525,7 @@ export function KbTree({
         </div>
       ) : null}
     </div>
+    <KbPeek active={peekActive} />
+    </>
   );
 }
