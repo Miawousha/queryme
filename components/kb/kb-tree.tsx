@@ -13,8 +13,8 @@ import type { PeekTarget } from "@/lib/kb/peek-extract";
 import { buildKbTree, resolveGroups, type KbChip, type KbTreeNode } from "@/lib/kb/tree";
 import { cn } from "@/lib/utils";
 
-const LABEL = "font-mono text-2xs uppercase text-[var(--color-text-tertiary)]";
-const LABEL_STYLE = { letterSpacing: "0.24em" };
+const LABEL = "font-mono text-control uppercase text-[var(--color-text-secondary)]";
+const LABEL_STYLE = { letterSpacing: "0.18em" };
 
 /**
  * Citation chip buttons: clicking `[n]` scrolls the chat to the citing
@@ -211,14 +211,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
     const hasChildren = node.children.length > 0;
     const label = (
       <span className="flex min-w-0 flex-1 flex-col">
-        <span
-          className={cn(
-            "truncate text-control",
-            isCited
-              ? "text-[var(--color-text-primary)]"
-              : "text-[var(--color-text-secondary)]",
-          )}
-        >
+        <span className="truncate text-control text-[var(--color-text-primary)]">
           {highlightMatch(node.label, ctx.needle)}
         </span>
         {node.subtitle && (
@@ -341,14 +334,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       <span aria-hidden className="shrink-0 font-mono text-2xs text-[var(--color-text-tertiary)]">
         #
       </span>
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate text-xs",
-          isCited
-            ? "text-[var(--color-text-primary)]"
-            : "text-[var(--color-text-secondary)]",
-        )}
-      >
+      <span className="min-w-0 flex-1 truncate text-xs text-[var(--color-text-primary)]">
         {highlightMatch(node.label, ctx.needle)}
       </span>
     </button>
