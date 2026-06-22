@@ -73,6 +73,22 @@ describe("KbPanel header", () => {
     expect(localStorage.getItem("queritae:kbDensity")).toBe("comfortable");
   });
 
+  it("shows a clear button only when the filter is non-empty and clears it on click", async () => {
+    vi.mocked(useKb).mockReturnValue(ctx());
+    const user = userEvent.setup();
+    render(<KbPanel />);
+
+    const input = screen.getByPlaceholderText("Filter…");
+    expect(screen.queryByRole("button", { name: "Clear filter" })).toBeNull();
+
+    await user.type(input, "ion");
+    expect(input).toHaveValue("ion");
+
+    await user.click(screen.getByRole("button", { name: "Clear filter" }));
+    expect(input).toHaveValue("");
+    expect(screen.queryByRole("button", { name: "Clear filter" })).toBeNull();
+  });
+
   it("mounts the Sources strip above the tree when the latest answer cited something", () => {
     vi.mocked(useKb).mockReturnValue(
       ctx({

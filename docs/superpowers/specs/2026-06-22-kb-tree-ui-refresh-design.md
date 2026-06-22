@@ -197,8 +197,8 @@ Following the existing `tests/components/kb/*` (+ `tests/lib/kb/*`) setup
 - **`latestAnswer` derivation** (chat / cited-paths): re-cited earlier source
   still appears under the latest message with its global index; indices match
   `citationIndexMap`.
-- **Header:** cited pill toggles `lens`; disabled at 0; filter row keeps `/`
-  focus + `Escape`-clear behaviour.
+- **Header:** cited pill toggles `lens`; disabled at 0; filter row drops the
+  `/`-to-focus shortcut and keeps `Escape`-clear behaviour.
 - **Density:** toggle flips `data-density` and persists; default is compact.
 - **Glyph:** non-md types render a glyph, md renders none.
 - **Trail/dot:** expanded cited branch shows the rail (no row tint except the

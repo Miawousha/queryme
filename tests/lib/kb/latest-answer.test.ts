@@ -53,4 +53,20 @@ describe("deriveLatestAnswer", () => {
     const out = deriveLatestAnswer([{ id: "b", text: "[^kb:experience/unknown.md]" }], idx);
     expect(out).toBeNull();
   });
+
+  it("keeps walking when the newest message cites only unknown sources, returning the older known one", () => {
+    const out = deriveLatestAnswer(
+      [
+        { id: "a", text: "older cites a known source [^kb:experience/2021-ion.md]" },
+        { id: "b", text: "newest cites only unknowns [^kb:experience/ghost.md] [^kb:experience/missing.md#x]" },
+      ],
+      idx,
+    );
+    // Newest message (b) has cites but none resolve, so the loop continues to
+    // the older message (a) rather than stopping at b or returning null.
+    expect(out).toEqual({
+      messageId: "a",
+      refs: [{ path: "experience/2021-ion.md", anchor: null, index: 1, messageId: "a" }],
+    });
+  });
 });

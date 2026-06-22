@@ -40,6 +40,7 @@ export function KbPanel() {
   const [filter, setFilter] = useState("");
   const [lens, setLens] = useState(false);
   const [density, toggleDensity] = useKbDensity();
+  const filterInputRef = useRef<HTMLInputElement>(null);
 
   const realFiles = manifest.filter((f) => !f.path.startsWith("_virtual/"));
   const lensCount = citedRefs.filter((r) => realFiles.some((f) => f.path === r.path)).length;
@@ -159,6 +160,7 @@ export function KbPanel() {
             <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
           </svg>
           <input
+            ref={filterInputRef}
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -172,6 +174,21 @@ export function KbPanel() {
             }}
             className="flex-1 bg-transparent py-1.5 text-xs text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none"
           />
+          {filter !== "" && (
+            <button
+              type="button"
+              aria-label={strings.clearFilter}
+              onClick={() => {
+                setFilter("");
+                filterInputRef.current?.focus();
+              }}
+              className="shrink-0 text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
