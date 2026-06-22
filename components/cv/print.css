@@ -1,7 +1,12 @@
 /* Screen: tasteful document column. The cv-page owns its own rhythm.
    Body prose is sized to ~14px on screen and ~10.5pt on print so the two
    render at comparable physical sizes. */
-.cv-prose ul {
+/* `cv-prose` may sit on the list element itself (curated `highlights`) or on a
+   wrapper around a Markdown-generated list (body-bullet fallback), so target
+   both — Tailwind's preflight resets `list-style: none`, and a descendant-only
+   selector would drop bullets from the `ul.cv-prose` case. */
+.cv-prose ul,
+ul.cv-prose {
   margin: 0.25rem 0;
   padding-left: 1.1rem;
   list-style: disc;
@@ -106,6 +111,7 @@
   /* Body prose sized for physical parity with screen. */
   .cv-prose p,
   .cv-prose ul,
+  ul.cv-prose,
   .cv-prose li {
     font-size: 10.5pt;
     line-height: 1.45;
