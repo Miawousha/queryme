@@ -15,6 +15,7 @@ import type { KbFile } from "@/lib/kb/manifest";
 import type { KbGroup } from "@/lib/kb/meta-format";
 import type { KbStrings, UiLang } from "@/lib/language";
 import type { CitedRef } from "@/lib/kb/cited-paths";
+import type { LatestAnswer } from "@/lib/kb/latest-answer";
 
 /** The document + optional section the viewer should show. */
 export type KbOpenTarget = { path: string; anchor: string | null };
@@ -31,6 +32,9 @@ type KbContextValue = {
   /** Ordered (path, anchor) citation pairs from this conversation. */
   citedRefs: CitedRef[];
   setCitedRefs: (refs: CitedRef[]) => void;
+  /** Sources the most recent answer cited; null when none. Drives the strip. */
+  latestAnswer: LatestAnswer | null;
+  setLatestAnswer: (v: LatestAnswer | null) => void;
   /**
    * Mutable ref whose `.current` Set tracks which citation keys have already
    * triggered an auto-reveal pulse in the tree. Lives in the provider so it
@@ -105,6 +109,7 @@ export function KbProvider({
   const [manifest, setManifest] = useState<KbFile[]>([]);
   const [groups, setGroups] = useState<KbGroup[]>([]);
   const [citedRefs, setCitedRefs] = useState<CitedRef[]>([]);
+  const [latestAnswer, setLatestAnswer] = useState<LatestAnswer | null>(null);
   const [openTarget, setOpenTarget] = useState<KbOpenTarget | null>(null);
   const seenAutoReveal = useRef<Set<string>>(new Set());
   const jumpListeners = useRef<Set<(messageId: string) => void>>(new Set());
@@ -152,6 +157,8 @@ export function KbProvider({
       groups,
       citedRefs,
       setCitedRefs,
+      latestAnswer,
+      setLatestAnswer,
       openTarget,
       openFile,
       closeFile,
@@ -163,7 +170,7 @@ export function KbProvider({
       contentRepoBranch,
       seenAutoReveal,
     }),
-    [lang, strings, manifest, groups, citedRefs, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, contentRepoUrl, contentRepoBranch, seenAutoReveal],
+    [lang, strings, manifest, groups, citedRefs, latestAnswer, openTarget, openFile, closeFile, jumpToMessage, onJumpToMessage, apiBasePath, cvPrintBase, contentRepoUrl, contentRepoBranch, seenAutoReveal],
   );
 
   return <KbContext.Provider value={value}>{children}</KbContext.Provider>;

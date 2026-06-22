@@ -12,6 +12,7 @@ import { useKb } from "@/components/kb/kb-context";
 import { useConversationHistory } from "@/components/use-conversation-history";
 import { chatMessageDomId, jumpToChatMessage } from "@/lib/chat-jump";
 import { citationIndexMap, extractCitations } from "@/lib/kb/cited-paths";
+import { deriveLatestAnswer } from "@/lib/kb/latest-answer";
 import type { UiLang, UiStrings } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
@@ -113,7 +114,7 @@ function latestIdentity(
 }
 
 export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps) {
-  const { setCitedRefs, openFile, onJumpToMessage, seenAutoReveal } = useKb();
+  const { setCitedRefs, setLatestAnswer, openFile, onJumpToMessage, seenAutoReveal } = useKb();
   // The transport body is a stable closure; read `lang` through a ref so a
   // mid-session toggle is observed by the next request without recreating the
   // transport. Sticky-per-conversation semantics live server-side — the
@@ -303,18 +304,26 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
 
   // Single extraction pass — both the KB panel context and the superscripts
   // are built from this one memo so messages are never traversed twice.
-  const extractedRefs = useMemo(() => {
-    const assistantMessages = messages
-      .filter((m) => m.role !== "user")
-      .map((m) => ({ id: m.id, text: messageText(m) }));
-    return extractCitations(assistantMessages);
-  }, [messages]);
+  const assistantMessages = useMemo(
+    () => messages.filter((m) => m.role !== "user").map((m) => ({ id: m.id, text: messageText(m) })),
+    [messages],
+  );
+  const extractedRefs = useMemo(() => extractCitations(assistantMessages), [assistantMessages]);
 
   useEffect(() => {
     setCitedRefs(extractedRefs);
   }, [extractedRefs, setCitedRefs]);
 
   const citationIndices = useMemo(() => citationIndexMap(extractedRefs), [extractedRefs]);
+
+  const latestAnswer = useMemo(
+    () => deriveLatestAnswer(assistantMessages, citationIndices),
+    [assistantMessages, citationIndices],
+  );
+
+  useEffect(() => {
+    setLatestAnswer(latestAnswer);
+  }, [latestAnswer, setLatestAnswer]);
 
   return (
     <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-card)]/20">
