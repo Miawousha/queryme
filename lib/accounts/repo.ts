@@ -108,14 +108,16 @@ export async function upsertAccountFromGitHub(
     return bySlug;
   }
 
-  // Self-serve signup: every brand-new GitHub identity starts waitlisted. A
-  // super-admin approves it from the console before any public surface (or
-  // paid model call) goes live for the account.
+  // Self-serve signup: every brand-new GitHub identity is active immediately and
+  // lands in its own admin. (The waitlist is no longer the default gate; a
+  // super-admin can still waitlist or disable an account from the console — see
+  // setAccountStatus — and the callback routes any non-active account to
+  // /waitlist.)
   return createAccount(db, {
     username: input.login,
     githubId: input.githubId,
     role: "user",
-    status: "waitlisted",
+    status: "active",
   });
 }
 
