@@ -62,6 +62,24 @@ describe("CvDocumentView", () => {
     );
   });
 
+  it("renders the profile QR (role=img) and the URL when profileUrl and qrSvg are provided", () => {
+    render(
+      <CvDocumentView
+        kb={makeKb()}
+        lang="en"
+        profileUrl="https://cv.alex.com"
+        qrSvg="<svg></svg>"
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Profile QR code" })).toBeInTheDocument();
+    expect(screen.getByText("cv.alex.com")).toBeInTheDocument();
+  });
+
+  it("omits the QR block when profileUrl or qrSvg is absent", () => {
+    render(<CvDocumentView kb={makeKb()} lang="en" />);
+    expect(screen.queryByRole("img", { name: "Profile QR code" })).toBeNull();
+  });
+
   it("shows total years for a closed role and only the period for an ongoing one", () => {
     const kb = makeKb({
       experience: [

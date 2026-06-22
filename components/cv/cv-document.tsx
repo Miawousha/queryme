@@ -113,7 +113,17 @@ function StackChip({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
+export function CvDocumentView({
+  kb,
+  lang,
+  profileUrl,
+  qrSvg,
+}: {
+  kb: Kb;
+  lang: KbLang;
+  profileUrl?: string;
+  qrSvg?: string;
+}) {
   const t = CV_STRINGS[lang];
   const fmt = (start: string, end: string) => formatPeriod(start, end, t.monthFormat, t.present);
   const repos = allRepos(kb);
@@ -122,42 +132,59 @@ export function CvDocumentView({ kb, lang }: { kb: Kb; lang: KbLang }) {
   return (
     <article className="cv-page text-[var(--color-text-secondary)]">
       <header className="cv-section relative mb-9 pb-6">
-        <h1 className="font-display text-[32px] font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
-          {kb.profile.name}
-        </h1>
-        {kb.profile.headline && (
-          <p className="mt-1.5 font-display text-[16px] leading-snug text-[var(--color-text-secondary)]">
-            {kb.profile.headline}
-          </p>
-        )}
-        {kb.profile.bio && (
-          <p className="mt-3 max-w-[64ch] font-display text-[14px] leading-relaxed text-[var(--color-text-tertiary)]">
-            {kb.profile.bio}
-          </p>
-        )}
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12px] text-[var(--color-text-tertiary)]">
-          {kb.profile.location && (
-            <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
-          )}
-          {kb.publicContact.email && (
-            <ContactItem icon={<MailIcon />} href={`mailto:${kb.publicContact.email}`}>
-              {kb.publicContact.email}
-            </ContactItem>
-          )}
-          {links?.linkedin && (
-            <ContactItem icon={<LinkedInIcon />} href={links.linkedin}>
-              LinkedIn
-            </ContactItem>
-          )}
-          {links?.github && (
-            <ContactItem icon={<GitHubIcon />} href={links.github}>
-              GitHub
-            </ContactItem>
-          )}
-          {links?.website && (
-            <ContactItem icon={<GlobeIcon />} href={links.website}>
-              {links.website.replace(/^https?:\/\//, "")}
-            </ContactItem>
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-[32px] font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
+              {kb.profile.name}
+            </h1>
+            {kb.profile.headline && (
+              <p className="mt-1.5 font-display text-[16px] leading-snug text-[var(--color-text-secondary)]">
+                {kb.profile.headline}
+              </p>
+            )}
+            {kb.profile.bio && (
+              <p className="mt-3 max-w-[64ch] font-display text-[14px] leading-relaxed text-[var(--color-text-tertiary)]">
+                {kb.profile.bio}
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12px] text-[var(--color-text-tertiary)]">
+              {kb.profile.location && (
+                <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
+              )}
+              {kb.publicContact.email && (
+                <ContactItem icon={<MailIcon />} href={`mailto:${kb.publicContact.email}`}>
+                  {kb.publicContact.email}
+                </ContactItem>
+              )}
+              {links?.linkedin && (
+                <ContactItem icon={<LinkedInIcon />} href={links.linkedin}>
+                  LinkedIn
+                </ContactItem>
+              )}
+              {links?.github && (
+                <ContactItem icon={<GitHubIcon />} href={links.github}>
+                  GitHub
+                </ContactItem>
+              )}
+              {links?.website && (
+                <ContactItem icon={<GlobeIcon />} href={links.website}>
+                  {links.website.replace(/^https?:\/\//, "")}
+                </ContactItem>
+              )}
+            </div>
+          </div>
+          {profileUrl && qrSvg && (
+            <div className="flex shrink-0 flex-col items-center gap-1.5">
+              <div
+                role="img"
+                aria-label={t.qrAlt}
+                className="cv-qr h-[88px] w-[88px] text-[var(--color-text-primary)]"
+                dangerouslySetInnerHTML={{ __html: qrSvg }}
+              />
+              <span className="font-mono text-[10px] tracking-[0.02em] text-[var(--color-text-tertiary)]">
+                {profileUrl.replace(/^https?:\/\//, "")}
+              </span>
+            </div>
           )}
         </div>
         {/* Accent keyline anchoring the identity block. */}

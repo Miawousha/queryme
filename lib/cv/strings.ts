@@ -18,6 +18,7 @@ export const CV_STRINGS = {
     present: "present",
     yr: "yr",
     yrs: "yrs",
+    qrAlt: "Profile QR code",
     monthFormat: "en-US" as const,
   },
   fr: {
@@ -37,6 +38,7 @@ export const CV_STRINGS = {
     present: "présent",
     yr: "an",
     yrs: "ans",
+    qrAlt: "QR code du profil",
     monthFormat: "fr-FR" as const,
   },
 } as const satisfies Record<KbLang, unknown>;

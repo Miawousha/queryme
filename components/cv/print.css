@@ -41,6 +41,14 @@ ul.cv-prose {
   font-weight: 600;
 }
 
+/* The QR is injected as a raw <svg> with its own width/height attributes; size
+   it to its container box (CSS wins over the presentation attributes). */
+.cv-qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 @media print {
   /* A4 with comfortable margins; remove the browser's default header/footer
      by keeping content within the page box. */
