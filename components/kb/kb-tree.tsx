@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
 import type { CitedRef } from "@/lib/kb/cited-paths";
 import { useKb } from "@/components/kb/kb-context";
+import { KbFileGlyph } from "@/components/kb/kb-file-glyph";
 import { useKbTreeState } from "@/components/kb/use-kb-tree-state";
 import { useKbPeek } from "@/lib/kb/use-kb-peek";
 import { KbPeek } from "@/components/kb/kb-peek";
@@ -39,7 +40,7 @@ function ChipButtons({
           type="button"
           aria-label={labelTemplate.replace("{n}", String(c.index))}
           onClick={() => jumpToMessage(c.messageId)}
-          className="kb-chip cursor-pointer rounded px-0.5 transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.15)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]"
+          className="kb-chip cursor-pointer rounded border border-[rgba(var(--color-accent-rgb),0.3)] bg-[rgba(var(--color-accent-rgb),0.1)] px-1 leading-tight transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.2)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]"
         >
           [{c.index}]
         </button>
@@ -69,6 +70,38 @@ function highlightMatch(label: string, needle: string): ReactNode {
         {label.slice(i, i + needle.length)}
       </span>
       {label.slice(i + needle.length)}
+    </>
+  );
+}
+
+/** Faint vertical indent guides, one per ancestor level. The segment at
+ * `trailLevel` (the cited branch's indent) renders in accent — the trail rail.
+ * Each row draws its own segments; stacked rows form continuous lines. A row
+ * that itself starts the trail sits at `trailLevel === depth`, so we render one
+ * segment past its own depth to mark the cited row, not only its descendants. */
+function GuideRails({ depth, trailLevel }: { depth: number; trailLevel: number | null }) {
+  if (depth === 0 && trailLevel === null) return null;
+  const count = Math.max(depth, trailLevel === null ? 0 : trailLevel + 1);
+  if (count === 0) return null;
+  const levels = Array.from({ length: count }, (_, i) => i);
+  return (
+    <>
+      {levels.map((i) => (
+        <span
+          key={i}
+          aria-hidden
+          data-kb-trail={i === trailLevel ? "" : undefined}
+          className="pointer-events-none absolute top-0 bottom-0"
+          style={{
+            left: i * 14 + 11,
+            background:
+              i === trailLevel
+                ? "var(--color-accent)"
+                : "rgba(var(--color-text-primary-rgb), 0.08)",
+            width: i === trailLevel ? 2 : 1,
+          }}
+        />
+      ))}
     </>
   );
 }
@@ -110,12 +143,20 @@ type RowCtx = {
   peekShow: (el: HTMLElement, node: KbTreeNode) => void;
   /** Pointer/focus left a peekable row → schedule the card's dismissal. */
   peekHide: () => void;
+  /** Indent level of the nearest enclosing cited+open doc, or null. */
+  trailLevel?: number | null;
 };
 
 function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCtx }) {
   const open = ctx.searchMode || ctx.isExpanded(node);
   const isCited = node.chips.length > 0;
   const isPulse = ctx.pulseId === node.id;
+
+  const trailLevel = ctx.trailLevel ?? null;
+  // A cited+open doc starts a trail at its own depth for its descendants and itself.
+  const startsTrail = node.kind === "doc" && open && (node.chips.length > 0 || node.dot);
+  const selfTrail = startsTrail ? depth : trailLevel;
+  const childCtx: RowCtx = startsTrail ? { ...ctx, trailLevel: depth } : ctx;
 
   const rowKeyDown = (e: React.KeyboardEvent) => {
     if (ctx.searchMode) return;
@@ -139,7 +180,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
           aria-expanded={open}
           style={{ paddingLeft: depth * 14 }}
           className={cn(
-            "flex w-full items-center gap-1.5 rounded px-2 py-1 text-left transition-colors",
+            "relative flex w-full items-center gap-1.5 rounded px-2 py-1 text-left transition-colors",
             "hover:bg-[rgba(var(--color-primary-rgb),0.07)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]",
             isCited && "bg-[rgba(var(--color-accent-rgb),0.06)]",
             isPulse && "kb-pulse",
@@ -147,6 +188,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
           onClick={() => ctx.toggle(node)}
           onKeyDown={rowKeyDown}
         >
+          <GuideRails depth={depth} trailLevel={selfTrail} />
           <Chevron open={open} />
           <span className={LABEL} style={LABEL_STYLE}>
             {highlightMatch(node.label, ctx.needle)}
@@ -160,7 +202,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
               nodes (collapsed cited descendants surface as the dot). */}
           {!open && node.dot && <Dot />}
         </button>
-        {open && node.children.map((c) => <Row key={c.id} node={c} depth={depth + 1} ctx={ctx} />)}
+        {open && node.children.map((c) => <Row key={c.id} node={c} depth={depth + 1} ctx={childCtx} />)}
       </>
     );
   }
@@ -192,24 +234,26 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
         className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]"
       />
     );
-    const typeBadge = (
-      <span
-        className="ml-1 shrink-0 font-mono text-3xs uppercase text-[var(--color-text-tertiary)]"
-        style={{ letterSpacing: "0.16em" }}
-      >
-        {node.fileType}
-      </span>
+    // Glyph swap (Task 4): md renders nothing; other types get a small line
+    // glyph. The glyph is aria-hidden, so a sr-only label keeps the file type
+    // in the row's accessible name for non-markdown docs.
+    const typeBadge = node.fileType && node.fileType !== "md" && (
+      <>
+        <span className="sr-only">{node.fileType}</span>
+        <KbFileGlyph type={node.fileType} className="ml-1" />
+      </>
     );
     return (
       <>
         <div
           style={{ paddingLeft: depth * 14 }}
           className={cn(
-            "flex items-center gap-0.5 rounded",
+            "relative flex items-center gap-0.5 rounded",
             isCited && "bg-[rgba(var(--color-accent-rgb),0.06)]",
             isPulse && "kb-pulse",
           )}
         >
+          <GuideRails depth={depth} trailLevel={selfTrail} />
           {/* Chevron toggle — separate button to avoid nested-button violation */}
           <button
             type="button"
@@ -264,7 +308,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
             </span>
           )}
         </div>
-        {open && node.children.map((c) => <Row key={c.id} node={c} depth={depth + 1} ctx={ctx} />)}
+        {open && node.children.map((c) => <Row key={c.id} node={c} depth={depth + 1} ctx={childCtx} />)}
       </>
     );
   }
@@ -279,7 +323,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       data-kb-row=""
       style={isCited ? undefined : { paddingLeft: depth * 14 }}
       className={cn(
-        "flex w-full min-w-0 items-center gap-1.5 rounded py-0.5 text-left transition-colors",
+        "relative flex w-full min-w-0 items-center gap-1.5 rounded py-0.5 text-left transition-colors",
         isCited ? "flex-1 pl-2" : "px-2",
         "hover:bg-[rgba(var(--color-primary-rgb),0.07)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]",
         !isCited && isPulse && "kb-pulse",
@@ -291,6 +335,9 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       onFocus={(e) => ctx.peekShow(e.currentTarget, node)}
       onBlur={ctx.peekHide}
     >
+      {/* Non-cited sections carry the depth padding on the button, so the
+          rails render here; cited sections render them on the wrapper. */}
+      {!isCited && <GuideRails depth={depth} trailLevel={selfTrail} />}
       <span aria-hidden className="shrink-0 font-mono text-2xs text-[var(--color-text-tertiary)]">
         #
       </span>
@@ -312,11 +359,12 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
     <div
       style={{ paddingLeft: depth * 14 }}
       className={cn(
-        "flex items-center gap-1.5 rounded pr-2",
+        "relative flex items-center gap-1.5 rounded pr-2",
         "bg-[rgba(var(--color-accent-rgb),0.06)]",
         isPulse && "kb-pulse",
       )}
     >
+      <GuideRails depth={depth} trailLevel={selfTrail} />
       {sectionButton}
       <ChipButtons
         chips={node.chips}
@@ -442,12 +490,8 @@ export function KbTree({
               <span className="min-w-0 flex-1 truncate text-control text-[var(--color-text-secondary)]">
                 {f.title}
               </span>
-              <span
-                className="shrink-0 font-mono text-3xs uppercase text-[var(--color-text-tertiary)]"
-                style={{ letterSpacing: "0.16em" }}
-              >
-                {f.type}
-              </span>
+              {f.type !== "md" && <span className="sr-only">{f.type}</span>}
+              <KbFileGlyph type={f.type} />
             </button>
           ))}
         </div>
