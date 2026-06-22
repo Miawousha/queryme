@@ -21,8 +21,8 @@ export default async function WaitlistPage() {
         Your account isn&apos;t live yet
       </h1>
       <p className="max-w-md text-sm text-[var(--color-text-secondary)]">
-        Your account has been created and is waiting for approval. New accounts are reviewed by
-        hand, so this can take a little while — your page goes public as soon as it&apos;s approved.
+        An administrator has paused this account, so your public page is hidden for now. If you
+        think this is a mistake, reach out and we&apos;ll take a look.
       </p>
       <p className="max-w-md text-sm text-[var(--color-text-secondary)]">
         In the meantime you can prepare your content: see the{" "}

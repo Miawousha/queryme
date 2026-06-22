@@ -413,9 +413,8 @@ export function LandingPage({ seeItLiveUsername }: Props) {
             .
           </h2>
           <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[var(--color-text-secondary)]">
-            Create an account with GitHub and point it at a content repo. New
-            accounts are reviewed by hand — your page goes public as soon as
-            it&apos;s approved.
+            Create an account with GitHub and point it at a content repo — your
+            page is live the moment you sign in.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a

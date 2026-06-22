@@ -76,6 +76,8 @@ d("accounts/repo (integration)", () => {
     extraIds.push(created.id);
     expect(created.username).toBe(login);
     expect(created.githubId).toBe(`gh-${login}`);
+    // Self-serve signups are active immediately (no waitlist gate).
+    expect(created.status).toBe("active");
 
     // returning path: same github_id resolves the same row
     const again = await upsertAccountFromGitHub(db, { githubId: `gh-${login}`, login });
