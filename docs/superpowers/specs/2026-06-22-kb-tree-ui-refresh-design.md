@@ -78,9 +78,11 @@ props.
   treatment.
 - **Density toggle** is a small icon button (compact ↔ comfortable).
 - **Filter** moves to its own full-width row directly below the band, with a
-  leading search glyph. Keep today's behaviour: `/` focuses it; `Escape`
-  clears an active filter (and only then stops propagation, so a second
-  `Escape` still closes the mobile drawer).
+  leading search glyph. `Escape` clears an active filter (and only then stops
+  propagation, so a second `Escape` still closes the mobile drawer). The
+  `/`-to-focus shortcut is **dropped** in this refresh — it lived on the tree
+  container, which no longer owns the input; re-adding it on the panel is a
+  documented follow-up (see the plan's "Known follow-up").
 
 ### C. Citation visuals
 
