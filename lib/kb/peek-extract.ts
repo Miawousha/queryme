@@ -33,9 +33,15 @@ function scan(body: string): Line[] {
       continue;
     }
     let slug = slugify(m[2].trim());
+    // Mirror extractSections: an empty slug is not a real section, so it never
+    // enters the dedup map and stays a plain body line (no suffix divergence).
+    if (!slug) {
+      out.push({ text, heading: null });
+      continue;
+    }
     const n = used.get(slug) ?? 0;
     used.set(slug, n + 1);
-    if (slug && n > 0) slug = `${slug}-${n}`;
+    if (n > 0) slug = `${slug}-${n}`;
     out.push({ text, heading: { slug, level: m[1].length } });
   }
   return out;
@@ -76,8 +82,20 @@ export function extractExcerpt(rawText: string, target: PeekTarget, maxChars = 2
     // fall through to doc intro on no match
   }
 
-  // doc intro: skip a single leading H1, then the first body run
+  // doc: prefer the intro paragraph (prose before any heading), skipping a
+  // single leading H1 since it just repeats the title. KB experience/project
+  // docs have no intro — their content starts at the first `## …` section — so
+  // when the intro run is empty, fall back to that first section's body.
   const first = lines.findIndex((l) => l.text.trim() !== "");
-  const start = first !== -1 && lines[first].heading?.level === 1 ? first + 1 : Math.max(first, 0);
-  return clamp(body(lines, start, lines.length), maxChars);
+  if (first === -1) return "";
+  const start = lines[first].heading?.level === 1 ? first + 1 : first;
+
+  const intro = body(lines, start, lines.length);
+  if (intro) return clamp(intro, maxChars);
+
+  const heading = lines.findIndex((l, i) => i >= start && l.heading !== null);
+  if (heading === -1) return "";
+  let end = heading + 1;
+  while (end < lines.length && !lines[end].heading) end++;
+  return clamp(body(lines, heading + 1, end), maxChars);
 }
