@@ -11,6 +11,8 @@ type Props = {
   strings: AllLocaleStrings;
   /** GitHub URL of the active persona content repo, or null if none configured. */
   contentRepoUrl: string | null;
+  /** Branch of the active persona content repo, or null if none configured. */
+  contentRepoBranch: string | null;
   /** Base path for API calls. Defaults to "/api". */
   apiBasePath?: string;
   /** Account page base for CV links: "" (→ /cv) or "/{username}". */
@@ -22,6 +24,7 @@ type Props = {
 export function HomePageClient({
   strings,
   contentRepoUrl,
+  contentRepoBranch,
   apiBasePath = "/api",
   cvPrintBase = "",
   isRootAccount = true,
@@ -46,6 +49,7 @@ export function HomePageClient({
         kbCollapsed={kbCollapsed}
         onKbCollapsedChange={setKbCollapsed}
         contentRepoUrl={contentRepoUrl}
+        contentRepoBranch={contentRepoBranch}
         apiBasePath={apiBasePath}
         isRootAccount={isRootAccount}
       />

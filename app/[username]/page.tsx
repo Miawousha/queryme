@@ -28,6 +28,7 @@ export default async function AccountHome({
     <HomePageClient
       strings={strings}
       contentRepoUrl={sourceRow?.repoUrl ?? null}
+      contentRepoBranch={sourceRow?.branch ?? null}
       apiBasePath={`/api/a/${account.username}`}
       cvPrintBase={`/${account.username}`}
       isRootAccount={false}

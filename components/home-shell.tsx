@@ -24,6 +24,8 @@ type Props = {
   onKbCollapsedChange: (next: boolean | ((prev: boolean) => boolean)) => void;
   /** GitHub URL of the active persona content repo, or null if none configured. */
   contentRepoUrl: string | null;
+  /** Branch of the active persona content repo, or null if none configured. */
+  contentRepoBranch: string | null;
   /** Base path for API calls. Defaults to "/api". */
   apiBasePath?: string;
   /** When false, MCP button/modal are hidden. Defaults to true. */
@@ -46,6 +48,7 @@ export function HomeShell({
   kbCollapsed,
   onKbCollapsedChange,
   contentRepoUrl,
+  contentRepoBranch,
   apiBasePath = "/api",
   isRootAccount = true,
 }: Props) {
@@ -98,6 +101,8 @@ export function HomeShell({
         }}
         repoUrl={REPO_URL}
         branch={REPO_BRANCH}
+        contentRepoUrl={contentRepoUrl}
+        contentRepoBranch={contentRepoBranch}
         cvHref={`${cvPrintBase}/cv?lang=${lang}`}
       />
       <CvModal open={cvOpen} onClose={() => setCvOpen(false)} onLangChange={onLangChange} />
