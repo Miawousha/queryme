@@ -13,16 +13,20 @@ export function CvStandalone({
   cvKb,
   lang,
   basePath,
+  profileUrl,
+  qrSvg,
 }: {
   cvKb: Kb;
   lang: KbLang;
   basePath: string;
+  profileUrl?: string;
+  qrSvg?: string;
 }) {
   const t = CV_STRINGS[lang];
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <CvTopBar lang={lang} printLabel={t.print} backLabel="queritae" basePath={basePath} />
-      <CvDocumentView kb={cvKb} lang={lang} />
+      <CvDocumentView kb={cvKb} lang={lang} profileUrl={profileUrl} qrSvg={qrSvg} />
     </main>
   );
 }

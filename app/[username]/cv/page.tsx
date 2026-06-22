@@ -4,6 +4,8 @@ import { loadCvKb, cvPersonaName, parseCvLang } from "@/lib/cv/load";
 import { loadActiveAccountForSlug } from "@/lib/accounts/load";
 import { CvStandalone } from "@/components/cv/cv-standalone";
 import { NotConfiguredScreen } from "@/components/not-configured-screen";
+import { resolveProfileUrl } from "@/lib/cv/profile-url";
+import { qrSvg } from "@/lib/cv/qr";
 
 export const revalidate = 3600;
 
@@ -33,5 +35,15 @@ export default async function AccountCvPage({ params, searchParams }: Props) {
   const lang = parseCvLang(langParam);
   const result = await loadCvKb(account.id, lang);
   if (!result) return <NotConfiguredScreen />;
-  return <CvStandalone cvKb={result.cvKb} lang={lang} basePath={`/${account.username}`} />;
+  const profileUrl = await resolveProfileUrl({ accountId: account.id, username: account.username });
+  const qr = await qrSvg(profileUrl);
+  return (
+    <CvStandalone
+      cvKb={result.cvKb}
+      lang={lang}
+      basePath={`/${account.username}`}
+      profileUrl={profileUrl}
+      qrSvg={qr ?? undefined}
+    />
+  );
 }
