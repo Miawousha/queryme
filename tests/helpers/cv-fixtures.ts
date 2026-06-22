@@ -43,6 +43,7 @@ export function makeKb(overrides?: Partial<Kb>): Kb {
         relativePath: "projects/note-g.md",
         frontmatter: {
           name: "Note G",
+          description: "The first published algorithm intended for a machine.",
           year: 1843,
           url: "https://example.com/note-g",
           stack: ["Algorithm"],

@@ -1,6 +1,6 @@
 import type { Kb } from "@/lib/kb/loader";
 import type { UiLang } from "@/lib/language";
-import { allRepos } from "@/lib/kb/repos";
+import { projectLink } from "@/lib/kb/repos";
 
 /** Lightweight CV → markdown serializer for copy/download. Mirrors the layout
  * of `CvDocumentView`: profile header, then each section as a `##` heading
@@ -59,9 +59,11 @@ export function assembleCvMarkdown(kb: Kb, lang: UiLang): string {
     lines.push("");
     lines.push(`## ${lang === "fr" ? "Projets" : "Projects"}`);
     for (const p of kb.projects) {
-      const url = p.frontmatter.url ? ` (${p.frontmatter.url})` : "";
+      const link = projectLink(p);
+      const linkPart = link ? ` (${link})` : "";
+      const desc = p.frontmatter.description ? ` — ${p.frontmatter.description}` : "";
       const year = p.frontmatter.year ? `, ${p.frontmatter.year}` : "";
-      lines.push(`- **${p.frontmatter.name}**${url}${year}`);
+      lines.push(`- **${p.frontmatter.name}**${linkPart}${desc}${year}`);
     }
   }
 
@@ -73,16 +75,6 @@ export function assembleCvMarkdown(kb: Kb, lang: UiLang): string {
         .filter(Boolean)
         .join(" · ");
       lines.push(`- **${pub.frontmatter.title}**${meta ? ` — ${meta}` : ""}`);
-    }
-  }
-
-  const repos = allRepos(kb);
-  if (repos.length > 0) {
-    lines.push("");
-    lines.push(`## Open source`);
-    for (const o of repos) {
-      const url = o.url ? ` (${o.url})` : "";
-      lines.push(`- **${o.name}**${url} — ${o.role}${o.description ? `: ${o.description}` : ""}`);
     }
   }
 

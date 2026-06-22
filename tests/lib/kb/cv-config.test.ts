@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
 import { filterKbForCv, loadCvConfig } from "@/lib/kb/cv-config";
-import { allRepos } from "@/lib/kb/repos";
+import { projectLink } from "@/lib/kb/repos";
 import type { Kb, ProjectEntry } from "@/lib/kb/loader";
 import type { Repo } from "@/lib/kb/schemas";
 
@@ -84,9 +84,11 @@ describe("filterKbForCv repo privacy", () => {
     expect(names).toEqual(["pub"]);
   });
 
-  it("yields only public repos through allRepos (the leak vector)", () => {
+  it("never yields a private repo url through projectLink (the leak vector)", () => {
+    // Defensive: straight off the raw KB, projectLink only returns a public, linkable url.
+    expect(projectLink(mixed().projects[0])).toBe("https://github.com/x/pub");
+    // ...and after the CV privacy filter it still resolves to the public repo.
     const cvKb = filterKbForCv(mixed(), null);
-    expect(allRepos(cvKb).map((r) => r.name)).toEqual(["pub"]);
-    expect(allRepos(cvKb).every((r) => r.visibility === "public" && r.url)).toBe(true);
+    expect(projectLink(cvKb.projects[0])).toBe("https://github.com/x/pub");
   });
 });

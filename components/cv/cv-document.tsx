@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Kb, KbLang } from "@/lib/kb/loader";
-import { allRepos } from "@/lib/kb/repos";
+import { projectLink } from "@/lib/kb/repos";
 import { CV_STRINGS } from "@/lib/cv/strings";
 
 function formatMonth(date: string, locale: "en-US" | "fr-FR", presentLabel: string): string {
@@ -126,7 +126,6 @@ export function CvDocumentView({
 }) {
   const t = CV_STRINGS[lang];
   const fmt = (start: string, end: string) => formatPeriod(start, end, t.monthFormat, t.present);
-  const repos = allRepos(kb);
   const links = kb.publicContact.links;
 
   return (
@@ -330,34 +329,37 @@ export function CvDocumentView({
         <section className="cv-section mb-9">
           <SectionHeading>{t.sections.projects}</SectionHeading>
           <ul className="flex flex-col gap-2 text-[14px] leading-snug">
-            {kb.projects.map((p) => (
-              <li
-                key={p.slug}
-                className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
-              >
-                <span>
-                  <span className="font-display font-semibold text-[var(--color-text-primary)]">
-                    {p.frontmatter.url ? (
-                      <a
-                        href={p.frontmatter.url}
-                        className="transition-colors hover:text-[var(--color-accent)]"
-                      >
-                        {p.frontmatter.name}
-                      </a>
-                    ) : (
-                      p.frontmatter.name
+            {kb.projects.map((p) => {
+              const link = projectLink(p);
+              return (
+                <li
+                  key={p.slug}
+                  className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+                >
+                  <span>
+                    <span className="font-display font-semibold text-[var(--color-text-primary)]">
+                      {link ? (
+                        <a
+                          href={link}
+                          className="transition-colors hover:text-[var(--color-accent)]"
+                        >
+                          {p.frontmatter.name}
+                        </a>
+                      ) : (
+                        p.frontmatter.name
+                      )}
+                    </span>
+                    {p.frontmatter.description && (
+                      <span className="text-[var(--color-text-secondary)]">
+                        {" — "}
+                        {p.frontmatter.description}
+                      </span>
                     )}
                   </span>
-                  {p.frontmatter.stack && p.frontmatter.stack.length > 0 && (
-                    <span className="font-mono text-[12px] text-[var(--color-text-tertiary)]">
-                      {"  ·  "}
-                      {p.frontmatter.stack.join(" · ")}
-                    </span>
-                  )}
-                </span>
-                {p.frontmatter.year && <MetaMarker>{p.frontmatter.year}</MetaMarker>}
-              </li>
-            ))}
+                  {p.frontmatter.year && <MetaMarker>{p.frontmatter.year}</MetaMarker>}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
@@ -416,32 +418,6 @@ export function CvDocumentView({
                 </li>
               );
             })}
-          </ul>
-        </section>
-      )}
-
-      {repos.length > 0 && (
-        <section className="cv-section mb-4">
-          <SectionHeading>{t.sections.code}</SectionHeading>
-          <ul className="flex flex-col gap-2 text-[14px] leading-snug">
-            {repos.map((o, i) => (
-              <li key={`${o.name}-${i}`} className="cv-entry">
-                {o.url ? (
-                  <a
-                    href={o.url}
-                    className="font-display font-semibold text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent)]"
-                  >
-                    {o.name}
-                  </a>
-                ) : (
-                  <span className="font-display font-semibold text-[var(--color-text-primary)]">{o.name}</span>
-                )}
-                <span className="text-[var(--color-text-tertiary)]"> · {o.role}</span>
-                {o.description && (
-                  <span className="text-[var(--color-text-secondary)]"> — {o.description}</span>
-                )}
-              </li>
-            ))}
           </ul>
         </section>
       )}

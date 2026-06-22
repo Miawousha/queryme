@@ -215,6 +215,7 @@ function renderProjects(entries: ProjectEntry[], heading: string): string {
     const year = p.frontmatter.year ? ` (${p.frontmatter.year})` : "";
     lines.push(`## ${p.frontmatter.name}${year}`);
     lines.push(`[ref: ${p.relativePath}]`);
+    if (p.frontmatter.description) lines.push(`Description: ${p.frontmatter.description}`);
     if (p.frontmatter.url) lines.push(`URL: ${p.frontmatter.url}`);
     if (p.frontmatter.stack?.length) lines.push(`Stack: ${p.frontmatter.stack.join(", ")}`);
     if (p.frontmatter.tags?.length) lines.push(`Tags: ${p.frontmatter.tags.join(", ")}`);

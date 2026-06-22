@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { CvDocumentView } from "@/components/cv/cv-document";
 import { makeKb } from "../../helpers/cv-fixtures";
 
@@ -12,15 +12,17 @@ describe("CvDocumentView", () => {
 
   it("renders each section heading when its data is present", () => {
     render(<CvDocumentView kb={makeKb()} lang="en" />);
-    for (const h of ["Experience", "Education", "Skills", "Selected projects", "Talks", "Publications", "Open source"]) {
+    for (const h of ["Experience", "Education", "Skills", "Projects", "Talks", "Publications"]) {
       expect(screen.getByRole("heading", { name: h })).toBeInTheDocument();
     }
+    // The legacy "Open source" block is merged into the unified "Projects" section.
+    expect(screen.queryByRole("heading", { name: "Open source" })).toBeNull();
   });
 
   it("omits a section when its data is empty", () => {
     render(<CvDocumentView kb={makeKb({ talks: [], projects: [] })} lang="en" />);
     expect(screen.queryByRole("heading", { name: "Talks" })).toBeNull();
-    expect(screen.queryByRole("heading", { name: "Selected projects" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Projects" })).toBeNull();
     // Experience still present
     expect(screen.getByRole("heading", { name: "Experience" })).toBeInTheDocument();
   });
@@ -54,12 +56,67 @@ describe("CvDocumentView", () => {
     expect(screen.getByText(/Taylor's Scientific Memoirs · 1843/)).toBeInTheDocument();
   });
 
-  it("lists public repos under Open source", () => {
+  it("renders one rich entry per project: a linked name, its description, and its year", () => {
     render(<CvDocumentView kb={makeKb()} lang="en" />);
-    expect(screen.getByRole("link", { name: "note-g" })).toHaveAttribute(
+    // projectLink prefers the project's canonical frontmatter url.
+    expect(screen.getByRole("link", { name: "Note G" })).toHaveAttribute(
       "href",
-      "https://github.com/ada/note-g",
+      "https://example.com/note-g",
     );
+    expect(
+      screen.getByText(/The first published algorithm intended for a machine\./),
+    ).toBeInTheDocument();
+    // The year renders as the project row's right-aligned meta marker.
+    const row = screen.getByRole("link", { name: "Note G" }).closest("li")!;
+    expect(within(row).getByText("1843")).toBeInTheDocument();
+  });
+
+  it("links a url-less project via its first public repo and never leaks a private repo url", () => {
+    const kb = makeKb({
+      projects: [
+        {
+          slug: "altergo",
+          relativePath: "projects/altergo.md",
+          frontmatter: {
+            name: "Altergo",
+            description: "Battery intelligence platform.",
+            repos: [
+              { name: "core", role: "author", visibility: "private", url: "https://github.com/x/private-core" },
+              { name: "sdk", role: "author", visibility: "public", url: "https://github.com/x/public-sdk" },
+            ],
+          },
+          body: "",
+        },
+      ],
+    });
+    const { container } = render(<CvDocumentView kb={kb} lang="en" />);
+    expect(screen.getByRole("link", { name: "Altergo" })).toHaveAttribute(
+      "href",
+      "https://github.com/x/public-sdk",
+    );
+    expect(container.innerHTML).not.toContain("private-core");
+  });
+
+  it("renders a project with no public link as plain text, not a link", () => {
+    const kb = makeKb({
+      projects: [
+        {
+          slug: "graybox",
+          relativePath: "projects/graybox.md",
+          frontmatter: {
+            name: "Graybox",
+            description: "A local-first meta-ontology.",
+            repos: [
+              { name: "graybox", role: "author", visibility: "private", url: "https://github.com/x/graybox" },
+            ],
+          },
+          body: "",
+        },
+      ],
+    });
+    render(<CvDocumentView kb={kb} lang="en" />);
+    expect(screen.getByText("Graybox")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Graybox" })).toBeNull();
   });
 
   it("renders the profile QR (role=img) and the URL when profileUrl and qrSvg are provided", () => {

@@ -68,11 +68,11 @@ describe("loadKb", () => {
     expect(kb.recommendations[0].relativePath).toBe("recommendations/2024-09-jane-doe.md");
   });
 
-  it("allRepos flattens every project's repos, sorted year desc then name", async () => {
-    const { allRepos } = await import("@/lib/kb/repos");
+  it("projectLink resolves a loaded project's canonical url", async () => {
+    const { projectLink } = await import("@/lib/kb/repos");
     const kb = await loadKb(FIXTURE_DIR);
-    const repos = allRepos(kb);
-    expect(repos.map((r) => r.name)).toEqual(["queryme", "sample-indexed"]);
+    const fixture = kb.projects.find((p) => p.slug === "fixture-project")!;
+    expect(projectLink(fixture)).toBe("https://example.com");
   });
 
   it("prefers a *.fr.md sidecar when lang=fr is requested", async () => {

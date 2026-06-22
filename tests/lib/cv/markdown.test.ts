@@ -14,8 +14,39 @@ describe("assembleCvMarkdown", () => {
     expect(md).toContain("## Projects");
     expect(md).toContain("## Publications");
     expect(md).toContain("- **Notes on the Analytical Engine** — A. Lovelace · Taylor's Scientific Memoirs · 1843");
-    expect(md).toContain("## Open source");
-    expect(md).toContain("note-g");
+  });
+
+  it("renders one rich line per project — name(link), description, year — and no separate Open source block", () => {
+    const md = assembleCvMarkdown(makeKb(), "en");
+    expect(md).toContain(
+      "- **Note G** (https://example.com/note-g) — The first published algorithm intended for a machine., 1843",
+    );
+    // The two legacy blocks are merged into one "Projects" section.
+    expect(md).not.toContain("## Open source");
+    expect(md).not.toContain("## Selected projects");
+  });
+
+  it("links a project via its first public repo when it has no frontmatter url, and never leaks a private repo url", () => {
+    const kb = makeKb({
+      projects: [
+        {
+          slug: "altergo",
+          relativePath: "projects/altergo.md",
+          frontmatter: {
+            name: "Altergo",
+            description: "Battery intelligence platform.",
+            repos: [
+              { name: "core", role: "author", visibility: "private", url: "https://github.com/x/private-core" },
+              { name: "sdk", role: "author", visibility: "public", url: "https://github.com/x/public-sdk" },
+            ],
+          },
+          body: "",
+        },
+      ],
+    });
+    const md = assembleCvMarkdown(kb, "en");
+    expect(md).toContain("- **Altergo** (https://github.com/x/public-sdk) — Battery intelligence platform.");
+    expect(md).not.toContain("private-core");
   });
 
   it("includes the bio and a Selected achievements section when the profile has them", () => {

@@ -99,6 +99,8 @@ export type Repo = z.infer<typeof RepoSchema>;
 
 export const ProjectFrontmatterSchema = z.object({
   name: z.string().min(1),
+  /** One-line CV subtitle; the markdown body stays the narrative. */
+  description: z.string().optional(),
   year: z.number().int().min(1900).max(2100).optional(),
   stack: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
