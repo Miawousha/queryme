@@ -85,7 +85,7 @@ function OutlineTitle({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={outlineAria ?? outlineLabel}
-        className="flex min-w-0 items-center gap-1 text-[13px] text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
+        className="flex min-w-0 items-center gap-1 text-control text-[var(--color-text-primary)] hover:text-[var(--color-accent)]"
       >
         <span className="min-w-0 truncate">{title}</span>
         <svg
@@ -122,7 +122,7 @@ function OutlineTitle({
                 setOpen(false);
                 onJumpTo(s.slug);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] text-[var(--color-text-secondary)] hover:bg-[rgba(var(--color-primary-rgb),0.08)] hover:text-[var(--color-text-primary)]"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-[var(--color-text-secondary)] hover:bg-[rgba(var(--color-primary-rgb),0.08)] hover:text-[var(--color-text-primary)]"
               style={{ paddingLeft: s.level === 3 ? 20 : 8 }}
             >
               <span className="min-w-0 flex-1 truncate">{s.title}</span>
@@ -192,14 +192,14 @@ export function KbDocToolbar({
         type="button"
         onClick={onBack}
         aria-label={backLabel}
-        className="shrink-0 whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+        className="shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
         style={{ letterSpacing: "0.2em" }}
       >
         ‹ {backLabel}
       </button>
       <div className="relative flex min-w-0 flex-1 items-center gap-1">
         {breadcrumb && breadcrumb.length > 0 && (
-          <span className="hidden min-w-0 shrink truncate text-[11px] text-[var(--color-text-tertiary)] sm:inline max-w-[50%]">
+          <span className="hidden min-w-0 shrink truncate text-2xs text-[var(--color-text-tertiary)] sm:inline max-w-[50%]">
             {breadcrumb.join(" / ")}&nbsp;/
           </span>
         )}
@@ -212,14 +212,14 @@ export function KbDocToolbar({
             outlineAria={outlineAria}
           />
         ) : (
-          <span className="min-w-0 truncate text-[13px] text-[var(--color-text-primary)]">
+          <span className="min-w-0 truncate text-control text-[var(--color-text-primary)]">
             {title}
           </span>
         )}
       </div>
       {typeBadge && (
         <span
-          className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-text-secondary)]"
+          className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
           style={{ letterSpacing: "0.16em" }}
         >
           {typeBadge}

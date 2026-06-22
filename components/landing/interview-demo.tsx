@@ -139,7 +139,7 @@ function ExchangeView({
       {answering && ex.identify && (
         <div className="cite-pop flex justify-start">
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(var(--color-accent-rgb),0.35)] bg-[rgba(var(--color-accent-rgb),0.07)] px-2.5 py-1 font-mono text-[10px] text-[var(--color-accent)]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(var(--color-accent-rgb),0.35)] bg-[rgba(var(--color-accent-rgb),0.07)] px-2.5 py-1 font-mono text-2xs text-[var(--color-accent)]"
             style={{ letterSpacing: "0.04em" }}
           >
             <span aria-hidden>✓</span> identify_interviewer · {ex.identify}
@@ -169,7 +169,7 @@ function ExchangeView({
             }}
           >
             <span
-              className="mb-1 block font-mono text-[9px] uppercase text-[var(--color-primary)]"
+              className="mb-1 block font-mono text-3xs uppercase text-[var(--color-primary)]"
               style={{ letterSpacing: "0.32em" }}
             >
               agent
@@ -304,7 +304,7 @@ export function InterviewDemo() {
         {/* Frame top bar */}
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
           <span
-            className="flex items-center gap-2 font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+            className="flex items-center gap-2 font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
             style={{ letterSpacing: "0.22em" }}
           >
             <span
@@ -315,7 +315,7 @@ export function InterviewDemo() {
             interview replay · scripted demo
           </span>
           <span
-            className="hidden font-mono text-[10px] text-[var(--color-text-tertiary)] sm:inline"
+            className="hidden font-mono text-2xs text-[var(--color-text-tertiary)] sm:inline"
             style={{ letterSpacing: "0.12em" }}
           >
             queritae.com/you
@@ -375,11 +375,11 @@ export function InterviewDemo() {
                 aria-hidden
                 className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-primary)]"
               />
-              <span className="caret-blink flex-1 truncate text-[13px] text-[var(--color-text-secondary)]">
+              <span className="caret-blink flex-1 truncate text-control text-[var(--color-text-secondary)]">
                 Ask the next question…
               </span>
               <span
-                className="shrink-0 font-mono text-[9px] uppercase text-[var(--color-text-tertiary)] transition-colors group-hover:text-[var(--color-text-secondary)]"
+                className="shrink-0 font-mono text-3xs uppercase text-[var(--color-text-tertiary)] transition-colors group-hover:text-[var(--color-text-secondary)]"
                 style={{ letterSpacing: "0.28em" }}
               >
                 play ↵
@@ -390,7 +390,7 @@ export function InterviewDemo() {
           {/* Mini knowledge-base panel — files light up as they're cited. */}
           <aside className="hidden w-[230px] shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-void)]/40 md:flex">
             <div
-              className="border-b border-[var(--color-border)] px-3.5 py-2.5 text-left font-mono text-[9px] uppercase text-[var(--color-text-tertiary)]"
+              className="border-b border-[var(--color-border)] px-3.5 py-2.5 text-left font-mono text-3xs uppercase text-[var(--color-text-tertiary)]"
               style={{ letterSpacing: "0.28em" }}
             >
               knowledge base
@@ -420,7 +420,7 @@ export function InterviewDemo() {
                     />
                     <span className="truncate">{path}</span>
                     {isCited && (
-                      <span className="cite-pop ml-auto shrink-0 text-[9px] uppercase text-[var(--color-accent)]">
+                      <span className="cite-pop ml-auto shrink-0 text-3xs uppercase text-[var(--color-accent)]">
                         cited
                       </span>
                     )}
@@ -429,7 +429,7 @@ export function InterviewDemo() {
               })}
             </ul>
             <div
-              className="border-t border-[var(--color-border)] px-3.5 py-2.5 text-left font-mono text-[9px] text-[var(--color-text-tertiary)]"
+              className="border-t border-[var(--color-border)] px-3.5 py-2.5 text-left font-mono text-3xs text-[var(--color-text-tertiary)]"
               style={{ letterSpacing: "0.08em" }}
             >
               every file public · synced from GitHub
@@ -445,7 +445,7 @@ export function InterviewDemo() {
             key={s.chip}
             type="button"
             onClick={() => jumpTo(i)}
-            className={`rounded-full border px-3 py-1 text-[12px] transition-colors ${
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
               !reduce && i === exIdx
                 ? "border-[rgba(var(--color-accent-rgb),0.5)] bg-[rgba(var(--color-accent-rgb),0.08)] text-[var(--color-text-primary)]"
                 : "border-[var(--color-border)] bg-[var(--color-card)]/40 text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"

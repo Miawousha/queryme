@@ -115,7 +115,7 @@ export function ChatMessage({
       >
         {isAssistant && (
           <span
-            className="mb-1 block font-mono text-[9px] uppercase text-[var(--color-primary)]"
+            className="mb-1 block font-mono text-3xs uppercase text-[var(--color-primary)]"
             style={{ letterSpacing: "0.32em" }}
           >
             {agentLabel}
@@ -218,7 +218,7 @@ export function ChatMessage({
             )}
           </div>
         ) : (
-          <p className="whitespace-pre-wrap text-[14px] leading-relaxed">{text}</p>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
         )}
       </div>
     </div>

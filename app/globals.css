@@ -14,8 +14,8 @@
   --color-void: #080e18;
   --color-surface: #0d1520;
   --color-card: #111d2b;
-  --color-border: #1c2c40;
-  --color-border-hover: #264060;
+  --color-border: #2c4057;
+  --color-border-hover: #34496b;
 
   --color-primary: #3b82d6;
   --color-primary-rgb: 59, 130, 214;
@@ -42,6 +42,20 @@
   --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
 
+  /*
+   * Type scale — single source of truth. Tailwind's defaults already cover
+   * the upper rungs (xs=12 · sm=14 · base=16 · lg=18 · xl=20 · 2xl=24 …);
+   * the tokens below add the sub-12px micro tiers and the few bespoke rungs
+   * the design uses, so components reference named steps instead of scattered
+   * `text-[Npx]` magic numbers. Utilities: `text-3xs`, `text-2xs`,
+   * `text-control`, `text-cozy`, `text-display`.
+   */
+  --text-3xs: 0.5625rem; /*  9px — micro eyebrow labels (mono, uppercase) */
+  --text-2xs: 0.625rem; /*  10px — small labels, chips, badges */
+  --text-control: 0.8125rem; /* 13px — buttons, toolbars, compact controls */
+  --text-cozy: 0.9375rem; /* 15px — relaxed lead paragraphs */
+  --text-display: 2rem; /*  32px — large standalone heading (CV name) */
+
   --radius: 0.875rem;
 }
 
@@ -54,17 +68,23 @@
   --color-void: #f4f6f9;
   --color-surface: #e9ecf1;
   --color-card: #ffffff;
-  --color-border: #d0d5de;
-  --color-border-hover: #b8bfc9;
+  --color-border: #c4cad6;
+  --color-border-hover: #aab3c2;
 
   --color-primary: #1a3f6f;
   --color-primary-rgb: 26, 63, 111;
-  --color-accent: #0ea5e9;
-  --color-accent-rgb: 14, 165, 233;
+  /*
+   * Sky #0ea5e9 only reaches ~2.6:1 on these light surfaces — well under the
+   * 4.5 AA floor for the links, inline code, citation marks and accent buttons
+   * that read this token. #0369a1 (sky-700) lifts those to ~5.5–5.9:1 (AA)
+   * while staying recognisably the same hue. Dark mode keeps the brighter cyan.
+   */
+  --color-accent: #0369a1;
+  --color-accent-rgb: 3, 105, 161;
 
   --color-text-primary: #0c1824;
   --color-text-secondary: #5c6b7e;
-  --color-text-tertiary: #69788a;
+  --color-text-tertiary: #5f6c7e;
   --color-text-primary-rgb: 12, 24, 36;
 
   color-scheme: light;

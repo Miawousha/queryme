@@ -36,7 +36,7 @@ export function CvTopBar({
     <div className="no-print mb-8 flex items-center justify-between gap-3">
       <Link
         href={(basePath || "/") as Route}
-        className="font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+        className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
       >
         ← {backLabel}
       </Link>
@@ -50,7 +50,7 @@ export function CvTopBar({
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-full border border-[var(--color-border)] px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          className="rounded-full border border-[var(--color-border)] px-4 py-1.5 font-mono text-2xs uppercase tracking-[0.18em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
         >
           {printLabel}
         </button>

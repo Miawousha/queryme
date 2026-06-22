@@ -25,7 +25,7 @@ export type McpModalProps = {
 };
 
 const SECTION_LABEL_CLASS =
-  "font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
+  "font-mono text-2xs uppercase text-[var(--color-text-tertiary)]";
 
 export function McpModal({ open, onClose, strings }: McpModalProps) {
   const [origin, setOrigin] = useState("");
@@ -98,7 +98,7 @@ export function McpModal({ open, onClose, strings }: McpModalProps) {
             {strings.configLabel}
           </span>
           <CodeBlock value={config} copy={strings.copy} copied={strings.copied} />
-          <p className="text-[11px] leading-relaxed text-[var(--color-text-tertiary)]">
+          <p className="text-2xs leading-relaxed text-[var(--color-text-tertiary)]">
             {strings.configNote}
           </p>
         </div>
@@ -140,7 +140,7 @@ function CopyButton({ onClick, label }: { onClick: () => void; label: string }) 
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1 font-mono text-[10px] uppercase text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-accent)]"
+      className="shrink-0 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1 font-mono text-2xs uppercase text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-accent)]"
       style={{ letterSpacing: "0.18em" }}
     >
       {label}
@@ -166,7 +166,7 @@ function CopyField({
         {label}
       </span>
       <div className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]/40 p-2">
-        <code className="flex-1 overflow-x-auto whitespace-nowrap font-mono text-[12px] text-[var(--color-text-primary)]">
+        <code className="flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs text-[var(--color-text-primary)]">
           {value}
         </code>
         <CopyButton onClick={() => trigger(value)} label={copied ? copiedLabel : copy} />
@@ -187,7 +187,7 @@ function CodeBlock({
   const { copied, trigger } = useCopied();
   return (
     <div className="relative rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]/40">
-      <pre className="overflow-x-auto p-3 font-mono text-[11px] leading-relaxed text-[var(--color-text-primary)]">
+      <pre className="overflow-x-auto p-3 font-mono text-2xs leading-relaxed text-[var(--color-text-primary)]">
         {value}
       </pre>
       <div className="absolute right-2 top-2">

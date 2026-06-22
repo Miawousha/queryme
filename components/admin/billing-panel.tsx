@@ -56,7 +56,7 @@ export function BillingPanel({
           </h2>
           <span
             className={cn(
-              "rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase",
+              "rounded-full border px-2 py-0.5 font-mono text-3xs uppercase",
               plan === "pro"
                 ? "border-[rgba(var(--color-accent-rgb),0.5)] bg-[rgba(var(--color-accent-rgb),0.08)] text-[var(--color-accent)]"
                 : "border-[var(--color-border)] text-[var(--color-text-secondary)]",
@@ -69,7 +69,7 @@ export function BillingPanel({
 
         {plan === "free" ? (
           <>
-            <p className="text-[13px] text-[var(--color-text-secondary)]">
+            <p className="text-control text-[var(--color-text-secondary)]">
               {usedThisMonth} of {freeAllowance} free answers used this month. Past the limit,
               visitors are offered the forward-a-question flow instead of live answers.
             </p>
@@ -84,7 +84,7 @@ export function BillingPanel({
               disabled={busy}
               onClick={() => go("checkout")}
               className={cn(
-                "self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-[10px] uppercase",
+                "self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-2xs uppercase",
                 "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
@@ -95,14 +95,14 @@ export function BillingPanel({
           </>
         ) : (
           <>
-            <p className="text-[13px] text-[var(--color-text-secondary)]" suppressHydrationWarning>
+            <p className="text-control text-[var(--color-text-secondary)]" suppressHydrationWarning>
               Pro is active
               {currentPeriodEnd
                 ? ` — renews ${new Date(currentPeriodEnd).toLocaleDateString()}`
                 : ""}
               . Unlimited answering within fair-use ceilings, custom domains, MCP.
             </p>
-            <p className="text-[12px] text-[var(--color-text-tertiary)]">
+            <p className="text-xs text-[var(--color-text-tertiary)]">
               {usedThisMonth} answered questions this month.
             </p>
             <button
@@ -110,7 +110,7 @@ export function BillingPanel({
               disabled={busy}
               onClick={() => go("portal")}
               className={cn(
-                "self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-[10px] uppercase",
+                "self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-2xs uppercase",
                 "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}

@@ -30,7 +30,7 @@ function PlanLimitNotice({
 
   return (
     <div className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 py-3">
-      <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+      <p className="text-control leading-relaxed text-[var(--color-text-secondary)]">
         {strings.notice}
       </p>
       {!sent && (
@@ -48,18 +48,18 @@ function PlanLimitNotice({
             onChange={(e) => setQuestion(e.target.value)}
             placeholder={strings.questionPlaceholder}
             rows={2}
-            className="text-[13px]"
+            className="text-control"
           />
           <div className="flex items-center gap-2">
             <input
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               placeholder={strings.contactPlaceholder}
-              className="flex-1 rounded-md border border-[var(--color-border)] bg-transparent px-2.5 py-1.5 text-[13px] text-[var(--color-text-primary)]"
+              className="flex-1 rounded-md border border-[var(--color-border)] bg-transparent px-2.5 py-1.5 text-control text-[var(--color-text-primary)]"
             />
             <button
               type="submit"
-              className="shrink-0 rounded-full bg-[var(--color-primary)] px-4 py-1.5 text-[13px] font-medium text-white transition-all hover:brightness-110"
+              className="shrink-0 rounded-full bg-[var(--color-primary)] px-4 py-1.5 text-control font-medium text-white transition-all hover:brightness-110"
             >
               {strings.submit}
             </button>
@@ -341,7 +341,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
             )}
           </span>
           <span
-            className="font-mono text-[10px] uppercase text-[var(--color-text-secondary)]"
+            className="font-mono text-2xs uppercase text-[var(--color-text-secondary)]"
             style={{ letterSpacing: "0.3em" }}
           >
             {isBusy ? t.statusThinking : t.statusReady}
@@ -354,14 +354,14 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
                 <button
                   type="button"
                   onClick={clearChat}
-                  className="rounded-full border border-[var(--color-accent)] bg-[rgba(var(--color-accent-rgb),0.12)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-accent)] transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.22)]"
+                  className="rounded-full border border-[var(--color-accent)] bg-[rgba(var(--color-accent-rgb),0.12)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.18em] text-[var(--color-accent)] transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.22)]"
                 >
                   {t.clearChat.confirm}
                 </button>
                 <button
                   type="button"
                   onClick={cancelClearConfirm}
-                  className="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--color-text-secondary)] hover:text-[var(--color-text-secondary)]"
+                  className="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--color-text-secondary)] hover:text-[var(--color-text-secondary)]"
                 >
                   {t.clearChat.cancel}
                 </button>
@@ -371,14 +371,14 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
                 type="button"
                 onClick={requestClear}
                 disabled={isBusy}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-border)] disabled:hover:text-[var(--color-text-secondary)]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.18em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-border)] disabled:hover:text-[var(--color-text-secondary)]"
               >
                 <ClearChatIcon />
                 {t.clearChat.action}
               </button>
             ))}
           <span
-            className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+            className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
             style={{ letterSpacing: "0.3em" }}
           >
             /chat
@@ -393,7 +393,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
           className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-card)]/40 px-5 py-1.5"
         >
           <span
-            className="font-mono text-[10px] uppercase text-[var(--color-text-secondary)]"
+            className="font-mono text-2xs uppercase text-[var(--color-text-secondary)]"
             style={{ letterSpacing: "0.18em" }}
           >
             {t.identity.chipPrefix}: {identitySummary}
@@ -446,7 +446,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
           {messages.length === 0 && (
             <div className="mt-3 flex flex-col gap-3">
               <p
-                className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+                className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
                 style={{ letterSpacing: "0.3em" }}
               >
                 {t.startersTitle}
@@ -459,7 +459,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
                     onClick={() => submit(s)}
                     disabled={isBusy}
                     className={cn(
-                      "group rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-3.5 py-1.5 text-[12px] text-[var(--color-text-secondary)]",
+                      "group rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-3.5 py-1.5 text-xs text-[var(--color-text-secondary)]",
                       "transition-all duration-200",
                       "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
                       "disabled:cursor-not-allowed disabled:opacity-50",
@@ -513,7 +513,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
             onChange={(e) => setInput(e.target.value)}
             placeholder={t.placeholder}
             rows={1}
-            className="min-h-[42px] resize-none border-transparent bg-transparent text-[14px] focus-visible:border-transparent focus-visible:ring-0"
+            className="min-h-[42px] resize-none border-transparent bg-transparent text-sm focus-visible:border-transparent focus-visible:ring-0"
             disabled={isBusy}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {

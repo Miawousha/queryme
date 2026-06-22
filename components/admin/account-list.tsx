@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 import type { AccountSummary } from "@/lib/accounts/repo";
 import type { AccountStatus } from "@/lib/db/schema";
 
-const TH = "py-2 pr-4 text-left font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]";
-const TD = "py-2 pr-4 text-[13px] text-[var(--color-text-secondary)]";
+const TH = "py-2 pr-4 text-left font-mono text-2xs uppercase text-[var(--color-text-tertiary)]";
+const TD = "py-2 pr-4 text-control text-[var(--color-text-secondary)]";
 const ACTION =
-  "rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-[10px] uppercase disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-2xs uppercase disabled:cursor-not-allowed disabled:opacity-50";
 
 const STATUS_STYLE: Record<AccountStatus, string> = {
   active: "border-[var(--color-primary)] text-[var(--color-primary)]",
@@ -84,7 +84,7 @@ export function AccountList({ accounts }: { accounts: AccountSummary[] }) {
                 <td className={TD}>
                   <span
                     className={cn(
-                      "rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase",
+                      "rounded-full border px-2 py-0.5 font-mono text-3xs uppercase",
                       STATUS_STYLE[status],
                     )}
                     style={{ letterSpacing: "0.16em" }}

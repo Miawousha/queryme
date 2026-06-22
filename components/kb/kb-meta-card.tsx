@@ -5,13 +5,13 @@ import { useKb } from "@/components/kb/kb-context";
 import { formatPeriod } from "@/lib/kb/meta-format";
 
 const LABEL =
-  "font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]";
+  "font-mono text-3xs uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className={LABEL}>{label}</span>
-      <span className="text-[13px] text-[var(--color-text-primary)]">{children}</span>
+      <span className="text-control text-[var(--color-text-primary)]">{children}</span>
     </div>
   );
 }
@@ -24,7 +24,7 @@ function Chips({ label, items }: { label: string; items: string[] }) {
         {items.map((item) => (
           <span
             key={item}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-0.5 text-[11px] text-[var(--color-text-secondary)]"
+            className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-0.5 text-2xs text-[var(--color-text-secondary)]"
           >
             {item}
           </span>

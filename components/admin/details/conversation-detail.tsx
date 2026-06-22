@@ -27,7 +27,7 @@ export function ConversationDetail({
         <Badge>{conversation.channel}</Badge>
         {conversation.language && <Badge>{conversation.language}</Badge>}
         {identity && <Badge>{identity.basis}</Badge>}
-        <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
+        <span className="ml-auto font-mono text-2xs text-[var(--color-text-tertiary)]">
           {conversation.turnCount} turns
         </span>
       </div>
@@ -36,7 +36,7 @@ export function ConversationDetail({
         <div className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] p-3">
           <div className="flex items-center justify-between">
             <span className={LABEL}>Interviewer</span>
-            <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">updated {fmt(identity.updatedAt)}</span>
+            <span className="font-mono text-2xs text-[var(--color-text-tertiary)]">updated {fmt(identity.updatedAt)}</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {identity.company && <Field label="Company" value={identity.company} />}
@@ -47,7 +47,7 @@ export function ConversationDetail({
           {identity.notes && (
             <div className="flex flex-col gap-1">
               <span className={LABEL}>Notes</span>
-              <p className="text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+              <p className="text-control leading-relaxed text-[var(--color-text-secondary)]">
                 {identity.notes}
               </p>
             </div>
@@ -55,13 +55,13 @@ export function ConversationDetail({
         </div>
       )}
 
-      <p className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+      <p className="font-mono text-2xs text-[var(--color-text-tertiary)]">
         id {conversation.id} · started {fmt(conversation.startedAt)} · last{" "}
         {fmt(conversation.lastMessageAt)}
       </p>
 
       {transcript === null ? (
-        <p className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]">
+        <p className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
           Loading transcript…
         </p>
       ) : transcript.length === 0 ? (
@@ -73,7 +73,7 @@ export function ConversationDetail({
               <span className={LABEL}>
                 {t.role} · {fmt(t.at)}
               </span>
-              <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--color-text-primary)]">
+              <p className="whitespace-pre-wrap text-control leading-relaxed text-[var(--color-text-primary)]">
                 {t.text}
               </p>
             </div>

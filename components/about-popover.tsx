@@ -106,13 +106,13 @@ export function AboutPopover({
         </div>
 
         <p
-          className="font-mono text-[10px] uppercase leading-relaxed text-[var(--color-text-tertiary)]"
+          className="font-mono text-2xs uppercase leading-relaxed text-[var(--color-text-tertiary)]"
           style={{ letterSpacing: "0.24em" }}
         >
           {strings.transparency}
         </p>
 
-        <div className="flex flex-col gap-2 text-[13px]">
+        <div className="flex flex-col gap-2 text-control">
           {links.map((link) => (
             <a
               key={link.href}

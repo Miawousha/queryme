@@ -111,7 +111,7 @@ export function McpTerminal() {
     >
       <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
         <span
-          className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]"
+          className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
           style={{ letterSpacing: "0.22em" }}
         >
           any mcp client · streamable http
@@ -119,13 +119,13 @@ export function McpTerminal() {
         <button
           type="button"
           onClick={copyEndpoint}
-          className="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-[9px] uppercase text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
+          className="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-3xs uppercase text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
           style={{ letterSpacing: "0.18em" }}
         >
           {copied ? "copied ✓" : "copy endpoint"}
         </button>
       </div>
-      <div className="min-h-[230px] space-y-1 px-4 py-4 font-mono text-[12px] leading-relaxed sm:text-[12.5px]">
+      <div className="min-h-[230px] space-y-1 px-4 py-4 font-mono text-xs leading-relaxed sm:text-[12.5px]">
         {rendered}
         {done && !reduce && (
           <div aria-hidden className="caret-blink text-[var(--color-text-primary)]">

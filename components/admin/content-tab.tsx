@@ -69,7 +69,7 @@ export function ContentTab({
                 >
                   {prettyRepo(state.active.repoUrl)}
                 </a>
-                <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                <span className="shrink-0 font-mono text-2xs text-[var(--color-text-tertiary)]">
                   synced {fmt(state.active.syncedAt)}
                 </span>
               </div>
@@ -123,14 +123,14 @@ export function ContentTab({
           <ul className="flex flex-col gap-1.5 text-xs">
             {state.history.map((row) => (
               <li key={row.id} className="flex items-baseline gap-3">
-                <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                <span className="font-mono text-2xs text-[var(--color-text-tertiary)]">
                   {fmt(row.syncedAt)}
                 </span>
                 <span
                   className={
                     row.status === "ok"
-                      ? "font-mono text-[10px] uppercase text-emerald-500"
-                      : "font-mono text-[10px] uppercase text-red-500"
+                      ? "font-mono text-2xs uppercase text-emerald-500"
+                      : "font-mono text-2xs uppercase text-red-500"
                   }
                 >
                   {row.status}

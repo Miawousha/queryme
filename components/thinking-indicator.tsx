@@ -16,7 +16,7 @@ export function ThinkingIndicator({ agentLabel, label }: ThinkingIndicatorProps)
         }}
       >
         <span
-          className="mb-1 block font-mono text-[9px] uppercase text-[var(--color-primary)]"
+          className="mb-1 block font-mono text-3xs uppercase text-[var(--color-primary)]"
           style={{ letterSpacing: "0.32em" }}
         >
           {agentLabel}
@@ -27,7 +27,7 @@ export function ThinkingIndicator({ agentLabel, label }: ThinkingIndicatorProps)
             <span />
             <span />
           </span>
-          <span className="text-[13px] italic text-[var(--color-text-secondary)]">
+          <span className="text-control italic text-[var(--color-text-secondary)]">
             {label}
           </span>
         </div>

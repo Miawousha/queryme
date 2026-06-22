@@ -51,24 +51,24 @@ export function QuestionDetail({
       <div className="flex flex-wrap items-center gap-2">
         {savedAt ? (
           <span
-            className="rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-text-secondary)]"
+            className="rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
             style={{ letterSpacing: "0.16em" }}
           >
             answered
           </span>
         ) : (
           <span
-            className="rounded-full border border-[var(--color-accent)] px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--color-accent)]"
+            className="rounded-full border border-[var(--color-accent)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-accent)]"
             style={{ letterSpacing: "0.16em" }}
           >
             unanswered
           </span>
         )}
-        <span className="ml-auto font-mono text-[10px] text-[var(--color-text-tertiary)]">
+        <span className="ml-auto font-mono text-2xs text-[var(--color-text-tertiary)]">
           {fmt(question.createdAt)}
         </span>
       </div>
-      <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[var(--color-text-primary)]">
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text-primary)]">
         {question.question}
       </p>
       {question.contact && <Field label="Visitor contact" value={question.contact} />}
@@ -78,11 +78,11 @@ export function QuestionDetail({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={6}
-          className="rounded-md border border-[var(--color-border)] bg-transparent p-2 text-[13px]"
+          className="rounded-md border border-[var(--color-border)] bg-transparent p-2 text-control"
           placeholder="Write the reply you want to send…"
         />
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          <span className="font-mono text-2xs text-[var(--color-text-tertiary)]">
             {question.contact ? "Will email the visitor on send." : "No contact — saved locally only."}
           </span>
           <button
@@ -90,7 +90,7 @@ export function QuestionDetail({
             disabled={busy || !draft.trim()}
             onClick={submit}
             className={cn(
-              "rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-[10px] uppercase",
+              "rounded-md border border-[var(--color-border)] px-3 py-1.5 font-mono text-2xs uppercase",
               "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
               "disabled:cursor-not-allowed disabled:opacity-50",
             )}
@@ -107,7 +107,7 @@ export function QuestionDetail({
           onClick={() => onOpenConversation(question.conversationId!)}
           className={cn(
             "self-start rounded-md border border-[var(--color-border)] px-3 py-1.5",
-            "font-mono text-[10px] uppercase text-[var(--color-text-secondary)] transition-colors",
+            "font-mono text-2xs uppercase text-[var(--color-text-secondary)] transition-colors",
             "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
             "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
           )}

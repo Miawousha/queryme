@@ -58,7 +58,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-4 flex items-center gap-3">
       <span aria-hidden className="h-2 w-2 shrink-0 rounded-[1px] bg-[var(--color-accent)]" />
-      <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.26em] text-[var(--color-text-secondary)]">
+      <h2 className="font-mono text-2xs font-medium uppercase tracking-[0.26em] text-[var(--color-text-secondary)]">
         {children}
       </h2>
       <span aria-hidden className="h-px flex-1 bg-[var(--color-border)]" />
@@ -70,7 +70,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
  * experience, education, projects and talks. */
 function MetaMarker({ children }: { children: React.ReactNode }) {
   return (
-    <span className="shrink-0 whitespace-nowrap font-mono text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
+    <span className="shrink-0 whitespace-nowrap font-mono text-xs uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
       {children}
     </span>
   );
@@ -133,20 +133,20 @@ export function CvDocumentView({
       <header className="cv-section relative mb-9 pb-6">
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-[32px] font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
+            <h1 className="font-display text-display font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
               {kb.profile.name}
             </h1>
             {kb.profile.headline && (
-              <p className="mt-1.5 font-display text-[16px] leading-snug text-[var(--color-text-secondary)]">
+              <p className="mt-1.5 font-display text-base leading-snug text-[var(--color-text-secondary)]">
                 {kb.profile.headline}
               </p>
             )}
             {kb.profile.bio && (
-              <p className="mt-3 max-w-[64ch] font-display text-[14px] leading-relaxed text-[var(--color-text-tertiary)]">
+              <p className="mt-3 max-w-[64ch] font-display text-sm leading-relaxed text-[var(--color-text-tertiary)]">
                 {kb.profile.bio}
               </p>
             )}
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12px] text-[var(--color-text-tertiary)]">
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-[var(--color-text-tertiary)]">
               {kb.profile.location && (
                 <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
               )}
@@ -180,7 +180,7 @@ export function CvDocumentView({
                 className="cv-qr h-[88px] w-[88px] text-[var(--color-text-primary)]"
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
-              <span className="font-mono text-[10px] tracking-[0.02em] text-[var(--color-text-tertiary)]">
+              <span className="font-mono text-2xs tracking-[0.02em] text-[var(--color-text-tertiary)]">
                 {profileUrl.replace(/^https?:\/\//, "")}
               </span>
             </div>
@@ -228,7 +228,7 @@ export function CvDocumentView({
               return (
                 <div key={e.slug} className="cv-entry cv-entry--flow">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-                    <h3 className="font-display text-[16px] font-semibold leading-snug text-[var(--color-text-primary)]">
+                    <h3 className="font-display text-base font-semibold leading-snug text-[var(--color-text-primary)]">
                       {e.frontmatter.role}
                       <span className="text-[var(--color-text-tertiary)]"> · </span>
                       <span className="text-[var(--color-text-secondary)]">{e.frontmatter.company}</span>
@@ -239,18 +239,18 @@ export function CvDocumentView({
                     </MetaMarker>
                   </div>
                   {e.frontmatter.location && (
-                    <p className="mt-1 flex items-center gap-1.5 font-mono text-[11px] tracking-[0.06em] text-[var(--color-text-tertiary)]">
+                    <p className="mt-1 flex items-center gap-1.5 font-mono text-2xs tracking-[0.06em] text-[var(--color-text-tertiary)]">
                       <PinIcon />
                       {e.frontmatter.location}
                     </p>
                   )}
                   {e.frontmatter.summary && (
-                    <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                    <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                       {e.frontmatter.summary}
                     </p>
                   )}
                   {e.frontmatter.highlights && e.frontmatter.highlights.length > 0 ? (
-                    <ul className="cv-prose mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                    <ul className="cv-prose mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                       {e.frontmatter.highlights.map((h, i) => (
                         <li key={i}>
                           <ReactMarkdown
@@ -264,7 +264,7 @@ export function CvDocumentView({
                     </ul>
                   ) : (
                     fallbackBullets && (
-                      <div className="cv-prose mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                      <div className="cv-prose mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{fallbackBullets}</ReactMarkdown>
                       </div>
                     )
@@ -290,7 +290,7 @@ export function CvDocumentView({
             {kb.education.entries.map((ed, i) => (
               <div
                 key={i}
-                className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 text-[14px] leading-snug"
+                className="cv-entry flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 text-sm leading-snug"
               >
                 <span>
                   <span className="font-display font-semibold text-[var(--color-text-primary)]">
@@ -316,7 +316,7 @@ export function CvDocumentView({
               .map((s) => (
                 <li
                   key={s.name}
-                  className="cv-entry rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-mono text-[12px] text-[var(--color-text-secondary)]"
+                  className="cv-entry rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-mono text-xs text-[var(--color-text-secondary)]"
                 >
                   {s.name}
                 </li>
@@ -328,7 +328,7 @@ export function CvDocumentView({
       {kb.projects.length > 0 && (
         <section className="cv-section mb-9">
           <SectionHeading>{t.sections.projects}</SectionHeading>
-          <ul className="flex flex-col gap-2 text-[14px] leading-snug">
+          <ul className="flex flex-col gap-2 text-sm leading-snug">
             {kb.projects.map((p) => {
               const link = projectLink(p);
               return (
@@ -367,7 +367,7 @@ export function CvDocumentView({
       {kb.talks.length > 0 && (
         <section className="cv-section mb-9">
           <SectionHeading>{t.sections.talks}</SectionHeading>
-          <ul className="flex flex-col gap-2 text-[14px] leading-snug">
+          <ul className="flex flex-col gap-2 text-sm leading-snug">
             {kb.talks.map((tk) => (
               <li
                 key={tk.slug}
@@ -398,12 +398,12 @@ export function CvDocumentView({
       {kb.publications.length > 0 && (
         <section className="cv-section mb-9">
           <SectionHeading>{t.sections.publications}</SectionHeading>
-          <ul className="flex flex-col gap-2.5 text-[14px] leading-snug">
+          <ul className="flex flex-col gap-2.5 text-sm leading-snug">
             {kb.publications.map((pub) => {
               const sub = [pub.frontmatter.venue, pub.frontmatter.year].filter(Boolean).join(" · ");
               return (
                 <li key={pub.slug} className="cv-entry">
-                  <p className="font-display text-[14px] font-semibold leading-snug text-[var(--color-text-primary)]">
+                  <p className="font-display text-sm font-semibold leading-snug text-[var(--color-text-primary)]">
                     {pub.frontmatter.title}
                   </p>
                   {(pub.frontmatter.authors || sub) && (

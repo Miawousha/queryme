@@ -10,13 +10,13 @@ export function AdminHeader({ username }: { username: string }) {
         <MatriceLogo size={28} animated />
         <div className="flex flex-col leading-tight">
           <span
-            className="whitespace-nowrap font-mono text-[10px] uppercase text-[var(--color-primary)]"
+            className="whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-primary)]"
             style={{ letterSpacing: "0.32em" }}
           >
             queritae
           </span>
           <span
-            className="whitespace-nowrap font-display text-[14px] font-medium text-[var(--color-text-primary)]"
+            className="whitespace-nowrap font-display text-sm font-medium text-[var(--color-text-primary)]"
             style={{ letterSpacing: "-0.01em" }}
           >
             Admin
@@ -24,7 +24,7 @@ export function AdminHeader({ username }: { username: string }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <span className="font-mono text-[10px] uppercase text-[var(--color-text-tertiary)]" style={{ letterSpacing: "0.18em" }}>
+        <span className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]" style={{ letterSpacing: "0.18em" }}>
           {username}
         </span>
         <ThemeToggle label="Switch between light and dark theme" />
