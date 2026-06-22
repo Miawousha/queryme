@@ -114,6 +114,43 @@ describe("loadKbManifest — symlink safety", () => {
   });
 });
 
+describe("loadKbManifest — authored one-liner → meta.description", () => {
+  it("maps an experience `summary` into meta.description (the panel hover preview source)", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-summary-"));
+    try {
+      await fs.mkdir(path.join(dir, "experience"), { recursive: true });
+      await fs.writeFile(
+        path.join(dir, "experience", "2020-acme.md"),
+        '---\ncompany: Acme\nrole: Engineer\nstart: "2020-01"\nend: present\nsummary: One-line experience summary.\n---\n\n## Context\nBody text.\n',
+      );
+
+      const manifest = await loadKbManifest(dir);
+      const exp = manifest.find((f) => f.path === "experience/2020-acme.md");
+
+      expect(exp?.meta?.description).toBe("One-line experience summary.");
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("prefers an explicit `description` over `summary` when both are present", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-summary-"));
+    try {
+      await fs.writeFile(
+        path.join(dir, "thing.md"),
+        "---\ndescription: Explicit description.\nsummary: Fallback summary.\n---\n\nBody.\n",
+      );
+
+      const manifest = await loadKbManifest(dir);
+      const f = manifest.find((x) => x.path === "thing.md");
+
+      expect(f?.meta?.description).toBe("Explicit description.");
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("loadKbManifest — sections", () => {
   it("extracts h2/h3 sections for markdown files and omits the key otherwise", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kb-sections-"));

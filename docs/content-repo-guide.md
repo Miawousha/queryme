@@ -300,6 +300,14 @@ Folders under `kb/` hold one Markdown file per item. Each file has a YAML
 a free Markdown **body** with the narrative. The filename (without `.md`) is the
 entry's **slug** and is what citations and `cv-config` reference.
 
+> **Hover preview.** In the chat panel's KB tree, hovering an entry shows a small
+> preview card. Its body uses the entry's one-line summary — `summary` for
+> experience, `description` for projects (and per-repo `description`) — when
+> present; otherwise it falls back to the first section of the Markdown body.
+> Writing that one-liner gives a clean, intentional preview, and it doubles as
+> the printable-CV subtitle. Hovering a specific **section** previews that
+> section's text.
+
 ### `kb/experience/<slug>.md` (e.g. `2022-acme.md`)
 
 ```markdown
@@ -309,7 +317,7 @@ role: Principal Engineer
 start: "2022-03"            # YYYY-MM | YYYY-MM-DD | present
 end: present
 location: Remote            # optional
-summary: "Led the platform team rebuilding Acme's billing core."  # optional, 1 line
+summary: "Led the platform team rebuilding Acme's billing core."  # optional, 1 line — CV subtitle + KB hover preview
 highlights:                 # optional; up to 8 bullets, ≤280 chars each — used on the printable CV
   - "Cut p99 checkout latency 70% by resharding the ledger."
   - "Grew the platform team from 4 to 16 engineers."
@@ -335,6 +343,7 @@ Acme processes ~2M transactions/day…
 ```markdown
 ---
 name: openpipe
+description: "Streaming data pipeline with a visual builder."  # optional, 1 line — CV subtitle + KB hover preview
 year: 2024            # optional integer
 stack: [Rust, WASM]   # optional
 tags: [tooling]       # optional

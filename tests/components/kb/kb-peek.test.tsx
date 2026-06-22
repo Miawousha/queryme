@@ -49,4 +49,41 @@ describe("KbPeek", () => {
     const { container } = render(<KbPeek active={active} />);
     expect(container.firstChild).toBeNull();
   });
+
+  const FILE_WITH_SUMMARY: KbFile = { ...FILE, meta: { description: "Authored one-liner summary." } };
+
+  it("doc: prefers the authored meta.description and shows it immediately (before the body loads)", () => {
+    const active: PeekActive = {
+      file: FILE_WITH_SUMMARY,
+      target: { kind: "doc" },
+      rect,
+      state: { status: "loading" },
+    };
+    render(<KbPeek active={active} />);
+    expect(screen.getByText("Authored one-liner summary.")).toBeInTheDocument();
+    expect(screen.queryByText("Loading preview…")).toBeNull();
+  });
+
+  it("doc: still shows the authored summary even when the body fetch errors", () => {
+    const active: PeekActive = {
+      file: FILE_WITH_SUMMARY,
+      target: { kind: "doc" },
+      rect,
+      state: { status: "error" },
+    };
+    render(<KbPeek active={active} />);
+    expect(screen.getByText("Authored one-liner summary.")).toBeInTheDocument();
+  });
+
+  it("section: ignores the doc summary and uses the section body", () => {
+    const active: PeekActive = {
+      file: FILE_WITH_SUMMARY,
+      target: { kind: "section", slug: "overview" },
+      rect,
+      state: { status: "ready", text: "## Overview\n\nOverview body.\n\n## Next\n\nx" },
+    };
+    render(<KbPeek active={active} />);
+    expect(screen.getByText("Overview body.")).toBeInTheDocument();
+    expect(screen.queryByText("Authored one-liner summary.")).toBeNull();
+  });
 });

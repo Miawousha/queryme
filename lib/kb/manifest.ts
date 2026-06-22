@@ -81,7 +81,11 @@ function pickMeta(data: Record<string, unknown>): KbFileMeta | null {
     language: asString(data.language),
     stars: asNumber(data.stars),
     last_active: asString(data.last_active),
-    description: asString(data.description),
+    // The entry's authored one-liner. Projects/repos call it `description`,
+    // experiences call it `summary` (both already used by the printable CV);
+    // fold them into one field so the panel's hover preview has a single,
+    // collection-agnostic source. `description` wins when both are present.
+    description: asString(data.description) ?? asString(data.summary),
   };
   const hasAny = Object.values(meta).some((v) => v !== undefined);
   return hasAny ? meta : null;
