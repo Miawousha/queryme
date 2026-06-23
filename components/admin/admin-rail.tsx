@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { LABEL } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
 
-type IconName = "conversations" | "questions" | "analytics" | "content" | "domains" | "billing";
+type IconName = "conversations" | "questions" | "analytics" | "content" | "domains" | "billing" | "signature";
 type Item = { href: string; label: string; icon: IconName; count?: number; accentCount?: boolean };
 type Group = { title: string; items: Item[] };
 
@@ -39,6 +39,7 @@ export function AdminRail({
         { href: `${adminBasePath}/settings/content`, label: "Content source", icon: "content" },
         { href: `${adminBasePath}/settings/domains`, label: "Custom domains", icon: "domains" },
         { href: `${adminBasePath}/settings/billing`, label: "Billing", icon: "billing" },
+        { href: `${adminBasePath}/settings/signature`, label: "Email signature", icon: "signature" },
       ],
     },
   ];
@@ -155,6 +156,12 @@ const GLYPHS: Record<IconName, React.ReactNode> = {
     <>
       <rect x="2" y="5" width="20" height="14" rx="2" />
       <path d="M2 10h20" />
+    </>
+  ),
+  signature: (
+    <>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
     </>
   ),
 };

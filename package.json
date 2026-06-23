@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_BASE_URL next dev",
     "build": "next build",
+    "build:badge": "tsx scripts/build-badge.ts",
     "start": "env -u ANTHROPIC_API_KEY -u ANTHROPIC_BASE_URL next start",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
@@ -61,6 +62,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
