@@ -67,6 +67,6 @@ export async function middleware(request: NextRequest) {
 // assets, none of which render the HTML document the CSP protects.
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|badge|icon.svg).*)",
   ],
 };

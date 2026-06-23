@@ -23,7 +23,13 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      {
+        source: "/badge/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ];
   },
 };
 
