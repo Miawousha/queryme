@@ -31,6 +31,8 @@ type Props = {
   /** When false, MCP button/modal are hidden. Defaults to true. */
   isRootAccount?: boolean;
   reportHref?: string | null;
+  /** Admin dashboard path for the signed-in owner, or null to hide the link. */
+  adminHref?: string | null;
 };
 
 /**
@@ -53,6 +55,7 @@ export function HomeShell({
   apiBasePath = "/api",
   isRootAccount = true,
   reportHref = null,
+  adminHref = null,
 }: Props) {
   const { cvPrintBase } = useKb();
   const [cvOpen, setCvOpen] = useState(false);
@@ -77,6 +80,8 @@ export function HomeShell({
           onToggleKb={() => onKbCollapsedChange((c) => !c)}
           kbShowLabel={t.kbPanel.show}
           kbHideLabel={t.kbPanel.hide}
+          adminHref={adminHref}
+          adminButtonLabel="Admin"
           queritae={{
             strings: t.queritae,
             landingHref: "/?ref=profile",

@@ -84,3 +84,21 @@ describe("AppTopBar CV button", () => {
     expect(screen.queryByRole("button", { name: "Open CV" })).toBeNull();
   });
 });
+
+describe("AppTopBar admin link", () => {
+  it("renders an Admin link to the dashboard when adminHref is provided", () => {
+    render(<AppTopBar {...baseProps({ adminHref: "/ada/admin", adminButtonLabel: "Admin" })} />);
+    const link = screen.getByRole("link", { name: "Admin" });
+    expect(link).toHaveAttribute("href", "/ada/admin");
+  });
+
+  it("renders no Admin link when adminHref is null (anonymous or non-owner)", () => {
+    render(<AppTopBar {...baseProps({ adminHref: null, adminButtonLabel: "Admin" })} />);
+    expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
+  });
+
+  it("renders no Admin link when adminHref is omitted", () => {
+    render(<AppTopBar {...baseProps()} />);
+    expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
+  });
+});

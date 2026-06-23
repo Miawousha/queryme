@@ -6,6 +6,7 @@ import { HomePageClient } from "@/components/home-page-client";
 import { NotConfiguredScreen } from "@/components/not-configured-screen";
 import { getActivePersonaSourceRowForAccount } from "@/lib/persona-source";
 import { loadActiveAccountForSlug } from "@/lib/accounts/load";
+import { requireSessionAccount, canAdminister } from "@/lib/accounts/guard";
 import { resolveProfileUrl } from "@/lib/cv/profile-url";
 import { buildReportMailto } from "@/lib/report/mailto";
 
@@ -29,6 +30,12 @@ export default async function AccountHome({
   const profileUrl = await resolveProfileUrl({ accountId: account.id, username: account.username });
   const reportEmail = process.env.REPORT_EMAIL ?? "abuse@queritae.com";
   const reportHref = buildReportMailto(reportEmail, { slug: account.username, url: profileUrl });
+
+  // Surface the admin link only to a signed-in viewer who may administer this
+  // account (its owner, or a super-admin). Anonymous visitors see nothing.
+  const session = await requireSessionAccount();
+  const adminHref = canAdminister(session, account) ? `/${account.username}/admin` : null;
+
   return (
     <HomePageClient
       strings={strings}
@@ -38,6 +45,7 @@ export default async function AccountHome({
       cvPrintBase={`/${account.username}`}
       isRootAccount={false}
       reportHref={reportHref}
+      adminHref={adminHref}
     />
   );
 }

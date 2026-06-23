@@ -14,4 +14,10 @@ describe("AdminHeader", () => {
     expect(screen.getByText("queritae")).toBeInTheDocument();
     expect(screen.getByText("alex")).toBeInTheDocument();
   });
+
+  it("links back to the account's public chat page", () => {
+    render(<AdminHeader username="alex" />);
+    const link = screen.getByRole("link", { name: "Chat" });
+    expect(link).toHaveAttribute("href", "/alex");
+  });
 });

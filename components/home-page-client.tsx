@@ -20,6 +20,8 @@ type Props = {
   /** When false, MCP button/modal are hidden. Defaults to true. */
   isRootAccount?: boolean;
   reportHref?: string | null;
+  /** Admin dashboard path for the signed-in owner, or null to hide the link. */
+  adminHref?: string | null;
 };
 
 export function HomePageClient({
@@ -30,6 +32,7 @@ export function HomePageClient({
   cvPrintBase = "",
   isRootAccount = true,
   reportHref = null,
+  adminHref = null,
 }: Props) {
   const [lang, setLang] = useState<UiLang>("en");
   const [mcpOpen, setMcpOpen] = useState(false);
@@ -62,6 +65,7 @@ export function HomePageClient({
         apiBasePath={apiBasePath}
         isRootAccount={isRootAccount}
         reportHref={reportHref}
+        adminHref={adminHref}
       />
     </KbProvider>
   );
