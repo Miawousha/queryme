@@ -1,14 +1,11 @@
 import { requireAdminAccount } from "@/lib/admin/require-admin";
 import { resolveProfileUrl } from "@/lib/cv/profile-url";
+import { siteOrigin } from "@/lib/site-url";
 import { PageHeader } from "@/components/admin/page-header";
 import { SignaturePanel } from "@/components/admin/sections/signature-panel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function siteOrigin(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-}
 
 export default async function SignatureSettingsPage({
   params,

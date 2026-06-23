@@ -1,11 +1,6 @@
 import { getDb } from "@/lib/db/client";
 import { listDomainsByAccount } from "@/lib/domains/repo";
-
-/** Platform origin, e.g. https://queritae.com (trailing slash trimmed). Mirrors
- * the NEXT_PUBLIC_SITE_URL pattern in lib/auto-sync/url.ts. */
-function siteOrigin(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-}
+import { siteOrigin } from "@/lib/site-url";
 
 function fallbackUrl(username?: string): string {
   return username ? `${siteOrigin()}/${encodeURIComponent(username)}` : siteOrigin();
