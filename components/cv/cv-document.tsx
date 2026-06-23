@@ -129,7 +129,7 @@ export function CvDocumentView({
   const links = kb.publicContact.links;
 
   return (
-    <article className="cv-page text-[var(--color-text-secondary)]">
+    <article lang={lang} className="cv-page text-[var(--color-text-secondary)]">
       <header className="cv-section relative mb-9 pb-6">
         {/* Masthead band: avatar + name + tagline + QR share one row. The bio
             and contacts drop to full-width rows below so they aren't squeezed
@@ -174,7 +174,7 @@ export function CvDocumentView({
         {/* Bio + contacts: full-width rows below the band, free of the band's
             width constraints. */}
         {kb.profile.bio && (
-          <p className="mt-5 max-w-[64ch] font-display text-sm leading-relaxed text-[var(--color-text-tertiary)]">
+          <p className="mt-5 max-w-[64ch] font-display text-sm leading-relaxed text-justify hyphens-auto text-[var(--color-text-tertiary)]">
             {kb.profile.bio}
           </p>
         )}
