@@ -174,7 +174,7 @@ export function CvDocumentView({
         {/* Bio + contacts: full-width rows below the band, free of the band's
             width constraints. */}
         {kb.profile.bio && (
-          <p className="mt-5 max-w-[64ch] font-display text-sm leading-relaxed text-justify hyphens-auto text-[var(--color-text-tertiary)]">
+          <p className="mt-5 font-display text-sm leading-relaxed text-justify hyphens-auto text-[var(--color-text-tertiary)]">
             {kb.profile.bio}
           </p>
         )}
