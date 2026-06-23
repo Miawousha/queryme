@@ -150,6 +150,17 @@ export async function setAccountStatus(
   return row;
 }
 
+/** Stamp the Terms acceptance time for an account. Idempotent (last write wins). */
+export async function acceptTos(db: Db, accountId: string): Promise<Account> {
+  const [row] = await db
+    .update(accounts)
+    .set({ tosAcceptedAt: new Date() })
+    .where(eq(accounts.id, accountId))
+    .returning();
+  if (!row) throw new Error(`no account '${accountId}'`);
+  return row;
+}
+
 export type AccountSummary = {
   id: string;
   username: string;
