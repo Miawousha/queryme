@@ -132,7 +132,16 @@ export function CvDocumentView({
     <article className="cv-page text-[var(--color-text-secondary)]">
       <header className="cv-section relative mb-9 pb-6">
         <div className="flex items-start justify-between gap-6">
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-start gap-5">
+            {kb.profile.photo && (
+              // eslint-disable-next-line @next/next/no-img-element -- plain <img>: any host, no next/image config; prints under existing print.css
+              <img
+                src={kb.profile.photo}
+                alt={t.photoAlt.replace("{name}", kb.profile.name)}
+                className="cv-photo h-20 w-20 shrink-0 rounded-full object-cover ring-1 ring-[var(--color-border)]"
+              />
+            )}
+            <div className="min-w-0 flex-1">
             <h1 className="font-display text-display font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
               {kb.profile.name}
             </h1>
@@ -170,6 +179,7 @@ export function CvDocumentView({
                   {links.website.replace(/^https?:\/\//, "")}
                 </ContactItem>
               )}
+            </div>
             </div>
           </div>
           {profileUrl && qrSvg && (

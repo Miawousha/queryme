@@ -160,4 +160,39 @@ describe("CvDocumentView", () => {
     // Ongoing role shows "present" and no computed year total.
     expect(screen.getByText(/present/i)).toBeInTheDocument();
   });
+
+  it("renders the profile photo with the person's name as alt when profile.photo is set", () => {
+    const kb = makeKb({
+      profile: {
+        name: "Ada Lovelace",
+        headline: "Computing pioneer",
+        photo: "https://cdn.example.com/ada.jpg",
+      },
+    });
+    render(<CvDocumentView kb={kb} lang="en" />);
+    const photo = screen.getByRole("img", { name: "Portrait of Ada Lovelace" });
+    expect(photo).toHaveAttribute("src", "https://cdn.example.com/ada.jpg");
+  });
+
+  it("omits the profile photo when profile.photo is absent", () => {
+    render(<CvDocumentView kb={makeKb()} lang="en" />);
+    // The QR is also role=img; assert specifically that no portrait img exists.
+    expect(screen.queryByRole("img", { name: /^Portrait of/ })).toBeNull();
+  });
+
+  it("renders the photo independently of the QR block", () => {
+    const kb = makeKb({
+      profile: {
+        name: "Ada Lovelace",
+        headline: "Computing pioneer",
+        photo: "https://cdn.example.com/ada.jpg",
+      },
+    });
+    render(
+      <CvDocumentView kb={kb} lang="en" profileUrl="https://cv.alex.com" qrSvg="<svg></svg>" />,
+    );
+    // Both the portrait and the QR render together.
+    expect(screen.getByRole("img", { name: "Portrait of Ada Lovelace" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Profile QR code" })).toBeInTheDocument();
+  });
 });

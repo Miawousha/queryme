@@ -18,6 +18,7 @@ export const CV_STRINGS = {
     yr: "yr",
     yrs: "yrs",
     qrAlt: "Profile QR code",
+    photoAlt: "Portrait of {name}",
     monthFormat: "en-US" as const,
     queritae: {
       pill: "queritae",
@@ -51,6 +52,7 @@ export const CV_STRINGS = {
     yr: "an",
     yrs: "ans",
     qrAlt: "QR code du profil",
+    photoAlt: "Portrait de {name}",
     monthFormat: "fr-FR" as const,
     queritae: {
       pill: "queritae",
