@@ -244,7 +244,7 @@ name: Jordan Rivera
 headline: Staff Software Engineer — distributed systems, from kernel to cloud
 location: Berlin, Germany          # optional
 languages: [en, fr]                # optional; subset of en | fr
-photo: https://…/jordan.jpg        # optional
+photo: https://…/jordan.jpg        # optional; public image URL, square works best (rendered as a circle)
 links:                             # optional; all entries are URLs
   linkedin: https://www.linkedin.com/in/jordanrivera/
   github: https://github.com/jordanrivera
