@@ -79,7 +79,7 @@ To recover from data loss or a bad migration:
    before the incident) — this gives an isolated copy of the data at that point
    without overwriting the live branch.
 3. Inspect the restored branch to confirm it has the expected data.
-4. Either (a) point the app's `DATABASE_URL` at the restored branch and promote
+4. Either (a) point the app's `POSTGRES_URL` at the restored branch and promote
    it, or (b) selectively copy the needed rows back into the live branch.
 5. After recovery, re-run any migrations that were legitimately applied after
    the restore point (see `lib/db/migrations/` + `npm run db:migrate`).
@@ -135,11 +135,18 @@ runtime upgrade:
   migration step in the build** (`build` is `next build`; `vercel.json` only
   defines the usage-alert cron).
 - **Migrations are a manual pre-deploy step.** When a push includes a new
-  `lib/db/migrations/*.sql`, run **`npm run db:migrate` against production
+  `lib/db/migrations/*.sql`, run the migration **against the production DB
   FIRST**, then push — otherwise the deployed code may `SELECT` a column the DB
   doesn't have yet and every account query fails. (This applies to the pending
   `0016_*` ToS migration.)
+- **Migrating prod — footgun:** `scripts/migrate.ts` reads `POSTGRES_URL` and
+  **auto-loads `.env.local`** (your *local* DB). So a bare `npm run db:migrate`
+  migrates local, not prod. To migrate **production**, run it where `.env.local`
+  is absent (or doesn't define `POSTGRES_URL`) with the prod URL exported —
+  e.g. from a clean checkout / CI, or temporarily move `.env.local` aside:
+  `POSTGRES_URL="<prod-neon-url>" npx tsx scripts/migrate.ts`. Confirm the
+  expected `ALTER TABLE` ran, then push.
 - Environment variables that must be set in Vercel Production: `SESSION_SECRET`,
-  `DATABASE_URL`, Stripe keys, GitHub OAuth/App credentials, `ANTHROPIC_API_KEY`,
+  `POSTGRES_URL`, Stripe keys, GitHub OAuth/App credentials, `ANTHROPIC_API_KEY`,
   `ROOT_ACCOUNT_USERNAME`, and **`REPORT_EMAIL`** (content-report mailto target;
   defaults to `abuse@queritae.com` if unset).
