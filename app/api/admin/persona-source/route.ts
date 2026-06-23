@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireRootAdmin } from "@/lib/accounts/guard";
+import { requireRootAdmin, needsTosAcceptance } from "@/lib/accounts/guard";
 import { resolveRootAccountId } from "@/lib/accounts/root";
 import { personaSourceStatus, personaSourceSync } from "@/lib/admin/persona-source-api";
 
@@ -13,8 +13,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (!(await requireRootAdmin())) {
+  const root = await requireRootAdmin();
+  if (!root) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (needsTosAcceptance(root)) {
+    return NextResponse.json({ error: "Terms acceptance required" }, { status: 403 });
   }
   let body: { repoUrl?: string; branch?: string };
   try {

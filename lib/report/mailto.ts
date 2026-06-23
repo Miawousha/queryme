@@ -4,13 +4,12 @@
  * URL server-side. Subject/body are URL-encoded.
  */
 export function buildReportMailto(email: string, ctx: { slug: string; url: string }): string {
-  const subject = `Report: persona "${ctx.slug}" on Queritae`;
-  const body = [
+  const subject = encodeURIComponent(`Report: persona "${ctx.slug}" on Queritae`);
+  const body = encodeURIComponent([
     `I'd like to report the persona at: ${ctx.url}`,
     "",
     "Reason (please describe):",
     "",
-  ].join("\n");
-  const qs = new URLSearchParams({ subject, body }).toString();
-  return `mailto:${email}?${qs}`;
+  ].join("\n"));
+  return `mailto:${email}?subject=${subject}&body=${body}`;
 }

@@ -13,6 +13,7 @@ describe("buildReportMailto", () => {
   it("URL-encodes special characters", () => {
     const href = buildReportMailto("abuse@queritae.com", { slug: "a b", url: "https://x/y?z=1" });
     expect(href).not.toContain(" ");
+    expect(href).not.toContain("+");
     expect(href).toContain("https%3A%2F%2Fx%2Fy%3Fz%3D1");
   });
 });

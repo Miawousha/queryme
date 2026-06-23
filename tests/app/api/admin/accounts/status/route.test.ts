@@ -8,16 +8,17 @@ vi.mock("@/lib/db/client", () => ({
 }));
 vi.mock("@/lib/accounts/guard", () => ({
   requireSuperAdmin: vi.fn(),
+  needsTosAcceptance: vi.fn((acct) => acct.status === "active" && acct.tosAcceptedAt == null),
 }));
 vi.mock("@/lib/accounts/repo", () => ({
   getAccountBySlug: vi.fn(),
   setAccountStatus: vi.fn(),
 }));
 
-import { requireSuperAdmin } from "@/lib/accounts/guard";
+import { requireSuperAdmin, needsTosAcceptance } from "@/lib/accounts/guard";
 import { getAccountBySlug, setAccountStatus } from "@/lib/accounts/repo";
 
-const superAdmin = { id: "su-1", username: "root", role: "admin" } as Account;
+const superAdmin = { id: "su-1", username: "root", role: "admin", status: "active", tosAcceptedAt: new Date() } as Account;
 
 function account(overrides: Partial<Account> = {}): Account {
   return {
@@ -53,6 +54,15 @@ describe("POST /api/admin/accounts/[username]/status", () => {
     vi.mocked(requireSuperAdmin).mockResolvedValue(null);
     const res = await POST(req({ status: "active" }), params("alex"));
     expect(res.status).toBe(403);
+    expect(setAccountStatus).not.toHaveBeenCalled();
+  });
+
+  it("403s when the super-admin is active but has not accepted the ToS", async () => {
+    const unaccepted = { id: "su-2", username: "root", role: "admin", status: "active", tosAcceptedAt: null } as Account;
+    vi.mocked(requireSuperAdmin).mockResolvedValue(unaccepted);
+    const res = await POST(req({ status: "active" }), params("alex"));
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("Terms acceptance required");
     expect(setAccountStatus).not.toHaveBeenCalled();
   });
 

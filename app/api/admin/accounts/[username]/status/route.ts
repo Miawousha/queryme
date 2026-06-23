@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/lib/db/client";
-import { requireSuperAdmin } from "@/lib/accounts/guard";
+import { requireSuperAdmin, needsTosAcceptance } from "@/lib/accounts/guard";
 import { getAccountBySlug, setAccountStatus } from "@/lib/accounts/repo";
 import { ACCOUNT_STATUSES } from "@/lib/db/schema";
 
@@ -15,6 +15,9 @@ export async function POST(
 ) {
   const su = await requireSuperAdmin();
   if (!su) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (needsTosAcceptance(su)) {
+    return NextResponse.json({ error: "Terms acceptance required" }, { status: 403 });
+  }
 
   let raw: unknown;
   try {

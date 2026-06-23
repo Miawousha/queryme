@@ -107,7 +107,7 @@ export function HomeShell({
         contentRepoUrl={contentRepoUrl}
         contentRepoBranch={contentRepoBranch}
         cvHref={`${cvPrintBase}/cv?lang=${lang}`}
-        reportHref={reportHref ?? null}
+        reportHref={reportHref}
       />
       <CvModal open={cvOpen} onClose={() => setCvOpen(false)} onLangChange={onLangChange} />
     </>

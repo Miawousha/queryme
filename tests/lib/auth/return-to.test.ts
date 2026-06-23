@@ -21,5 +21,6 @@ describe("safeReturnTo", () => {
   it("falls back on null/empty", () => {
     expect(safeReturnTo(null, FB)).toBe(FB);
     expect(safeReturnTo("", FB)).toBe(FB);
+    expect(safeReturnTo(undefined, FB)).toBe(FB);
   });
 });

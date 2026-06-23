@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const ROUTE_TEST_ACCOUNT_ID = "route-test-account-id";
+const ACTIVE_ROOT = { id: ROUTE_TEST_ACCOUNT_ID, role: "admin", status: "active", tosAcceptedAt: new Date() };
 
 describe("GET /api/admin/persona-source", () => {
   beforeEach(() => {
@@ -14,6 +15,7 @@ describe("GET /api/admin/persona-source", () => {
   it("returns 401 when unauthenticated", async () => {
     vi.doMock("@/lib/accounts/guard", () => ({
       requireRootAdmin: async () => null,
+      needsTosAcceptance: () => false,
     }));
     const { GET } = await import("@/app/api/admin/persona-source/route");
     const res = await GET();
@@ -22,7 +24,8 @@ describe("GET /api/admin/persona-source", () => {
 
   it("returns { active: null, history: [] } when no persona is configured", async () => {
     vi.doMock("@/lib/accounts/guard", () => ({
-      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
+      requireRootAdmin: async () => ACTIVE_ROOT,
+      needsTosAcceptance: () => false,
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => null,
@@ -61,7 +64,8 @@ describe("GET /api/admin/persona-source", () => {
       },
     ];
     vi.doMock("@/lib/accounts/guard", () => ({
-      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
+      requireRootAdmin: async () => ACTIVE_ROOT,
+      needsTosAcceptance: () => false,
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => fakeActive,
@@ -91,6 +95,7 @@ describe("POST /api/admin/persona-source", () => {
   it("returns 401 when unauthenticated", async () => {
     vi.doMock("@/lib/accounts/guard", () => ({
       requireRootAdmin: async () => null,
+      needsTosAcceptance: () => false,
     }));
     const { POST } = await import("@/app/api/admin/persona-source/route");
     const req = new Request("http://x/api/admin/persona-source", {
@@ -102,9 +107,29 @@ describe("POST /api/admin/persona-source", () => {
     expect(res.status).toBe(401);
   });
 
+  it("returns 403 when root admin has not accepted the ToS", async () => {
+    const unaccepted = { id: ROUTE_TEST_ACCOUNT_ID, role: "admin", status: "active", tosAcceptedAt: null };
+    vi.doMock("@/lib/accounts/guard", () => ({
+      requireRootAdmin: async () => unaccepted,
+      needsTosAcceptance: (acct: { status: string; tosAcceptedAt: Date | null }) =>
+        acct.status === "active" && acct.tosAcceptedAt == null,
+    }));
+    const { POST } = await import("@/app/api/admin/persona-source/route");
+    const req = new Request("http://x/api/admin/persona-source", {
+      method: "POST",
+      body: JSON.stringify({ repoUrl: "https://github.com/alex/queryme-content" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe("Terms acceptance required");
+  });
+
   it("returns 400 when repoUrl is missing", async () => {
     vi.doMock("@/lib/accounts/guard", () => ({
-      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
+      requireRootAdmin: async () => ACTIVE_ROOT,
+      needsTosAcceptance: () => false,
     }));
     const { POST } = await import("@/app/api/admin/persona-source/route");
     const req = new Request("http://x/api/admin/persona-source", {
@@ -120,7 +145,8 @@ describe("POST /api/admin/persona-source", () => {
 
   it("triggers a sync and returns the new row info", async () => {
     vi.doMock("@/lib/accounts/guard", () => ({
-      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
+      requireRootAdmin: async () => ACTIVE_ROOT,
+      needsTosAcceptance: () => false,
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => null,
@@ -146,7 +172,8 @@ describe("POST /api/admin/persona-source", () => {
 
   it("returns 400 with the error message when sync fails", async () => {
     vi.doMock("@/lib/accounts/guard", () => ({
-      requireRootAdmin: async () => ({ id: "route-test-account-id", role: "admin" }),
+      requireRootAdmin: async () => ACTIVE_ROOT,
+      needsTosAcceptance: () => false,
     }));
     vi.doMock("@/lib/persona-source", () => ({
       getActivePersonaSourceRowForAccount: async () => null,

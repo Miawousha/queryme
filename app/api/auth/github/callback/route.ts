@@ -5,6 +5,7 @@ import { SESSION_COOKIE, SESSION_TTL_MS, createSessionToken } from "@/lib/admin/
 import { getDb } from "@/lib/db/client";
 import { upsertAccountFromGitHub } from "@/lib/accounts/repo";
 import { ReservedLoginError, SlugConflictError } from "@/lib/accounts/errors";
+import { needsTosAcceptance } from "@/lib/accounts/guard";
 
 export const runtime = "nodejs";
 
@@ -54,11 +55,10 @@ export async function GET(req: NextRequest) {
 
   // Active accounts that haven't accepted the Terms go to the interstitial
   // first; everyone else to admin (active+accepted) or the holding page.
-  const dest =
-    account.status === "active"
-      ? account.tosAcceptedAt == null
-        ? `/auth/accept-tos?returnTo=/${account.username}/admin`
-        : `/${account.username}/admin`
+  const dest = needsTosAcceptance(account)
+    ? `/auth/accept-tos?returnTo=/${account.username}/admin`
+    : account.status === "active"
+      ? `/${account.username}/admin`
       : "/waitlist";
   const res = NextResponse.redirect(new URL(dest, origin));
   res.cookies.set(
