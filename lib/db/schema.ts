@@ -28,6 +28,7 @@ export const accounts = pgTable(
     status: text("status", { enum: ACCOUNT_STATUSES }).notNull().default("waitlisted"),
     plan: text("plan", { enum: ACCOUNT_PLANS }).notNull().default("free"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    tosAcceptedAt: timestamp("tos_accepted_at", { withTimezone: true }),
   },
   (table) => ({
     githubIdUnique: uniqueIndex("accounts_github_id_unique")
