@@ -11,6 +11,7 @@ const strings: AboutPopoverProps["strings"] = {
   repo: "GitHub repo",
   mcpDocs: "Connect from your agent (MCP docs)",
   printableCv: "Printable CV",
+  report: "Report this persona",
 };
 
 function baseProps(overrides: Partial<AboutPopoverProps> = {}): AboutPopoverProps {
@@ -25,6 +26,7 @@ function baseProps(overrides: Partial<AboutPopoverProps> = {}): AboutPopoverProp
     contentRepoUrl: "https://github.com/Miawousha/queryme-content-alex",
     contentRepoBranch: "main",
     cvHref: "/alex/cv?lang=en",
+    reportHref: null,
     ...overrides,
   };
 }

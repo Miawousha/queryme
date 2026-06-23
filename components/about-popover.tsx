@@ -12,6 +12,7 @@ export type AboutPopoverStrings = {
   repo: string;
   mcpDocs: string;
   printableCv: string;
+  report: string;
 };
 
 export type AboutPopoverProps = {
@@ -29,6 +30,7 @@ export type AboutPopoverProps = {
   contentRepoUrl: string | null;
   contentRepoBranch: string | null;
   cvHref: string;
+  reportHref: string | null;
 };
 
 /**
@@ -45,6 +47,7 @@ export function AboutPopover({
   contentRepoUrl,
   contentRepoBranch,
   cvHref,
+  reportHref,
 }: AboutPopoverProps) {
   const dialogRef = useDialog<HTMLDivElement>(open, onClose);
 
@@ -128,6 +131,17 @@ export function AboutPopover({
             </a>
           ))}
         </div>
+
+        {reportHref && (
+          <div className="mt-1 border-t border-[var(--color-border)] pt-3">
+            <a
+              href={reportHref}
+              className="inline-flex items-center gap-2 text-2xs uppercase tracking-wide text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+            >
+              {strings.report}
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

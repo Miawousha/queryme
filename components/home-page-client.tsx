@@ -19,6 +19,7 @@ type Props = {
   cvPrintBase?: string;
   /** When false, MCP button/modal are hidden. Defaults to true. */
   isRootAccount?: boolean;
+  reportHref?: string | null;
 };
 
 export function HomePageClient({
@@ -28,6 +29,7 @@ export function HomePageClient({
   apiBasePath = "/api",
   cvPrintBase = "",
   isRootAccount = true,
+  reportHref = null,
 }: Props) {
   const [lang, setLang] = useState<UiLang>("en");
   const [mcpOpen, setMcpOpen] = useState(false);
@@ -59,6 +61,7 @@ export function HomePageClient({
         contentRepoBranch={contentRepoBranch}
         apiBasePath={apiBasePath}
         isRootAccount={isRootAccount}
+        reportHref={reportHref}
       />
     </KbProvider>
   );

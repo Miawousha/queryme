@@ -91,6 +91,7 @@ export function buildUiStrings(persona: Persona) {
         title: "About this project",
         close: "Close",
         printableCv: "Printable CV",
+        report: "Report this persona",
       },
       kbPanel: {
         show: "Show the knowledge base panel",
@@ -248,6 +249,7 @@ export function buildUiStrings(persona: Persona) {
         title: "À propos de ce projet",
         close: "Fermer",
         printableCv: "CV imprimable",
+        report: "Signaler ce profil",
       },
       kbPanel: {
         show: "Afficher la base de connaissances",

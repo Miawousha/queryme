@@ -30,6 +30,7 @@ type Props = {
   apiBasePath?: string;
   /** When false, MCP button/modal are hidden. Defaults to true. */
   isRootAccount?: boolean;
+  reportHref?: string | null;
 };
 
 /**
@@ -51,6 +52,7 @@ export function HomeShell({
   contentRepoBranch,
   apiBasePath = "/api",
   isRootAccount = true,
+  reportHref = null,
 }: Props) {
   const { cvPrintBase } = useKb();
   const [cvOpen, setCvOpen] = useState(false);
@@ -98,12 +100,14 @@ export function HomeShell({
           repo: t.footer.repo,
           mcpDocs: t.footer.mcpDocs,
           printableCv: t.about.printableCv,
+          report: t.about.report,
         }}
         repoUrl={REPO_URL}
         branch={REPO_BRANCH}
         contentRepoUrl={contentRepoUrl}
         contentRepoBranch={contentRepoBranch}
         cvHref={`${cvPrintBase}/cv?lang=${lang}`}
+        reportHref={reportHref ?? null}
       />
       <CvModal open={cvOpen} onClose={() => setCvOpen(false)} onLangChange={onLangChange} />
     </>

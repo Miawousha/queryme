@@ -6,6 +6,8 @@ import { HomePageClient } from "@/components/home-page-client";
 import { NotConfiguredScreen } from "@/components/not-configured-screen";
 import { getActivePersonaSourceRowForAccount } from "@/lib/persona-source";
 import { loadActiveAccountForSlug } from "@/lib/accounts/load";
+import { resolveProfileUrl } from "@/lib/cv/profile-url";
+import { buildReportMailto } from "@/lib/report/mailto";
 
 export default async function AccountHome({
   params,
@@ -24,6 +26,9 @@ export default async function AccountHome({
   const persona = loadPersona(root);
   const strings = buildUiStrings(persona);
   const sourceRow = await getActivePersonaSourceRowForAccount(account.id);
+  const profileUrl = await resolveProfileUrl({ accountId: account.id, username: account.username });
+  const reportEmail = process.env.REPORT_EMAIL ?? "abuse@queritae.com";
+  const reportHref = buildReportMailto(reportEmail, { slug: account.username, url: profileUrl });
   return (
     <HomePageClient
       strings={strings}
@@ -32,6 +37,7 @@ export default async function AccountHome({
       apiBasePath={`/api/a/${account.username}`}
       cvPrintBase={`/${account.username}`}
       isRootAccount={false}
+      reportHref={reportHref}
     />
   );
 }
