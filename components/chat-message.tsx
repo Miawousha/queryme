@@ -5,8 +5,7 @@ import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import { parseCitations } from "@/lib/kb/citations";
-import { citedRefKey } from "@/lib/kb/cited-paths";
+import { rewriteCitations } from "@/lib/kb/cited-paths";
 import { splitOnMarkers } from "@/lib/markers";
 import { cn } from "@/lib/utils";
 
@@ -56,22 +55,6 @@ export type ChatMessageProps = {
   /** Conversation-global citation numbers keyed by `path` / `path#anchor`. */
   citationIndices?: Record<string, number>;
 };
-
-function rewriteCitations(text: string, indices: Record<string, number>): string {
-  const cites = parseCitations(text);
-  let fallback = 0;
-  let out = text;
-  for (const c of cites) {
-    fallback += 1;
-    const target = citedRefKey(c.path, c.anchor);
-    const n = indices[target] ?? fallback;
-    // `kb://<path>[#anchor]` is an internal sentinel — the `a` renderer below
-    // turns it into a button that opens the file (and section) in the KB panel.
-    const replacement = `<sup>[\\[${n}\\]](kb://${target})</sup>`;
-    out = out.replace(c.token, replacement);
-  }
-  return out;
-}
 
 export function ChatMessage({
   role,

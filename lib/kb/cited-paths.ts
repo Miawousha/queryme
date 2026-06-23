@@ -46,3 +46,26 @@ export function citationIndexMap(refs: CitedRef[]): Record<string, number> {
   }
   return map;
 }
+
+/**
+ * Rewrites each `[^kb:<path>[#anchor]]` token in an assistant message into a
+ * markdown superscript footnote link, `<sup>[\[n\]](kb://<path>[#anchor])</sup>`,
+ * where `n` is the conversation-global index from `citationIndexMap`. The
+ * `kb://` target is an internal sentinel the chat's `a` renderer turns into a
+ * button that opens the file (and section) in the KB panel. A token whose key
+ * isn't in `indices` falls back to a local 1-based counter so it still renders.
+ *
+ * Pure string transform — kept here alongside the rest of the citation
+ * pipeline so the render stage is unit-testable without the React component.
+ */
+export function rewriteCitations(text: string, indices: Record<string, number>): string {
+  let fallback = 0;
+  let out = text;
+  for (const c of parseCitations(text)) {
+    fallback += 1;
+    const target = citedRefKey(c.path, c.anchor);
+    const n = indices[target] ?? fallback;
+    out = out.replace(c.token, `<sup>[\\[${n}\\]](kb://${target})</sup>`);
+  }
+  return out;
+}

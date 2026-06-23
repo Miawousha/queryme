@@ -31,14 +31,14 @@ This phase is also the foundation for billing (Phase 5) — metering first, pric
 
 ## Phase 2 — Own the citation contract (product integrity)
 
-The product's differentiator (cited, verifiable answers) currently depends on every owner's
-external `prompts/system.md` remembering to instruct the `[^kb:...]` format. The app never
-validates or injects it — one owner's prompt without it silently loses citations and
-flatlines their analytics. Make the shell own the contract:
+The product's differentiator (cited, verifiable answers) originally depended on every owner's
+external `prompts/system.md` remembering to instruct the `[^kb:...]` format — one owner's
+prompt without it silently lost citations and flatlined their analytics. The shell now owns
+the contract. **Phase complete (2026-06-23).**
 
 - [x] **Inject a canonical citation instruction** as an app-controlled system-prompt part (`CITATION_CONTRACT_INSTRUCTION` in `lib/kb/citations.ts`, injected by `lib/prompts.ts`), regardless of what the persona repo says. The owner's prompt customizes voice; the platform guarantees grounding. (2026-06-15)
-- [ ] **Validate at sync** — extend the required-files check (`lib/persona-source.ts:44`) and `validate-kb` to lint the content repo: citation markers parse, refs resolve to real KB paths. Surface warnings in the admin Content tab.
-- [ ] **Contract tests** — lock the pipeline end-to-end: assembler `[ref:]` → model format → `parseCitations` → renderer.
+- [~] **Validate at sync** — *dropped 2026-06-15.* Once the shell injects the contract (above), the original rationale — lint that the owner's `prompts/system.md` remembers the citation instruction — is moot. And the assembler generates `[ref:]` markers from real files *by construction*, so there is nothing in the content repo to lint for ref validity. Spec: `docs/superpowers/specs/2026-06-15-shell-owned-citation-contract-design.md`.
+- [x] **Contract tests** — `tests/prompts/citation-pipeline.test.ts` locks the pipeline end-to-end: assembler `[ref:]` → model echo → `parseCitations` → manifest anchor-resolution → `extractCitations`/dedup → `rewriteCitations` (UI superscript), plus the FR-accent and path-traversal invariants. The per-token contract stays in `tests/prompts/system-contract.test.ts`. (2026-06-23)
 
 ## Phase 3 — Trust, safety, and ops floor (before strangers arrive)
 
