@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useDialog } from "@/lib/use-dialog";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +60,7 @@ export function QueritaeCta({ strings, landingHref, signupHref, className }: Que
         {strings.pill}
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -120,7 +121,8 @@ export function QueritaeCta({ strings, landingHref, signupHref, className }: Que
               </a>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { QueritaeCta, type QueritaeCtaStrings } from "@/components/queritae-cta";
 
 const strings: QueritaeCtaStrings = {
@@ -62,5 +62,29 @@ describe("QueritaeCta", () => {
     fireEvent.click(screen.getByRole("button", { name: strings.title }));
     fireEvent.click(screen.getByRole("button", { name: strings.close }));
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("portals the modal out of its host container so a transformed/filtered ancestor can't clip it", () => {
+    // The host bars (e.g. the chat `<header>`) carry `backdrop-blur`, which
+    // establishes a containing block for `position: fixed` descendants — a
+    // modal rendered inline would resolve `fixed inset-0` against the header
+    // box (a thin sliver), not the viewport. Portalling to `document.body`
+    // escapes that. Assert the open dialog is NOT a descendant of the host.
+    const { container } = render(
+      <div data-testid="host">
+        <QueritaeCta
+          strings={strings}
+          landingHref="/?ref=profile"
+          signupHref="/api/auth/github/login"
+        />
+      </div>,
+    );
+    const host = within(container).getByTestId("host");
+    fireEvent.click(within(host).getByRole("button", { name: strings.title }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(host).not.toContainElement(dialog);
+    expect(document.body).toContainElement(dialog);
   });
 });
