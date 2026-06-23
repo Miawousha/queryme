@@ -31,7 +31,7 @@ describe("GET /api/auth/github/callback", () => {
     const state = createState(SECRET);
     exchangeCodeForToken.mockResolvedValue("tok");
     fetchGitHubUser.mockResolvedValue({ id: 42, login: "octocat" });
-    upsertAccountFromGitHub.mockResolvedValue({ id: "acct-1", username: "octocat", status: "active" });
+    upsertAccountFromGitHub.mockResolvedValue({ id: "acct-1", username: "octocat", status: "active", tosAcceptedAt: new Date() });
 
     const { GET } = await import("@/app/api/auth/github/callback/route");
     const res = await GET(callbackReq({ code: "c", state }, state));
@@ -40,6 +40,20 @@ describe("GET /api/auth/github/callback", () => {
     expect(res.headers.get("location")).toContain("/octocat/admin");
     expect(res.headers.get("set-cookie")).toContain("queritae_session=");
     expect(upsertAccountFromGitHub).toHaveBeenCalledWith({}, { githubId: "42", login: "octocat" });
+  });
+
+  it("sends active accounts that haven't accepted the Terms to the interstitial", async () => {
+    const state = createState(SECRET);
+    exchangeCodeForToken.mockResolvedValue("tok");
+    fetchGitHubUser.mockResolvedValue({ id: 99, login: "octocat" });
+    upsertAccountFromGitHub.mockResolvedValue({ id: "acct-9", username: "octocat", status: "active", tosAcceptedAt: null });
+
+    const { GET } = await import("@/app/api/auth/github/callback/route");
+    const res = await GET(callbackReq({ code: "c", state }, state));
+
+    expect(res.headers.get("location")).toContain("/auth/accept-tos");
+    expect(res.headers.get("location")).toContain("returnTo=/octocat/admin");
+    expect(res.headers.get("set-cookie")).toContain("queritae_session=");
   });
 
   it("redirects waitlisted accounts to /waitlist, with a session cookie", async () => {

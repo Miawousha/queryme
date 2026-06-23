@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
+import type { Route } from "next";
 import { resolveAccountAdmin } from "@/app/[username]/admin/resolve";
 import type { Account } from "@/lib/db/schema";
 
@@ -19,5 +20,6 @@ export async function requireAdminAccount(username: string): Promise<Account> {
   const res = await resolveAdminCached(username);
   if (res.kind === "not-found") notFound();
   if (res.kind === "login") redirect("/api/auth/github/login");
+  if (res.kind === "needs-tos") redirect(`/auth/accept-tos?returnTo=/${username}/admin` as Route);
   return res.account;
 }

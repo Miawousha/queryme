@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import type { Route } from "next";
+import { notFound, redirect } from "next/navigation";
 import { AccountList } from "@/components/admin/account-list";
 import { loadSuperConsole } from "./load";
 
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
 
 export default async function SuperAdminPage() {
   const result = await loadSuperConsole();
-  if (!result) notFound();
+  if (result.kind === "forbidden") notFound();
+  if (result.kind === "needs-tos") redirect("/auth/accept-tos?returnTo=/admin" as Route);
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
       <h1 className="mb-6 font-display text-xl text-[var(--color-text-primary)]">Accounts</h1>

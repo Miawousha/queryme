@@ -19,16 +19,22 @@ beforeEach(() => {
 });
 
 describe("loadSuperConsole", () => {
-  it("returns null for non-super callers", async () => {
+  it("returns forbidden for non-super callers", async () => {
     requireSuperAdmin.mockResolvedValue(null);
     const { loadSuperConsole } = await import("@/app/admin/load");
-    expect(await loadSuperConsole()).toBeNull();
+    expect((await loadSuperConsole()).kind).toBe("forbidden");
   });
   it("returns the account list for a super-admin", async () => {
-    requireSuperAdmin.mockResolvedValue({ id: "a", role: "admin" });
+    requireSuperAdmin.mockResolvedValue({ id: "a", role: "admin", status: "active", tosAcceptedAt: new Date() });
     listAllAccounts.mockResolvedValue([{ username: "x", role: "user" }]);
     const { loadSuperConsole } = await import("@/app/admin/load");
     const result = await loadSuperConsole();
-    expect(result?.accounts).toHaveLength(1);
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") expect(result.accounts).toHaveLength(1);
+  });
+  it("returns needs-tos for an active super-admin that hasn't accepted", async () => {
+    requireSuperAdmin.mockResolvedValue({ id: "a", role: "admin", status: "active", tosAcceptedAt: null });
+    const { loadSuperConsole } = await import("@/app/admin/load");
+    expect((await loadSuperConsole()).kind).toBe("needs-tos");
   });
 });
