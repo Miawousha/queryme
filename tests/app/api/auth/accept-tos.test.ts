@@ -36,6 +36,7 @@ describe("POST /api/auth/accept-tos", () => {
     const { POST } = await import("@/app/api/auth/accept-tos/route");
     const res = await POST(postReq({ returnTo: "https://evil.com" }));
     expect(new URL(res.headers.get("location")!).pathname).toBe("/octocat/admin");
+    expect(acceptTos).toHaveBeenCalledWith({}, "acct-1");
   });
 
   it("redirects to login when there is no session", async () => {
@@ -43,6 +44,15 @@ describe("POST /api/auth/accept-tos", () => {
     const { POST } = await import("@/app/api/auth/accept-tos/route");
     const res = await POST(postReq({ returnTo: "/x" }));
     expect(acceptTos).not.toHaveBeenCalled();
-    expect(res.headers.get("location")).toContain("/api/auth/github/login");
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/api/auth/github/login");
+  });
+
+  it("redirects to login when the account no longer exists", async () => {
+    getSessionAccountId.mockResolvedValue("ghost");
+    acceptTos.mockRejectedValue(new Error("no account 'ghost'"));
+    const { POST } = await import("@/app/api/auth/accept-tos/route");
+    const res = await POST(postReq({ returnTo: "/x" }));
+    expect(res.status).toBe(303);
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/api/auth/github/login");
   });
 });

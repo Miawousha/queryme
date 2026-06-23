@@ -12,8 +12,13 @@ export async function POST(req: NextRequest) {
   if (!accountId) {
     return NextResponse.redirect(new URL("/api/auth/github/login", origin), 303);
   }
-  const account = await acceptTos(getDb(), accountId);
   const form = await req.formData();
+  let account;
+  try {
+    account = await acceptTos(getDb(), accountId);
+  } catch {
+    return NextResponse.redirect(new URL("/api/auth/github/login", origin), 303);
+  }
   const returnTo = safeReturnTo(form.get("returnTo")?.toString(), `/${account.username}/admin`);
   return NextResponse.redirect(new URL(returnTo, origin), 303);
 }
