@@ -129,46 +129,30 @@ export function CvDocumentView({
   const links = kb.publicContact.links;
 
   return (
-    <article className="cv-page text-[var(--color-text-secondary)]">
+    <article lang={lang} className="cv-page text-[var(--color-text-secondary)]">
       <header className="cv-section relative mb-9 pb-6">
-        <div className="flex items-start justify-between gap-6">
-          <div className="min-w-0 flex-1">
-            <h1 className="font-display text-display font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
-              {kb.profile.name}
-            </h1>
-            {kb.profile.headline && (
-              <p className="mt-1.5 font-display text-base leading-snug text-[var(--color-text-secondary)]">
-                {kb.profile.headline}
-              </p>
+        {/* Masthead band: avatar + name + tagline + QR share one row. The bio
+            and contacts drop to full-width rows below so they aren't squeezed
+            into the narrow column the avatar and QR would otherwise leave. On
+            narrow screens the QR wraps beneath the name block. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-4">
+          <div className="flex min-w-0 grow basis-[20rem] items-center gap-5">
+            {kb.profile.photo && (
+              // eslint-disable-next-line @next/next/no-img-element -- plain <img>: any host, no next/image config; prints under existing print.css
+              <img
+                src={kb.profile.photo}
+                alt={t.photoAlt.replace("{name}", kb.profile.name)}
+                className="cv-photo h-20 w-20 shrink-0 rounded-full object-cover ring-1 ring-[var(--color-border)]"
+              />
             )}
-            {kb.profile.bio && (
-              <p className="mt-3 max-w-[64ch] font-display text-sm leading-relaxed text-[var(--color-text-tertiary)]">
-                {kb.profile.bio}
-              </p>
-            )}
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-[var(--color-text-tertiary)]">
-              {kb.profile.location && (
-                <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
-              )}
-              {kb.publicContact.email && (
-                <ContactItem icon={<MailIcon />} href={`mailto:${kb.publicContact.email}`}>
-                  {kb.publicContact.email}
-                </ContactItem>
-              )}
-              {links?.linkedin && (
-                <ContactItem icon={<LinkedInIcon />} href={links.linkedin}>
-                  LinkedIn
-                </ContactItem>
-              )}
-              {links?.github && (
-                <ContactItem icon={<GitHubIcon />} href={links.github}>
-                  GitHub
-                </ContactItem>
-              )}
-              {links?.website && (
-                <ContactItem icon={<GlobeIcon />} href={links.website}>
-                  {links.website.replace(/^https?:\/\//, "")}
-                </ContactItem>
+            <div className="min-w-0">
+              <h1 className="font-display text-display font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
+                {kb.profile.name}
+              </h1>
+              {kb.profile.headline && (
+                <p className="mt-1.5 font-display text-base leading-snug text-[var(--color-text-secondary)]">
+                  {kb.profile.headline}
+                </p>
               )}
             </div>
           </div>
@@ -177,13 +161,46 @@ export function CvDocumentView({
               <div
                 role="img"
                 aria-label={t.qrAlt}
-                className="cv-qr h-[88px] w-[88px] text-[var(--color-text-primary)]"
+                className="cv-qr h-20 w-20 text-[var(--color-text-primary)]"
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
               <span className="font-mono text-2xs tracking-[0.02em] text-[var(--color-text-tertiary)]">
                 {profileUrl.replace(/^https?:\/\//, "")}
               </span>
             </div>
+          )}
+        </div>
+
+        {/* Bio + contacts: full-width rows below the band, free of the band's
+            width constraints. */}
+        {kb.profile.bio && (
+          <p className="mt-5 font-display text-sm leading-relaxed text-justify hyphens-auto text-[var(--color-text-tertiary)]">
+            {kb.profile.bio}
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-[var(--color-text-tertiary)]">
+          {kb.profile.location && (
+            <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
+          )}
+          {kb.publicContact.email && (
+            <ContactItem icon={<MailIcon />} href={`mailto:${kb.publicContact.email}`}>
+              {kb.publicContact.email}
+            </ContactItem>
+          )}
+          {links?.linkedin && (
+            <ContactItem icon={<LinkedInIcon />} href={links.linkedin}>
+              LinkedIn
+            </ContactItem>
+          )}
+          {links?.github && (
+            <ContactItem icon={<GitHubIcon />} href={links.github}>
+              GitHub
+            </ContactItem>
+          )}
+          {links?.website && (
+            <ContactItem icon={<GlobeIcon />} href={links.website}>
+              {links.website.replace(/^https?:\/\//, "")}
+            </ContactItem>
           )}
         </div>
         {/* Accent keyline anchoring the identity block. */}
