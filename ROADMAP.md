@@ -45,7 +45,7 @@ the contract. **Phase complete (2026-06-23).**
 - [x] **Terms acceptance** at first login (`tos_accepted_at` column + interstitial at `/auth/accept-tos`, enforced at the admin gates + OAuth callback). (2026-06-23)
 - [~] **Account suspension** action — already functional via the `disabled` status; **content-report path shipped** as a lean `REPORT_EMAIL` mailto in the About popover (2026-06-23). Persisted report queue + "Disable→Suspend" relabel deferred.
 - [ ] **Impersonation guardrails** — reserved-slug list exists (`lib/accounts/slug.ts`); add brand/person-name review for custom domains and usernames.
-- [ ] **Ops checklist** — error monitoring (none found in code), DB backup verification on Neon, smoke test for the persona sync path (it touches `/tmp` on serverless).
+- [x] **Ops floor** — `docs/ops-runbook.md` (2026-06-23): error visibility via a Vercel **log-drain** (config-only, no app code), Neon **PITR backup/restore** procedure + verification checklist, and persona-sync health. The sync `/tmp` round-trip (download→extract→symlink-swap→load) is already locked by `tests/lib/persona-source.test.ts`; the runbook adds the serverless-only **manual prod smoke** procedure. *The runbook's OPERATOR ACTION steps (configure the log drain, confirm Neon retention) are pending a human.*
 
 ---
 
