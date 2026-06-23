@@ -29,3 +29,13 @@ export async function requireRootAdmin(): Promise<Account | null> {
   if (!root) return null;
   return canAdminister(session, root) ? session : null;
 }
+
+/**
+ * True when this account holder must accept the Terms before using any
+ * authenticated surface. Only gates *active* accounts — waitlisted/disabled
+ * users never reach a gated surface, and gating them would trap them on the
+ * interstitial. `== null` catches both a null column and an undefined field.
+ */
+export function needsTosAcceptance(account: Account): boolean {
+  return account.status === "active" && account.tosAcceptedAt == null;
+}
