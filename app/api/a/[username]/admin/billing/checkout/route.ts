@@ -33,6 +33,8 @@ export async function POST(
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer,
+    // Lets customers enter a promo code on the Stripe-hosted Checkout page.
+    allow_promotion_codes: true,
     line_items: [{ price: priceId, quantity: 1 }],
     client_reference_id: res.account.id,
     // Stamped onto the subscription so webhook events map back to the account
