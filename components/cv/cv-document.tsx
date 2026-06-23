@@ -131,8 +131,17 @@ export function CvDocumentView({
   return (
     <article className="cv-page text-[var(--color-text-secondary)]">
       <header className="cv-section relative mb-9 pb-6">
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex min-w-0 flex-1 items-start gap-5">
+        {/* `flex-wrap` is inert without a photo (the identity stays `flex-1`,
+            basis-0, so it shrinks rather than wrapping the QR). With a photo the
+            avatar consumes ~100px on the left, so the wrapper takes a real
+            basis and the QR wraps below it on narrow screens instead of being
+            overrun by the display-size name. */}
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div
+            className={`flex min-w-0 items-start gap-5 ${
+              kb.profile.photo ? "grow basis-[18rem]" : "flex-1"
+            }`}
+          >
             {kb.profile.photo && (
               // eslint-disable-next-line @next/next/no-img-element -- plain <img>: any host, no next/image config; prints under existing print.css
               <img
@@ -142,44 +151,44 @@ export function CvDocumentView({
               />
             )}
             <div className="min-w-0 flex-1">
-            <h1 className="font-display text-display font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
-              {kb.profile.name}
-            </h1>
-            {kb.profile.headline && (
-              <p className="mt-1.5 font-display text-base leading-snug text-[var(--color-text-secondary)]">
-                {kb.profile.headline}
-              </p>
-            )}
-            {kb.profile.bio && (
-              <p className="mt-3 max-w-[64ch] font-display text-sm leading-relaxed text-[var(--color-text-tertiary)]">
-                {kb.profile.bio}
-              </p>
-            )}
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-[var(--color-text-tertiary)]">
-              {kb.profile.location && (
-                <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
+              <h1 className="font-display text-display font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
+                {kb.profile.name}
+              </h1>
+              {kb.profile.headline && (
+                <p className="mt-1.5 font-display text-base leading-snug text-[var(--color-text-secondary)]">
+                  {kb.profile.headline}
+                </p>
               )}
-              {kb.publicContact.email && (
-                <ContactItem icon={<MailIcon />} href={`mailto:${kb.publicContact.email}`}>
-                  {kb.publicContact.email}
-                </ContactItem>
+              {kb.profile.bio && (
+                <p className="mt-3 max-w-[64ch] font-display text-sm leading-relaxed text-[var(--color-text-tertiary)]">
+                  {kb.profile.bio}
+                </p>
               )}
-              {links?.linkedin && (
-                <ContactItem icon={<LinkedInIcon />} href={links.linkedin}>
-                  LinkedIn
-                </ContactItem>
-              )}
-              {links?.github && (
-                <ContactItem icon={<GitHubIcon />} href={links.github}>
-                  GitHub
-                </ContactItem>
-              )}
-              {links?.website && (
-                <ContactItem icon={<GlobeIcon />} href={links.website}>
-                  {links.website.replace(/^https?:\/\//, "")}
-                </ContactItem>
-              )}
-            </div>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-[var(--color-text-tertiary)]">
+                {kb.profile.location && (
+                  <ContactItem icon={<PinIcon />}>{kb.profile.location}</ContactItem>
+                )}
+                {kb.publicContact.email && (
+                  <ContactItem icon={<MailIcon />} href={`mailto:${kb.publicContact.email}`}>
+                    {kb.publicContact.email}
+                  </ContactItem>
+                )}
+                {links?.linkedin && (
+                  <ContactItem icon={<LinkedInIcon />} href={links.linkedin}>
+                    LinkedIn
+                  </ContactItem>
+                )}
+                {links?.github && (
+                  <ContactItem icon={<GitHubIcon />} href={links.github}>
+                    GitHub
+                  </ContactItem>
+                )}
+                {links?.website && (
+                  <ContactItem icon={<GlobeIcon />} href={links.website}>
+                    {links.website.replace(/^https?:\/\//, "")}
+                  </ContactItem>
+                )}
+              </div>
             </div>
           </div>
           {profileUrl && qrSvg && (
