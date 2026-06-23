@@ -21,6 +21,8 @@ const queritaeStrings: QueritaeCtaStrings = {
 
 function baseProps() {
   return {
+    name: "Ada Lovelace",
+    tagline: "Queryable CV",
     lang: "en" as const,
     onLangChange: vi.fn(),
     themeToggleLabel: "Theme",

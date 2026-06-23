@@ -10,6 +10,8 @@ beforeEach(() => {
 
 function baseProps(overrides: Partial<AppTopBarProps> = {}): AppTopBarProps {
   return {
+    name: "Ada Lovelace",
+    tagline: "Queryable CV",
     lang: "en",
     onLangChange: vi.fn(),
     themeToggleLabel: "Theme",
@@ -24,6 +26,21 @@ function baseProps(overrides: Partial<AppTopBarProps> = {}): AppTopBarProps {
     ...overrides,
   };
 }
+
+describe("AppTopBar masthead", () => {
+  it("renders the person's name and tagline from props, not a hardcoded value", () => {
+    render(<AppTopBar {...baseProps({ name: "Ada Lovelace", tagline: "Queryable CV" })} />);
+    // Name appears twice (visible eyebrow + sr-only h1); tagline likewise.
+    expect(screen.getAllByText(/Ada Lovelace/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Ada Lovelace — Queryable CV");
+    expect(screen.queryByText(/Alexandre Collet/)).toBeNull();
+  });
+
+  it("uses the localized tagline it is given (e.g. French)", () => {
+    render(<AppTopBar {...baseProps({ name: "Ada Lovelace", tagline: "CV interrogeable", lang: "fr" })} />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Ada Lovelace — CV interrogeable");
+  });
+});
 
 describe("AppTopBar source-repo link", () => {
   it("renders an external GitHub link when sourceRepo is provided", () => {

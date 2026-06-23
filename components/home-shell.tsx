@@ -61,6 +61,8 @@ export function HomeShell({
     <>
       <div className="relative z-10 flex h-dvh flex-col">
         <AppTopBar
+          name={t.masthead.name}
+          tagline={t.masthead.tagline}
           lang={lang}
           onLangChange={onLangChange}
           themeToggleLabel={t.themeToggle}

@@ -8,6 +8,10 @@ import type { UiLang } from "@/lib/language";
 import { cn } from "@/lib/utils";
 
 export type AppTopBarProps = {
+  /** Person's full name shown in the masthead — derived from the persona, never hardcoded. */
+  name: string;
+  /** Localized tagline under the name (e.g. "Queryable CV" / "CV interrogeable"). */
+  tagline: string;
   lang: UiLang;
   onLangChange: (next: UiLang) => void;
   themeToggleLabel: string;
@@ -40,6 +44,8 @@ const ICON_BTN =
  * collapsed state + toggle.
  */
 export function AppTopBar({
+  name,
+  tagline,
   lang,
   onLangChange,
   themeToggleLabel,
@@ -58,7 +64,9 @@ export function AppTopBar({
 }: AppTopBarProps) {
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-2.5 backdrop-blur sm:px-6">
-      <h1 className="sr-only">Alexandre Collet — Queryable CV</h1>
+      <h1 className="sr-only">
+        {name} — {tagline}
+      </h1>
       <div className="flex shrink-0 items-center gap-3">
         <MatriceLogo size={28} animated />
         {/* Name hidden on mobile — the controls cluster needs the full row width. */}
@@ -67,13 +75,13 @@ export function AppTopBar({
             className="whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-primary)]"
             style={{ letterSpacing: "0.32em" }}
           >
-            Alexandre Collet
+            {name}
           </span>
           <span
             className="whitespace-nowrap font-display text-sm font-medium text-[var(--color-text-primary)]"
             style={{ letterSpacing: "-0.01em" }}
           >
-            Queryable CV
+            {tagline}
           </span>
         </div>
       </div>

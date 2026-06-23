@@ -12,6 +12,8 @@ export function buildUiStrings(persona: Persona) {
   return {
     en: {
       headline: `${persona.fullName} — queryable CV`,
+      /** Two-line app masthead: the person's name + a localized tagline. */
+      masthead: { name: persona.fullName, tagline: "Queryable CV" },
       intro: `Hi — I'm an agent that can answer questions about ${enGiven}'s background, experience, and projects. Ask me anything.`,
       placeholder: "Ask a question…",
       send: "Send",
@@ -183,6 +185,8 @@ export function buildUiStrings(persona: Persona) {
     },
     fr: {
       headline: `${persona.fullName} — CV interrogeable`,
+      /** Two-line app masthead: the person's name + a localized tagline. */
+      masthead: { name: persona.fullName, tagline: "CV interrogeable" },
       intro: `Bonjour — je suis un agent qui peut répondre à des questions sur le parcours, l'expérience et les projets ${frGivenApos}. Posez-moi vos questions.`,
       placeholder: "Posez une question…",
       send: "Envoyer",
