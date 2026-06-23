@@ -6,6 +6,7 @@ import type { Route } from "next";
 import type { ConversationTurn } from "@/lib/db/schema";
 import { CONVERSATION_LIMIT, type ConversationListItem } from "@/lib/admin/data";
 import { RecordList } from "@/components/admin/record-list";
+import { StatTile } from "@/components/admin/ui";
 import { DetailSidebar } from "@/components/admin/detail-sidebar";
 import { ConversationRow } from "@/components/admin/rows/conversation-row";
 import { ConversationDetail } from "@/components/admin/details/conversation-detail";
@@ -33,6 +34,9 @@ export function ConversationsSection({
   );
   const shown = segment === "interviewers" ? interviewers : conversations;
   const selected = selectedId ? conversations.find((c) => c.id === selectedId) ?? null : null;
+  const avgTurns = conversations.length
+    ? Math.round(conversations.reduce((sum, c) => sum + c.turnCount, 0) / conversations.length)
+    : 0;
 
   // The list payload omits transcripts; fetch the selected one on demand. While
   // it loads, `transcript` is null and the detail body shows a loading state.
@@ -66,6 +70,13 @@ export function ConversationsSection({
 
   return (
     <>
+      {conversations.length > 0 && (
+        <div className="mb-5 grid grid-cols-3 gap-3">
+          <StatTile label="Conversations" value={conversations.length} />
+          <StatTile label="Interviewers" value={interviewers.length} tone="accent" />
+          <StatTile label="Avg turns" value={avgTurns} />
+        </div>
+      )}
       <div className="mb-4 flex items-center gap-2">
         <SegmentButton active={segment === "all"} onClick={() => setSegment("all")} label="All" count={conversations.length} />
         <SegmentButton

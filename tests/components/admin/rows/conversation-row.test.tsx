@@ -35,9 +35,11 @@ describe("ConversationRow", () => {
     expect(screen.getByText("Sarah Lee")).toBeInTheDocument();
     expect(screen.getByText(/VP Eng · Acme/)).toBeInTheDocument();
     expect(screen.getByText("stated")).toBeInTheDocument();
+    // Identity chip shows the person's initials.
+    expect(screen.getByText("SL")).toBeInTheDocument();
   });
 
-  it("shows channel + turn count for a plain conversation", () => {
+  it("shows an Anonymous label, channel + turn count for a plain conversation", () => {
     render(
       <ConversationRow
         conversation={conv({
@@ -46,6 +48,7 @@ describe("ConversationRow", () => {
         })}
       />,
     );
+    expect(screen.getByText("Anonymous")).toBeInTheDocument();
     expect(screen.getByText("mcp")).toBeInTheDocument();
     expect(screen.getByText("1 turns")).toBeInTheDocument();
   });

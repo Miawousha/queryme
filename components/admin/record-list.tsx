@@ -52,11 +52,11 @@ export function RecordList<T>({
               aria-pressed={selected}
               onClick={() => onSelect(id)}
               className={cn(
-                "w-full rounded-xl border bg-[var(--color-card)]/60 px-4 py-3 text-left transition-colors",
+                "w-full rounded-xl border border-l-2 bg-[var(--color-card)]/40 px-4 py-3 text-left transition-colors",
                 "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
                 selected
-                  ? "border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]"
-                  : "border-[var(--color-border)] hover:border-[var(--color-primary)]",
+                  ? "border-[rgba(var(--color-accent-rgb),0.4)] border-l-[var(--color-accent)] bg-[var(--color-card)]"
+                  : "border-[var(--color-border)] border-l-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:border-l-[var(--color-border-hover)]",
               )}
             >
               {renderRow(item)}
