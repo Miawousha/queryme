@@ -23,9 +23,29 @@ export function CvStandalone({
   qrSvg?: string;
 }) {
   const t = CV_STRINGS[lang];
+  const q = t.queritae;
+  const queritae = {
+    strings: {
+      pill: q.pill,
+      title: q.title,
+      pitch: q.pitchTemplate.replace("{name}", cvKb.profile.name),
+      bullets: q.bullets,
+      exploreCta: q.exploreCta,
+      signupCta: q.signupCta,
+      close: q.close,
+    },
+    landingHref: "/?ref=profile",
+    signupHref: "/api/auth/github/login",
+  };
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <CvTopBar lang={lang} printLabel={t.print} backLabel="queritae" basePath={basePath} />
+      <CvTopBar
+        lang={lang}
+        printLabel={t.print}
+        backLabel="queritae"
+        basePath={basePath}
+        queritae={queritae}
+      />
       <CvDocumentView kb={cvKb} lang={lang} profileUrl={profileUrl} qrSvg={qrSvg} />
     </main>
   );

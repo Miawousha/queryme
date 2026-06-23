@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Route } from "next";
 import { LanguageToggle } from "@/components/language-toggle";
+import { QueritaeCta, type QueritaeCtaStrings } from "@/components/queritae-cta";
 import type { UiLang } from "@/lib/language";
 
 export function CvTopBar({
@@ -12,12 +13,19 @@ export function CvTopBar({
   printLabel,
   backLabel,
   basePath = "",
+  queritae,
 }: {
   lang: UiLang;
   printLabel: string;
   backLabel: string;
   /** Account page base: "" for the root account (→ /cv) or "/{username}". */
   basePath?: string;
+  /** Platform CTA wiring. When present, renders the "queritae" pill + modal. */
+  queritae?: {
+    strings: QueritaeCtaStrings;
+    landingHref: string;
+    signupHref: string;
+  };
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,6 +62,13 @@ export function CvTopBar({
         >
           {printLabel}
         </button>
+        {queritae && (
+          <QueritaeCta
+            strings={queritae.strings}
+            landingHref={queritae.landingHref}
+            signupHref={queritae.signupHref}
+          />
+        )}
       </div>
     </div>
   );

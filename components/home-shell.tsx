@@ -75,6 +75,11 @@ export function HomeShell({
           onToggleKb={() => onKbCollapsedChange((c) => !c)}
           kbShowLabel={t.kbPanel.show}
           kbHideLabel={t.kbPanel.hide}
+          queritae={{
+            strings: t.queritae,
+            landingHref: "/?ref=profile",
+            signupHref: "/api/auth/github/login",
+          }}
         />
 
         <KbLayout
