@@ -42,8 +42,8 @@ the contract. **Phase complete (2026-06-23).**
 
 ## Phase 3 — Trust, safety, and ops floor (before strangers arrive)
 
-- [ ] **Terms acceptance** at first login (`tosAcceptedAt` column + one-time interstitial).
-- [ ] **Account suspension** action in the super-admin console (builds on Phase 1's disabled flag), plus a content-report path — even just a mailto on persona pages.
+- [x] **Terms acceptance** at first login (`tos_accepted_at` column + interstitial at `/auth/accept-tos`, enforced at the admin gates + OAuth callback). (2026-06-23)
+- [~] **Account suspension** action — already functional via the `disabled` status; **content-report path shipped** as a lean `REPORT_EMAIL` mailto in the About popover (2026-06-23). Persisted report queue + "Disable→Suspend" relabel deferred.
 - [ ] **Impersonation guardrails** — reserved-slug list exists (`lib/accounts/slug.ts`); add brand/person-name review for custom domains and usernames.
 - [ ] **Ops checklist** — error monitoring (none found in code), DB backup verification on Neon, smoke test for the persona sync path (it touches `/tmp` on serverless).
 
