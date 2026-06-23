@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { PersonaSource } from "@/lib/db/schema";
 import { KbSetupSteps } from "@/components/admin/kb-setup-steps";
+import { KbProgressStrip } from "@/components/admin/kb-progress-strip";
 import { ManualSyncForm } from "@/components/admin/manual-sync-form";
 import { Field, LABEL } from "@/components/admin/ui";
 import { fmt } from "@/lib/admin/format";
@@ -55,6 +56,7 @@ export function ContentTab({
 
   return (
     <div className="flex flex-col gap-6 p-4">
+      <KbProgressStrip active={state.active} historyCount={state.history.length} />
       {state.active ? (
         <>
           <section className="flex flex-col gap-2">

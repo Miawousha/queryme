@@ -105,6 +105,21 @@ describe("ContentTab", () => {
     expect(screen.getByText(/advanced: change source manually/i)).toBeInTheDocument();
   });
 
+  it("shows the onboarding progress strip on its 'build' step when empty", async () => {
+    stubPersonaSource(null);
+    render(<ContentTab apiBasePath="/api/a/alex/admin" username="alex" />);
+    const strip = await screen.findByRole("list", { name: /setup progress/i });
+    expect(strip).toBeInTheDocument();
+    expect(strip.querySelector('[aria-current="step"]')?.textContent).toMatch(/build/i);
+  });
+
+  it("collapses the progress strip to the live state once a source is active", async () => {
+    stubPersonaSource(ACTIVE_ROW);
+    render(<ContentTab apiBasePath="/api/a/alex/admin" username="alex" />);
+    await screen.findByText(/active source/i);
+    expect(screen.getByText(/knowledge base is live/i)).toBeInTheDocument();
+  });
+
   it("passes appInstallUrl down to the empty-state Connect CTA", async () => {
     stubPersonaSource(null);
     render(
