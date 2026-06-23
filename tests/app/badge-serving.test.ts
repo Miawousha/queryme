@@ -20,7 +20,12 @@ describe("badge serving", () => {
     const badge = headers.find((h) => h.source.startsWith("/badge"));
     expect(badge).toBeDefined();
     expect(
-      badge!.headers.some((x) => x.key === "Cache-Control" && x.value.includes("immutable")),
+      badge!.headers.some(
+        (x) =>
+          x.key === "Cache-Control" &&
+          x.value.includes("immutable") &&
+          x.value.includes("max-age=31536000"),
+      ),
     ).toBe(true);
   });
 });

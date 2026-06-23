@@ -19,6 +19,10 @@ const CURSOR = { x: 56, y: 53, w: 18, h: 18, rx: 4 };
  * The Queritae mark as an SVG string. The "tile" lockup carves the Q + cursor
  * out of a solid square via a mask, so the whole mark is one recolorable fill
  * and the knockout is true transparency (renders correctly on any background).
+ *
+ * Trusted-input contract: `color` and `id` are interpolated directly into the
+ * SVG without escaping, so they must be trusted / developer-supplied values
+ * (internal constants, app-generated ids) — never raw user input.
  */
 export function queritaeMarkSvg(opts: QueritaeMarkOptions = {}): string {
   const { lockup = "tile", color = "#0f172a", size = 96, id = "q" } = opts;
