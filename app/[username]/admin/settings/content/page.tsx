@@ -1,4 +1,5 @@
 import { requireAdminAccount } from "@/lib/admin/require-admin";
+import { PageHeader } from "@/components/admin/page-header";
 import { ContentTab } from "@/components/admin/content-tab";
 import { AutoSyncPanel } from "@/components/admin/auto-sync-panel";
 import { appInstallUrl } from "@/lib/github-app/url";
@@ -19,6 +20,11 @@ export default async function ContentSettingsPage({
   const apiBasePath = `/api/a/${account.username}/admin`;
   return (
     <>
+      <PageHeader
+        eyebrow="Settings"
+        title="Content source"
+        description="Connect and sync the GitHub repo that powers your knowledge base."
+      />
       <ContentTab
         apiBasePath={apiBasePath}
         username={account.username}

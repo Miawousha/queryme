@@ -5,6 +5,7 @@ import { loadConversations } from "@/lib/admin/data";
 import { requireAdminAccount } from "@/lib/admin/require-admin";
 import { needsContentOnboarding } from "@/lib/admin/onboarding";
 import { getActivePersonaSourceRowForAccount } from "@/lib/persona-source";
+import { PageHeader } from "@/components/admin/page-header";
 import { ConversationsSection } from "@/components/admin/sections/conversations-section";
 
 export const runtime = "nodejs";
@@ -29,9 +30,16 @@ export default async function ConversationsPage({
 
   const conversations = await loadConversations(getDb(), account.id);
   return (
-    <ConversationsSection
-      conversations={conversations}
-      apiBasePath={`/api/a/${account.username}/admin`}
-    />
+    <>
+      <PageHeader
+        eyebrow="Activity"
+        title="Conversations"
+        description="Every chat your knowledge base has answered."
+      />
+      <ConversationsSection
+        conversations={conversations}
+        apiBasePath={`/api/a/${account.username}/admin`}
+      />
+    </>
   );
 }

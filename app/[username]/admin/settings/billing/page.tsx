@@ -6,6 +6,7 @@ import { getBillingForAccount } from "@/lib/billing/repo";
 import { syncCheckoutSession } from "@/lib/billing/checkout";
 import { getStripe } from "@/lib/billing/stripe";
 import { FREE_MONTHLY_ANSWERS } from "@/lib/billing/plan";
+import { PageHeader } from "@/components/admin/page-header";
 import { BillingPanel } from "@/components/admin/billing-panel";
 
 export const runtime = "nodejs";
@@ -35,12 +36,19 @@ export default async function BillingSettingsPage({
   const totals = await getUsageTotals(db, account.id);
 
   return (
-    <BillingPanel
-      apiBasePath={`/api/a/${account.username}/admin`}
-      plan={fresh.plan}
-      usedThisMonth={totals.monthMessages}
-      freeAllowance={FREE_MONTHLY_ANSWERS}
-      currentPeriodEnd={billing?.currentPeriodEnd?.toISOString() ?? null}
-    />
+    <>
+      <PageHeader
+        eyebrow="Settings"
+        title="Billing"
+        description="Your plan and answers used this month."
+      />
+      <BillingPanel
+        apiBasePath={`/api/a/${account.username}/admin`}
+        plan={fresh.plan}
+        usedThisMonth={totals.monthMessages}
+        freeAllowance={FREE_MONTHLY_ANSWERS}
+        currentPeriodEnd={billing?.currentPeriodEnd?.toISOString() ?? null}
+      />
+    </>
   );
 }

@@ -52,7 +52,7 @@ export function BillingPanel({
       <div className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-cozy font-medium text-[var(--color-text-primary)]">
-            Billing
+            Plan
           </h2>
           <span
             className={cn(

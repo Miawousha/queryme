@@ -1,4 +1,5 @@
 import { requireAdminAccount } from "@/lib/admin/require-admin";
+import { PageHeader } from "@/components/admin/page-header";
 import { DomainsPanel } from "@/components/admin/domains-panel";
 
 export const runtime = "nodejs";
@@ -11,5 +12,14 @@ export default async function DomainsSettingsPage({
 }) {
   const { username } = await params;
   const account = await requireAdminAccount(username);
-  return <DomainsPanel apiBasePath={`/api/a/${account.username}/admin`} />;
+  return (
+    <>
+      <PageHeader
+        eyebrow="Settings"
+        title="Custom domains"
+        description="Serve your profile from a domain you own."
+      />
+      <DomainsPanel apiBasePath={`/api/a/${account.username}/admin`} />
+    </>
+  );
 }
