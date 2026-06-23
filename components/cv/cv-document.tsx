@@ -161,7 +161,7 @@ export function CvDocumentView({
               <div
                 role="img"
                 aria-label={t.qrAlt}
-                className="cv-qr h-[88px] w-[88px] text-[var(--color-text-primary)]"
+                className="cv-qr h-20 w-20 text-[var(--color-text-primary)]"
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
               <span className="font-mono text-2xs tracking-[0.02em] text-[var(--color-text-tertiary)]">
