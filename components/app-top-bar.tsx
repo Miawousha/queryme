@@ -2,6 +2,7 @@
 
 import { LanguageToggle } from "@/components/language-toggle";
 import { MatriceLogo } from "@/components/matrice-logo";
+import { QueritaeCta, type QueritaeCtaStrings } from "@/components/queritae-cta";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { UiLang } from "@/lib/language";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,12 @@ export type AppTopBarProps = {
   onToggleKb: () => void;
   kbShowLabel: string;
   kbHideLabel: string;
+  /** Platform CTA wiring. When present, renders the "queritae" pill + modal. */
+  queritae?: {
+    strings: QueritaeCtaStrings;
+    landingHref: string;
+    signupHref: string;
+  } | null;
 };
 
 const ICON_BTN =
@@ -47,6 +54,7 @@ export function AppTopBar({
   onToggleKb,
   kbShowLabel,
   kbHideLabel,
+  queritae,
 }: AppTopBarProps) {
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-2.5 backdrop-blur sm:px-6">
@@ -134,6 +142,13 @@ export function AppTopBar({
         >
           <PanelIcon />
         </button>
+        {queritae && (
+          <QueritaeCta
+            strings={queritae.strings}
+            landingHref={queritae.landingHref}
+            signupHref={queritae.signupHref}
+          />
+        )}
       </div>
     </header>
   );

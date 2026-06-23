@@ -93,6 +93,19 @@ export function buildUiStrings(persona: Persona) {
         printableCv: "Printable CV",
         report: "Report this persona",
       },
+      queritae: {
+        pill: "queritae",
+        title: "What is Queritae?",
+        pitch: `This is ${enGiven}'s queryable CV — a résumé you can interview. Queritae turns a GitHub repo of career notes into a grounded AI agent that answers questions, with citations.`,
+        bullets: [
+          "Grounded in real career notes",
+          "Agent-native — built-in MCP endpoint",
+          "Your own domain",
+        ],
+        exploreCta: "Explore Queritae →",
+        signupCta: "Create yours with GitHub",
+        close: "Close",
+      },
       kbPanel: {
         show: "Show the knowledge base panel",
         hide: "Hide the knowledge base panel",
@@ -250,6 +263,19 @@ export function buildUiStrings(persona: Persona) {
         close: "Fermer",
         printableCv: "CV imprimable",
         report: "Signaler ce profil",
+      },
+      queritae: {
+        pill: "queritae",
+        title: "Qu'est-ce que Queritae ?",
+        pitch: `Voici le CV interrogeable ${frGivenApos} — un CV que l'on peut interviewer. Queritae transforme un dépôt GitHub de notes de carrière en un agent IA fiable qui répond aux questions, avec citations.`,
+        bullets: [
+          "Fondé sur de vraies notes de carrière",
+          "Pensé pour les agents — endpoint MCP intégré",
+          "Votre propre domaine",
+        ],
+        exploreCta: "Découvrir Queritae →",
+        signupCta: "Créez le vôtre avec GitHub",
+        close: "Fermer",
       },
       kbPanel: {
         show: "Afficher la base de connaissances",
