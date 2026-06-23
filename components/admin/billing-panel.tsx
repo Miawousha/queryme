@@ -51,7 +51,7 @@ export function BillingPanel({
     <div className="flex max-w-2xl flex-col gap-6">
       <div className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] p-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-base font-medium text-[var(--color-text-primary)]">
+          <h2 className="font-display text-cozy font-medium text-[var(--color-text-primary)]">
             Billing
           </h2>
           <span
