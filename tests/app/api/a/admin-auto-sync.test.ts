@@ -13,14 +13,10 @@ const repo = {
   getAutoSyncConfig: vi.fn(),
   enableAutoSync: vi.fn(),
   disableAutoSync: vi.fn(),
-  regenerateSecret: vi.fn(),
 };
 
 function mockRepo() {
   vi.doMock("@/lib/auto-sync/repo", () => repo);
-  vi.doMock("@/lib/auto-sync/url", () => ({
-    webhookUrlFor: (u: string) => `https://queritae.com/api/a/${u}/sync-webhook`,
-  }));
 }
 
 async function callGet() {
@@ -62,7 +58,7 @@ describe("/api/a/[username]/admin/auto-sync", () => {
     expect(repo.enableAutoSync).not.toHaveBeenCalled();
   });
 
-  it("GET returns the view with revealed secret + webhook URL", async () => {
+  it("GET returns the App-connected view", async () => {
     process.env.GITHUB_APP_SLUG = "queritae";
     mockAuth();
     mockRepo();
@@ -77,8 +73,6 @@ describe("/api/a/[username]/admin/auto-sync", () => {
     expect(await res.json()).toEqual({
       enabled: true,
       configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeef",
       lastDeliveryAt: null,
       connectedViaApp: true,
       manageUrl: "https://github.com/settings/installations/inst-9",
@@ -91,35 +85,26 @@ describe("/api/a/[username]/admin/auto-sync", () => {
     mockRepo();
     repo.getAutoSyncConfig.mockResolvedValue(null);
     const body = await (await callGet()).json();
-    expect(body).toMatchObject({ enabled: false, configured: false, secret: null, manageUrl: null });
+    expect(body).toMatchObject({ enabled: false, configured: false, connectedViaApp: false, manageUrl: null });
   });
 
   it("POST enable calls enableAutoSync and returns the view", async () => {
     mockAuth();
     mockRepo();
-    repo.enableAutoSync.mockResolvedValue({ enabled: true, secret: "newsecret", lastDeliveryAt: null });
+    repo.enableAutoSync.mockResolvedValue({ enabled: true, lastDeliveryAt: null });
     const res = await callPost("enable");
     expect(res.status).toBe(200);
     expect(repo.enableAutoSync).toHaveBeenCalledWith("acct-1");
-    expect(await res.json()).toMatchObject({ enabled: true, secret: "newsecret" });
+    expect(await res.json()).toMatchObject({ enabled: true, configured: true });
   });
 
   it("POST disable calls disableAutoSync", async () => {
     mockAuth();
     mockRepo();
-    repo.disableAutoSync.mockResolvedValue({ enabled: false, secret: "kept", lastDeliveryAt: null });
+    repo.disableAutoSync.mockResolvedValue({ enabled: false, lastDeliveryAt: null });
     const res = await callPost("disable");
     expect(repo.disableAutoSync).toHaveBeenCalledWith("acct-1");
-    expect(await res.json()).toMatchObject({ enabled: false, secret: "kept" });
-  });
-
-  it("POST regenerate calls regenerateSecret", async () => {
-    mockAuth();
-    mockRepo();
-    repo.regenerateSecret.mockResolvedValue({ enabled: true, secret: "rotated", lastDeliveryAt: null });
-    const res = await callPost("regenerate");
-    expect(repo.regenerateSecret).toHaveBeenCalledWith("acct-1");
-    expect(await res.json()).toMatchObject({ secret: "rotated" });
+    expect(await res.json()).toMatchObject({ enabled: false, configured: true });
   });
 
   it("POST 400s on an unknown action", async () => {
