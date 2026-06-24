@@ -24,7 +24,7 @@ d("github-app/repo (integration)", () => {
     }
   });
 
-  it("connect creates a row with installation + secret, find resolves it, disconnect clears it", async () => {
+  it("connect creates a row with installation, find resolves it, disconnect clears it", async () => {
     const acct = await createAccount(db, { username });
     accountId = acct.id;
 
@@ -38,10 +38,9 @@ d("github-app/repo (integration)", () => {
       .from(personaAutoSync)
       .where(eq(personaAutoSync.accountId, accountId));
     expect(row.enabled).toBe(true);
-    expect(row.secret).toMatch(/^[0-9a-f]{64}$/);
     expect(row.installationId).toBe("inst-1");
 
-    // Idempotent re-connect (e.g. existing manual-webhook row) keeps the secret.
+    // Idempotent re-connect rebinds to the new installation id.
     await connectInstallation(accountId, "inst-2");
     expect(await findAccountIdByInstallation("inst-2")).toBe(accountId);
     expect(await findAccountIdByInstallation("inst-1")).toBeNull();

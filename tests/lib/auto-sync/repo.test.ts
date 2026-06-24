@@ -4,22 +4,11 @@ import { getDb } from "@/lib/db/client";
 import { accounts, personaAutoSync } from "@/lib/db/schema";
 import { createAccount } from "@/lib/accounts/repo";
 import {
-  generateSecret,
   getAutoSyncConfig,
   enableAutoSync,
   disableAutoSync,
-  regenerateSecret,
   touchLastDelivery,
 } from "@/lib/auto-sync/repo";
-
-describe("generateSecret", () => {
-  it("returns a 64-char hex string", () => {
-    expect(generateSecret()).toMatch(/^[0-9a-f]{64}$/);
-  });
-  it("returns a different value each call", () => {
-    expect(generateSecret()).not.toBe(generateSecret());
-  });
-});
 
 const RUN_DB = !!process.env.RUN_DB_TESTS;
 const d = RUN_DB ? describe : describe.skip;
@@ -36,7 +25,7 @@ d("auto-sync/repo (integration)", () => {
     }
   });
 
-  it("enable creates a row with a secret, disable keeps the secret", async () => {
+  it("enable creates a row, disable pauses it, re-enable flips it back on", async () => {
     const acct = await createAccount(db, { username });
     accountId = acct.id;
 
@@ -44,21 +33,13 @@ d("auto-sync/repo (integration)", () => {
 
     const enabled = await enableAutoSync(accountId);
     expect(enabled.enabled).toBe(true);
-    expect(enabled.secret).toMatch(/^[0-9a-f]{64}$/);
 
     const disabled = await disableAutoSync(accountId);
     expect(disabled?.enabled).toBe(false);
-    expect(disabled?.secret).toBe(enabled.secret); // secret retained
 
     const reenabled = await enableAutoSync(accountId);
     expect(reenabled.enabled).toBe(true);
-    expect(reenabled.secret).toBe(enabled.secret); // same secret, instant re-enable
-  });
-
-  it("regenerate replaces the secret", async () => {
-    const before = await getAutoSyncConfig(accountId);
-    const after = await regenerateSecret(accountId);
-    expect(after.secret).not.toBe(before?.secret);
+    expect(reenabled.id).toBe(enabled.id); // same row, instant re-enable
   });
 
   it("touchLastDelivery stamps last_delivery_at", async () => {

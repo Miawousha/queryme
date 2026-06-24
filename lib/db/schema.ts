@@ -220,12 +220,10 @@ export type AccountBilling = typeof accountBilling.$inferSelect;
 
 /**
  * Per-account auto-sync config. One row per account (unique account_id). This
- * is CONFIG, not history — persona_source stays the append-only sync log. The
- * `secret` is the GitHub webhook HMAC signing secret, generated on first
- * enable and revealed to the owner (like a Stripe endpoint secret). `enabled`
- * pauses delivery handling without destroying the secret, so re-enabling is
- * instant and an already-installed GitHub hook keeps working. `webhook_id` is
- * the seam for a future server-side (OAuth) hook creation: null in manual mode.
+ * is CONFIG, not history — persona_source stays the append-only sync log.
+ * `enabled` pauses delivery handling without destroying the row, so re-enabling
+ * is instant and an already-connected GitHub App installation keeps working.
+ * `webhook_id` is the seam for a future server-side (OAuth) hook creation.
  */
 export const personaAutoSync = pgTable(
   "persona_auto_sync",
@@ -235,11 +233,10 @@ export const personaAutoSync = pgTable(
       .references(() => accounts.id)
       .notNull(),
     enabled: boolean("enabled").notNull().default(false),
-    secret: text("secret").notNull(),
     webhookId: text("webhook_id"),
     // GitHub App installation id (stored as text; numeric but never used in
-    // arithmetic). Set when the account connects via the GitHub App; null for
-    // manual-webhook accounts. Unique-when-present.
+    // arithmetic). Set when the account connects via the GitHub App.
+    // Unique-when-present.
     installationId: text("installation_id"),
     lastDeliveryAt: timestamp("last_delivery_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

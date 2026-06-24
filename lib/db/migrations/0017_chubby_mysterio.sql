@@ -1,0 +1,1 @@
+ALTER TABLE "persona_auto_sync" DROP COLUMN "secret";

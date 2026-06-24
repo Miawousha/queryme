@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { personaAutoSync } from "@/lib/db/schema";
-import { generateSecret, getAutoSyncConfig } from "@/lib/auto-sync/repo";
+import { getAutoSyncConfig } from "@/lib/auto-sync/repo";
 
 /** The account whose auto-sync row owns this GitHub App installation. */
 export async function findAccountIdByInstallation(installationId: string): Promise<string | null> {
@@ -15,10 +15,8 @@ export async function findAccountIdByInstallation(installationId: string): Promi
 
 /**
  * Bind an installation to an account, enabling auto-sync. Upserts the
- * `persona_auto_sync` row: on first connect it creates the row with a fresh
- * secret (so the not-null column is satisfied and the manual fallback stays
- * usable); on a later connect it sets the new installation id and re-enables,
- * keeping the existing secret. Idempotent.
+ * `persona_auto_sync` row: on first connect it creates the row; on a later
+ * connect it sets the new installation id and re-enables. Idempotent.
  */
 export async function connectInstallation(accountId: string, installationId: string): Promise<void> {
   const existing = await getAutoSyncConfig(accountId);
@@ -31,10 +29,10 @@ export async function connectInstallation(accountId: string, installationId: str
   }
   await getDb()
     .insert(personaAutoSync)
-    .values({ accountId, enabled: true, secret: generateSecret(), installationId });
+    .values({ accountId, enabled: true, installationId });
 }
 
-/** Clear the installation binding (e.g. on uninstall). Keeps the row + secret. */
+/** Clear the installation binding (e.g. on uninstall). Keeps the row. */
 export async function disconnectInstallation(installationId: string): Promise<void> {
   await getDb()
     .update(personaAutoSync)
