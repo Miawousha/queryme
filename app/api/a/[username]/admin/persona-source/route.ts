@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server";
-import { resolveAccountAdmin } from "@/app/[username]/admin/resolve";
+import { resolveAccountAdminViaSessionOrToken } from "@/lib/admin/setup-token-guard";
 import { personaSourceStatus, personaSourceSync } from "@/lib/admin/persona-source-api";
 
 export const runtime = "nodejs";
 
 type Ctx = { params: Promise<{ username: string }> };
 
-export async function GET(_req: Request, { params }: Ctx) {
+export async function GET(req: Request, { params }: Ctx) {
   const { username } = await params;
-  const res = await resolveAccountAdmin(username);
+  const res = await resolveAccountAdminViaSessionOrToken(username, req);
   if (res.kind !== "ok") return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(await personaSourceStatus(res.account.id));
 }
 
 export async function POST(req: Request, { params }: Ctx) {
   const { username } = await params;
-  const res = await resolveAccountAdmin(username);
+  const res = await resolveAccountAdminViaSessionOrToken(username, req);
   if (res.kind !== "ok") return NextResponse.json({ error: "Not found" }, { status: 404 });
   let body: { repoUrl?: string; branch?: string };
   try {
