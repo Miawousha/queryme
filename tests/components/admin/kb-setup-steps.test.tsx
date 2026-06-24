@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KbSetupSteps } from "@/components/admin/kb-setup-steps";
@@ -11,6 +11,19 @@ afterEach(() => {
   });
 });
 
+// Copy now mints a short-lived setup token before assembling the prompt, so
+// every path that reaches the clipboard needs fetch stubbed. Default: ok.
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ token: "setup.x.y.z", expiresAt: Date.now() + 60000 }),
+    }),
+  );
+});
+afterEach(() => vi.unstubAllGlobals());
+
 const baseProps = {
   username: "alex",
   apiBasePath: "/api/a/alex/admin",
@@ -18,13 +31,15 @@ const baseProps = {
 };
 
 describe("KbSetupSteps", () => {
-  it("renders the prompt with the username and origin-correct URLs", () => {
+  it("renders the build-repo step with token-aware helper text", () => {
     render(<KbSetupSteps {...baseProps} />);
-    const origin = window.location.origin;
-    const prompt = screen.getByTestId("setup-prompt");
-    expect(prompt.textContent).toContain(`${origin}/alex`);
-    expect(prompt.textContent).toContain(`${origin}/setup-guide.md`);
-    expect(prompt.textContent).toContain("Queritae knowledge base");
+    // The static prompt preview is gone — the prompt is only assembled at copy
+    // time because it carries a live token. The step + helper text remain.
+    expect(screen.getByText(/build your content repo/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/includes a one-time credential so your agent can register the repo/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("setup-prompt")).not.toBeInTheDocument();
   });
 
   it("shows Connect with GitHub App as the primary step when an install URL is given", () => {
@@ -51,7 +66,7 @@ describe("KbSetupSteps", () => {
     expect(screen.getByRole("button", { name: /^sync$/i })).toBeInTheDocument();
   });
 
-  it("copies the full prompt to the clipboard", async () => {
+  it("mints a token and copies the full prompt to the clipboard", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
@@ -60,17 +75,33 @@ describe("KbSetupSteps", () => {
     render(<KbSetupSteps {...baseProps} />);
     await userEvent.click(screen.getByRole("button", { name: /copy prompt/i }));
     expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText.mock.calls[0][0]).toContain(`${window.location.origin}/setup-guide.md`);
+    const copied = writeText.mock.calls[0][0] as string;
+    expect(copied).toContain("Authorization: Bearer setup.x.y.z");
+    expect(copied).toContain(`${window.location.origin}/setup-guide.md`);
     await screen.findByRole("button", { name: /copied/i });
   });
 
   it("shows failure feedback when the clipboard write is rejected", async () => {
+    // fetch resolves ok (default), so the flow reaches the clipboard, which rejects.
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
       configurable: true,
     });
     render(<KbSetupSteps {...baseProps} />);
     await userEvent.click(screen.getByRole("button", { name: /copy prompt/i }));
+    await screen.findByRole("button", { name: /copy failed/i });
+  });
+
+  it("shows failure feedback when the token mint fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    render(<KbSetupSteps {...baseProps} />);
+    await userEvent.click(screen.getByRole("button", { name: /copy prompt/i }));
+    expect(writeText).not.toHaveBeenCalled();
     await screen.findByRole("button", { name: /copy failed/i });
   });
 });

@@ -2,14 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ManualSyncForm } from "@/components/admin/manual-sync-form";
-
-function buildPrompt(username: string, origin: string): string {
-  return [
-    `I'm setting up my Queritae knowledge base — a queryable CV that will live at ${origin}/${username}.`,
-    "",
-    `Fetch ${origin}/setup-guide.md and follow it exactly. Ask me for my source material (CV, LinkedIn export, portfolio links), and interview me briefly to fill gaps and capture stories. When everything passes the guide's self-checks, create a public GitHub repo, push, and give me the repo URL so I can paste it into my Queritae admin.`,
-  ].join("\n");
-}
+import { buildAgentPrompt } from "@/lib/admin/setup-prompt";
 
 // Empty-state onboarding for the Content tab: build the content repo with a
 // coding agent, then connect it — one-click via the GitHub App when available,
@@ -28,10 +21,18 @@ export function KbSetupSteps({
 }) {
   const [feedback, setFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prompt = buildPrompt(username, window.location.origin);
 
   const copy = async () => {
     try {
+      const res = await fetch(`${apiBasePath}/setup-token`, { method: "POST" });
+      if (!res.ok) throw new Error("mint failed");
+      const { token } = (await res.json()) as { token: string };
+      const prompt = buildAgentPrompt({
+        origin: window.location.origin,
+        username,
+        token,
+        appInstallUrl: appInstallUrl ?? null,
+      });
       await navigator.clipboard.writeText(prompt);
       setFeedback("copied");
     } catch {
@@ -55,12 +56,10 @@ export function KbSetupSteps({
           <span className="font-medium">Build your content repo.</span> Copy this
           prompt into your coding agent.
           <div className="mt-2 rounded border border-[var(--color-border)] p-2">
-            <pre
-              data-testid="setup-prompt"
-              className="whitespace-pre-wrap font-sans text-xs text-[var(--color-text-secondary)]"
-            >
-              {prompt}
-            </pre>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              Copy a ready-to-paste prompt — it includes a one-time credential so
+              your agent can register the repo for you.
+            </p>
             <button
               type="button"
               onClick={copy}
