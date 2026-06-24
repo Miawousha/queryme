@@ -33,8 +33,9 @@ describe("ContentTab", () => {
     await waitFor(() =>
       expect(screen.getByText(/set up your knowledge base/i)).toBeInTheDocument(),
     );
-    // Prompt is personalized and the sync form is still present as step 3.
-    expect(screen.getByTestId("setup-prompt").textContent).toContain("/alex");
+    // Prompt is only assembled at copy time (token fetch) so the static preview
+    // is gone from the DOM. The sync form (step 3) and Copy prompt button remain.
+    expect(screen.getByRole("button", { name: /copy prompt/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^sync$/i })).toBeInTheDocument();
     expect(screen.queryByText(/active source/i)).not.toBeInTheDocument();
   });
