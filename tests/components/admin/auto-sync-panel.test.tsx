@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { AutoSyncPanel } from "@/components/admin/auto-sync-panel";
 
@@ -15,32 +15,10 @@ afterEach(() => {
 });
 
 describe("AutoSyncPanel", () => {
-  it("shows the webhook URL and secret when enabled", async () => {
-    stubFetch({
-      enabled: true,
-      configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeefsecret",
-      lastDeliveryAt: null,
-      connectedViaApp: false,
-      manageUrl: null,
-      appInstallUrl: null,
-    });
-    render(<AutoSyncPanel apiBasePath="/api/a/alex/admin" />);
-    await waitFor(() =>
-      expect(screen.getByText(/sync-webhook/)).toBeInTheDocument(),
-    );
-    expect(screen.getByText(/deadbeefsecret/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /disable/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /regenerate secret/i })).toBeInTheDocument();
-  });
-
-  it("shows only an Enable button when disabled", async () => {
+  it("shows only an Enable button when disabled and no install URL", async () => {
     stubFetch({
       enabled: false,
       configured: false,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: null,
       lastDeliveryAt: null,
       connectedViaApp: false,
       manageUrl: null,
@@ -50,8 +28,6 @@ describe("AutoSyncPanel", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /enable/i })).toBeInTheDocument(),
     );
-    // Secret is not revealed while disabled.
-    expect(screen.queryByText(/sync-webhook/)).not.toBeInTheDocument();
     // With no install URL, the GitHub App block is absent entirely.
     expect(screen.queryByText(/github app/i)).not.toBeInTheDocument();
   });
@@ -60,8 +36,6 @@ describe("AutoSyncPanel", () => {
     stubFetch({
       enabled: false,
       configured: false,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: null,
       lastDeliveryAt: null,
       connectedViaApp: false,
       manageUrl: null,
@@ -72,12 +46,10 @@ describe("AutoSyncPanel", () => {
     expect(link).toHaveAttribute("href", "https://github.com/apps/queritae/installations/new");
   });
 
-  it("connected via App: shows status, Manage on GitHub, and demotes the webhook under Advanced", async () => {
+  it("connected via App: shows status and Manage on GitHub", async () => {
     stubFetch({
       enabled: true,
       configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeefsecret",
       lastDeliveryAt: null,
       connectedViaApp: true,
       manageUrl: "https://github.com/settings/installations/inst-9",
@@ -92,16 +64,12 @@ describe("AutoSyncPanel", () => {
       "href",
       "https://github.com/settings/installations/inst-9",
     );
-    // The secret still exists in the DOM but only inside the collapsed Advanced disclosure.
-    expect(screen.getByText("deadbeefsecret").closest("details")).not.toBeNull();
   });
 
-  it("connected via App and enabled: renders Last delivery exactly once (not duplicated under Advanced)", async () => {
+  it("connected via App and enabled: renders Last delivery exactly once", async () => {
     stubFetch({
       enabled: true,
       configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeefsecret",
       lastDeliveryAt: "2026-06-16T12:00:00.000Z",
       connectedViaApp: true,
       manageUrl: "https://github.com/settings/installations/inst-9",
@@ -111,8 +79,6 @@ describe("AutoSyncPanel", () => {
     await waitFor(() =>
       expect(screen.getByText(/connected via github app/i)).toBeInTheDocument(),
     );
-    // The webhook (and its old duplicate "Last delivery") lives under Advanced;
-    // the panel-level line must be the only one rendered.
     expect(screen.getAllByText(/last delivery/i)).toHaveLength(1);
   });
 
@@ -120,8 +86,6 @@ describe("AutoSyncPanel", () => {
     stubFetch({
       enabled: false,
       configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeefsecret",
       lastDeliveryAt: null,
       connectedViaApp: true,
       manageUrl: "https://github.com/settings/installations/inst-9",
@@ -132,45 +96,10 @@ describe("AutoSyncPanel", () => {
     expect(screen.getByRole("button", { name: /enable/i })).toBeInTheDocument();
   });
 
-  it("not connected with an install URL: demotes the manual webhook under Advanced", async () => {
-    stubFetch({
-      enabled: true,
-      configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeefsecret",
-      lastDeliveryAt: null,
-      connectedViaApp: false,
-      manageUrl: null,
-      appInstallUrl: "https://github.com/apps/queritae/installations/new",
-    });
-    render(<AutoSyncPanel apiBasePath="/api/a/alex/admin" />);
-    await screen.findByRole("link", { name: /connect with github app/i });
-    expect(screen.getByText("deadbeefsecret").closest("details")).not.toBeNull();
-  });
-
-  it("no install URL configured: shows the manual webhook inline (not demoted)", async () => {
-    stubFetch({
-      enabled: true,
-      configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeefsecret",
-      lastDeliveryAt: null,
-      connectedViaApp: false,
-      manageUrl: null,
-      appInstallUrl: null,
-    });
-    render(<AutoSyncPanel apiBasePath="/api/a/alex/admin" />);
-    await waitFor(() => expect(screen.getByText(/deadbeefsecret/)).toBeInTheDocument());
-    expect(screen.getByText("deadbeefsecret").closest("details")).toBeNull();
-    expect(screen.queryByRole("link", { name: /connect with github app/i })).not.toBeInTheDocument();
-  });
-
   it("not connected, disabled, install URL present: shows the Connect CTA and the Off fallback", async () => {
     stubFetch({
       enabled: false,
       configured: false,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: null,
       lastDeliveryAt: null,
       connectedViaApp: false,
       manageUrl: null,
@@ -178,23 +107,20 @@ describe("AutoSyncPanel", () => {
     });
     render(<AutoSyncPanel apiBasePath="/api/a/alex/admin" />);
     await screen.findByRole("link", { name: /connect with github app/i });
-    // With no webhook node, advancedWebhook is null (not false), so the ?? fallback renders.
     expect(screen.getByText(/off — connect the app above/i)).toBeInTheDocument();
   });
 
-  it("shows the last delivery time in the manual-webhook-only path", async () => {
+  it("shows the last delivery time in the no-App path", async () => {
     stubFetch({
       enabled: true,
       configured: true,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: "deadbeefsecret",
       lastDeliveryAt: "2026-06-16T10:00:00.000Z",
       connectedViaApp: false,
       manageUrl: null,
       appInstallUrl: null,
     });
     render(<AutoSyncPanel apiBasePath="/api/a/alex/admin" />);
-    await waitFor(() => expect(screen.getByText(/deadbeefsecret/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/last delivery:/i)).toBeInTheDocument());
     expect(screen.getAllByText(/last delivery:/i)).toHaveLength(1);
   });
 
@@ -202,8 +128,6 @@ describe("AutoSyncPanel", () => {
     stubFetch({
       enabled: false,
       configured: false,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: null,
       lastDeliveryAt: null,
       connectedViaApp: false,
       manageUrl: null,
@@ -218,8 +142,6 @@ describe("AutoSyncPanel", () => {
     const notConnected = {
       enabled: false,
       configured: false,
-      webhookUrl: "https://queritae.com/api/a/alex/sync-webhook",
-      secret: null,
       lastDeliveryAt: null,
       connectedViaApp: false,
       manageUrl: null,
