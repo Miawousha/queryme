@@ -39,15 +39,14 @@ repo. Follow this workflow:
    section in the reference needs a Queritae checkout; skip it unless you
    have one.)
 5. **Publish.** Create a **public** GitHub repo (private repos cannot be
-   synced — the fetch is unauthenticated), push, and give the user the
-   repo URL.
-6. **Hand off.** Tell the user to open their Queritae admin —
-   **Settings → Content source** — and click **Connect with GitHub App**, then
-   install it on the repo you just created. That single install is the whole
-   connection step: their page goes live and auto-updates on every push. (If
-   they'd rather connect manually, they can instead paste the repo URL under
-   **Content source** and click **Sync**.) If a later sync reports an error,
-   have the user paste it back to you; fix the file, push, and it re-syncs
-   automatically.
+   synced — the fetch is unauthenticated) and push.
+6. **Register it.** Your setup prompt includes a one-time `curl` with a scoped
+   token — run it to register the repo with Queritae and trigger the first
+   sync. A 200 with a `commitSha` means the page is live. If it returns a
+   schema error, fix the named file, push, and re-run the same `curl`. The
+   token expires in 60 minutes; if it lapses, ask the user for a fresh prompt.
+7. **Hand off.** Tell the user their page is live, and that one optional step
+   turns on auto-update: install the **GitHub App** (the prompt has the link),
+   which syncs every future push automatically.
 
 ---
