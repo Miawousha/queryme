@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const { resolveAccountAdmin, loadAccountForSlug } = vi.hoisted(() => ({
   resolveAccountAdmin: vi.fn(),
@@ -20,9 +20,18 @@ function reqWith(token?: string): Request {
 }
 
 describe("resolveAccountAdminViaSessionOrToken", () => {
+  let _originalSessionSecret: string | undefined;
   beforeEach(() => {
     vi.clearAllMocks();
+    _originalSessionSecret = process.env.SESSION_SECRET;
     process.env.SESSION_SECRET = "s3cr3t";
+  });
+  afterEach(() => {
+    if (_originalSessionSecret === undefined) {
+      delete process.env.SESSION_SECRET;
+    } else {
+      process.env.SESSION_SECRET = _originalSessionSecret;
+    }
   });
 
   it("returns the session resolution when a session is present", async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createSetupToken } from "@/lib/admin/setup-token";
 
 const loadAccountForSlug = vi.fn();
@@ -50,6 +50,18 @@ describe("GET /api/a/[username]/admin/persona-source", () => {
 });
 
 describe("POST /api/a/[username]/admin/persona-source", () => {
+  let _originalSessionSecret: string | undefined;
+  beforeEach(() => {
+    _originalSessionSecret = process.env.SESSION_SECRET;
+  });
+  afterEach(() => {
+    if (_originalSessionSecret === undefined) {
+      delete process.env.SESSION_SECRET;
+    } else {
+      process.env.SESSION_SECRET = _originalSessionSecret;
+    }
+  });
+
   it("authorizes via a setup-token bearer when there is no session", async () => {
     process.env.SESSION_SECRET = "s3cr3t";
     // No session → resolveAccountAdmin returns { kind: "login" }, so the guard
