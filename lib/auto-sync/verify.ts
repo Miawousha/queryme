@@ -19,25 +19,3 @@ export function verifySignature(
   if (got.length !== want.length) return false;
   return timingSafeEqual(got, want);
 }
-
-export type DecideInput = {
-  event: string | null; // X-GitHub-Event header
-  ref: string | null; // payload.ref, e.g. "refs/heads/main"
-  enabled: boolean; // auto-sync enabled for this account
-  branch: string; // the account's STORED branch
-};
-
-export type Decision = "sync" | "skip" | "pong";
-
-/**
- * Routes a VERIFIED webhook delivery. Pure — no I/O. A `ping` is always
- * acknowledged (pong). Otherwise a sync happens only for a `push` to the
- * stored branch while auto-sync is enabled; everything else is skipped.
- */
-export function decideAction(input: DecideInput): Decision {
-  if (input.event === "ping") return "pong";
-  if (!input.enabled) return "skip";
-  if (input.event !== "push") return "skip";
-  if (input.ref !== `refs/heads/${input.branch}`) return "skip";
-  return "sync";
-}
