@@ -1,26 +1,23 @@
 import type { Metadata } from "next";
+import { DocumentFrame } from "@/components/page-frame";
 
 export const metadata: Metadata = { title: "Terms of Service — Queritae" };
 
 export default function TermsPage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12 text-[var(--color-text-secondary)]">
-      <div className="mb-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-2xs uppercase tracking-wide text-[var(--color-text-tertiary)]">
+    <DocumentFrame label="Legal" note="draft" eyebrow="Last updated 2026-06-23" title="Terms of Service">
+      <p className="mb-8 border border-[var(--color-stale)]/40 bg-[var(--color-stale)]/10 px-3 py-2 font-heading text-2xs uppercase tracking-[0.12em] text-[var(--color-stale)]">
         Draft — review before relying on this. Not legal advice.
-      </div>
-      <h1 className="mb-4 font-display text-2xl text-[var(--color-text-primary)]">
-        Terms of Service
-      </h1>
-      <p className="mb-8">Last updated: 2026-06-23.</p>
+      </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">Acceptance</h2>
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">Acceptance</h2>
       <p className="mb-6">
         By creating an account or using Queritae (the &quot;Service&quot;), you agree to be bound
         by these Terms of Service. If you do not agree, do not use the Service. These terms form a
         binding agreement between you and the operator of queritae.com.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">The Service</h2>
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">The Service</h2>
       <p className="mb-6">
         Queritae is a Software-as-a-Service platform that transforms a GitHub-hosted content
         repository into a conversational AI persona — a cited, chat-based interface backed by your
@@ -29,7 +26,7 @@ export default function TermsPage() {
         change over time.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">
         Accounts &amp; eligibility
       </h2>
       <p className="mb-6">
@@ -39,7 +36,7 @@ export default function TermsPage() {
         the right to suspend or terminate accounts that violate these terms.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">
         Acceptable use
       </h2>
       <p className="mb-6">
@@ -50,7 +47,7 @@ export default function TermsPage() {
         not permitted without prior written consent.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">
         Content &amp; ownership
       </h2>
       <p className="mb-6">
@@ -62,7 +59,7 @@ export default function TermsPage() {
         that content.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">
         Fees &amp; billing
       </h2>
       <p className="mb-6">
@@ -73,7 +70,7 @@ export default function TermsPage() {
         case-by-case basis — contact us at the address below.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">Disclaimers</h2>
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">Disclaimers</h2>
       <p className="mb-6">
         The Service is provided on an &quot;as is&quot; and &quot;as available&quot; basis without
         warranties of any kind, express or implied. AI-generated answers may be inaccurate,
@@ -81,7 +78,7 @@ export default function TermsPage() {
         warrant that the Service will be uninterrupted, error-free, or free of harmful components.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">
         Limitation of liability
       </h2>
       <p className="mb-6">
@@ -92,7 +89,7 @@ export default function TermsPage() {
         paid to us in the twelve months preceding the claim.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">
         Changes to these terms
       </h2>
       <p className="mb-6">
@@ -102,17 +99,17 @@ export default function TermsPage() {
         acceptance of the revised terms.
       </p>
 
-      <h2 className="mb-2 font-display text-lg text-[var(--color-text-primary)]">Contact</h2>
+      <h2 className="mb-3 mt-10 text-xl font-medium tracking-[-0.015em] text-[var(--color-text-primary)]">Contact</h2>
       <p className="mb-6">
         Questions about these terms should be sent to{" "}
         <a
           href="mailto:abuse@queritae.com"
-          className="text-[var(--color-primary)] underline-offset-2 hover:underline"
+          className="text-[var(--color-brand)] underline underline-offset-[3px]"
         >
           abuse@queritae.com
         </a>
         . We aim to respond within a reasonable timeframe.
       </p>
-    </main>
+    </DocumentFrame>
   );
 }

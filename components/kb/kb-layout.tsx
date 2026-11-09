@@ -111,7 +111,7 @@ export function KbLayout({
             onClick={() => setCollapsed(false)}
             aria-label={strings.showPanel}
             className="flex w-9 shrink-0 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-card)]/30 font-mono text-3xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-            style={{ writingMode: "vertical-rl", letterSpacing: "0.3em" }}
+            style={{ writingMode: "vertical-rl", letterSpacing: "0.14em" }}
           >
             KB
           </button>
@@ -159,8 +159,8 @@ export function KbLayout({
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          className="fixed bottom-4 right-4 z-30 rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 font-mono text-2xs uppercase text-[var(--color-text-secondary)] shadow-lg"
-          style={{ letterSpacing: "0.2em" }}
+          className="fixed bottom-4 right-4 z-30 border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 font-mono text-2xs uppercase text-[var(--color-text-secondary)] shadow-lg"
+          style={{ letterSpacing: "0.14em" }}
         >
           KB
         </button>
@@ -180,7 +180,7 @@ export function KbLayout({
               onClick={() => setDrawerOpen(false)}
               aria-label={strings.closePanel}
               className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-              style={{ letterSpacing: "0.2em" }}
+              style={{ letterSpacing: "0.14em" }}
             >
               {strings.close} ›
             </button>

@@ -40,7 +40,10 @@ export function RecordList<T>({
     );
   }
   return (
-    <ul aria-label={ariaLabel} className="flex flex-col gap-2">
+    <ul
+      aria-label={ariaLabel}
+      className="flex flex-col divide-y divide-[var(--color-border)] border border-[var(--color-border)] bg-[var(--color-void)]"
+    >
       {items.map((item) => {
         const id = getId(item);
         const selected = id === selectedId;
@@ -52,11 +55,12 @@ export function RecordList<T>({
               aria-pressed={selected}
               onClick={() => onSelect(id)}
               className={cn(
-                "w-full rounded-xl border border-l-2 bg-[var(--color-card)]/40 px-4 py-3 text-left transition-colors",
-                "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
+                "relative w-full px-4 py-3 text-left transition-colors",
+                "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]/50",
+                // The selected row carries v2's sidebar mark: a brand bar on the left.
                 selected
-                  ? "border-[rgba(var(--color-accent-rgb),0.4)] border-l-[var(--color-accent)] bg-[var(--color-card)]"
-                  : "border-[var(--color-border)] border-l-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:border-l-[var(--color-border-hover)]",
+                  ? "bg-[var(--color-card)] before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-[var(--color-brand)]"
+                  : "hover:bg-[var(--color-card)]/60",
               )}
             >
               {renderRow(item)}

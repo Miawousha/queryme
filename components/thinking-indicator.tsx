@@ -9,16 +9,12 @@ export function ThinkingIndicator({ agentLabel, label }: ThinkingIndicatorProps)
   return (
     <div className="flex w-full justify-start" role="status" aria-live="polite">
       <div
-        className="relative max-w-[85%] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-3"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(var(--color-primary-rgb),0.06), rgba(var(--color-primary-rgb),0.06))",
-        }}
+        className="relative max-w-[85%] border border-[var(--color-border)] bg-[var(--color-void)] px-4 py-3"
       >
-        <span
-          className="mb-1 block font-mono text-3xs uppercase text-[var(--color-primary)]"
-          style={{ letterSpacing: "0.32em" }}
-        >
+        <span className="mb-2 flex items-center gap-1.5 font-heading text-2xs uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+          <span aria-hidden className="text-[var(--color-brand)]">
+            ✦
+          </span>
           {agentLabel}
         </span>
         <div className="flex items-center gap-2.5">
@@ -27,7 +23,7 @@ export function ThinkingIndicator({ agentLabel, label }: ThinkingIndicatorProps)
             <span />
             <span />
           </span>
-          <span className="text-control italic text-[var(--color-text-secondary)]">
+          <span className="text-shimmer text-control">
             {label}
           </span>
         </div>

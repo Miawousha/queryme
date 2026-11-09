@@ -14,7 +14,7 @@ import { buildKbTree, resolveGroups, type KbChip, type KbTreeNode } from "@/lib/
 import { cn } from "@/lib/utils";
 
 const LABEL = "font-mono text-control uppercase text-[var(--color-text-secondary)]";
-const LABEL_STYLE = { letterSpacing: "0.18em" };
+const LABEL_STYLE = { letterSpacing: "0.14em" };
 
 /**
  * Citation chip buttons: clicking `[n]` scrolls the chat to the citing

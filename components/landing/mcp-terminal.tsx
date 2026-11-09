@@ -107,20 +107,20 @@ export function McpTerminal() {
   return (
     <div
       ref={rootRef}
-      className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-void)]/70 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.55)] backdrop-blur-sm"
+      className="overflow-hidden border border-[var(--color-border)] bg-[var(--color-void)]"
     >
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
-        <span
-          className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
-          style={{ letterSpacing: "0.22em" }}
-        >
+      <div className="flex items-center justify-between gap-4 border-b border-dashed border-[var(--color-border)] px-4 py-3">
+        <span className="flex items-center gap-2 font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
+          <span aria-hidden className="text-[var(--color-brand)]">
+            ✦
+          </span>
           any mcp client · streamable http
         </span>
         <button
           type="button"
           onClick={copyEndpoint}
-          className="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-3xs uppercase text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"
-          style={{ letterSpacing: "0.18em" }}
+          className="shrink-0 border border-[var(--color-text-primary)]/70 px-2.5 py-1 font-heading text-3xs uppercase text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-text-primary)] hover:text-[var(--color-void)]"
+          style={{ letterSpacing: "0.14em" }}
         >
           {copied ? "copied ✓" : "copy endpoint"}
         </button>

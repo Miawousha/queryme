@@ -34,7 +34,7 @@ export function KbProgressStrip({
   if (active) {
     return (
       <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-2.5">
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-2xs text-emerald-500">
+        <span className="flex size-5 shrink-0 items-center justify-center bg-emerald-500/15 text-2xs text-emerald-500">
           ✓
         </span>
         <span className="font-mono text-2xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
@@ -62,7 +62,7 @@ export function KbProgressStrip({
           >
             <span
               className={[
-                "flex size-5 shrink-0 items-center justify-center rounded-full border text-2xs font-medium",
+                "flex size-5 shrink-0 items-center justify-center border text-2xs font-medium",
                 status === "done"
                   ? "border-transparent bg-emerald-500/15 text-emerald-500"
                   : isCurrent

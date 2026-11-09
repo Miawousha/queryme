@@ -56,12 +56,12 @@ export function BillingPanel({
           </h2>
           <span
             className={cn(
-              "rounded-full border px-2 py-0.5 font-mono text-3xs uppercase",
+              "border px-2 py-0.5 font-mono text-3xs uppercase",
               plan === "pro"
                 ? "border-[rgba(var(--color-accent-rgb),0.5)] bg-[rgba(var(--color-accent-rgb),0.08)] text-[var(--color-accent)]"
                 : "border-[var(--color-border)] text-[var(--color-text-secondary)]",
             )}
-            style={{ letterSpacing: "0.16em" }}
+            style={{ letterSpacing: "0.14em" }}
           >
             {plan}
           </span>
@@ -75,7 +75,7 @@ export function BillingPanel({
             </p>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
               <div
-                className="h-full rounded-full bg-[var(--color-accent)]"
+                className="h-full bg-[var(--color-accent)]"
                 style={{ width: `${Math.min(100, (usedThisMonth / freeAllowance) * 100)}%` }}
               />
             </div>
@@ -88,7 +88,7 @@ export function BillingPanel({
                 "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
-              style={{ letterSpacing: "0.18em" }}
+              style={{ letterSpacing: "0.14em" }}
             >
               {busy ? "Redirecting…" : "Upgrade to Pro — $9/month"}
             </button>
@@ -114,7 +114,7 @@ export function BillingPanel({
                 "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
-              style={{ letterSpacing: "0.18em" }}
+              style={{ letterSpacing: "0.14em" }}
             >
               {busy ? "Redirecting…" : "Manage billing"}
             </button>

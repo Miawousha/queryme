@@ -60,7 +60,7 @@ function PlanLimitNotice({
             />
             <button
               type="submit"
-              className="shrink-0 rounded-full bg-[var(--color-primary)] px-4 py-1.5 text-control font-medium text-white transition-all hover:brightness-110"
+              className="shrink-0 bg-[var(--color-text-primary)] px-4 py-1.5 text-control font-medium text-[var(--color-void)] transition-all hover:opacity-85"
             >
               {strings.submit}
             </button>
@@ -326,17 +326,8 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
   }, [latestAnswer, setLatestAnswer]);
 
   return (
-    <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-card)]/20">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -top-24 left-1/2 h-[260px] w-[420px] -translate-x-1/2 rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(var(--color-accent-rgb),0.10) 0%, transparent 70%)",
-          filter: "blur(20px)",
-        }}
-      />
-
-      <header className="flex h-11 shrink-0 items-center justify-between border-b border-[var(--color-border)] px-5">
+    <section className="relative flex h-full flex-col overflow-hidden bg-[var(--color-void)]">
+      <header className="flex h-11 shrink-0 items-center justify-between border-b border-dashed border-[var(--color-border)] px-5">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden
@@ -349,10 +340,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
               <span className="absolute inset-0 animate-ping rounded-full bg-[var(--color-accent)] opacity-60" />
             )}
           </span>
-          <span
-            className="font-mono text-2xs uppercase text-[var(--color-text-secondary)]"
-            style={{ letterSpacing: "0.3em" }}
-          >
+          <span className="font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
             {isBusy ? t.statusThinking : t.statusReady}
           </span>
         </div>
@@ -363,14 +351,14 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
                 <button
                   type="button"
                   onClick={clearChat}
-                  className="rounded-full border border-[var(--color-accent)] bg-[rgba(var(--color-accent-rgb),0.12)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.18em] text-[var(--color-accent)] transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.22)]"
+                  className="border border-[var(--color-accent)] bg-[rgba(var(--color-accent-rgb),0.12)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.14em] text-[var(--color-accent)] transition-colors hover:bg-[rgba(var(--color-accent-rgb),0.22)]"
                 >
                   {t.clearChat.confirm}
                 </button>
                 <button
                   type="button"
                   onClick={cancelClearConfirm}
-                  className="rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--color-text-secondary)] hover:text-[var(--color-text-secondary)]"
+                  className="border border-[var(--color-border)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)] transition-colors hover:border-[var(--color-text-secondary)] hover:text-[var(--color-text-secondary)]"
                 >
                   {t.clearChat.cancel}
                 </button>
@@ -380,7 +368,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
                 type="button"
                 onClick={requestClear}
                 disabled={isBusy}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.18em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-border)] disabled:hover:text-[var(--color-text-secondary)]"
+                className="inline-flex items-center gap-1.5 border border-[var(--color-border)] px-2.5 py-1 font-mono text-2xs uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-border)] disabled:hover:text-[var(--color-text-secondary)]"
               >
                 <ClearChatIcon />
                 {t.clearChat.action}
@@ -388,7 +376,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
             ))}
           <span
             className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
-            style={{ letterSpacing: "0.3em" }}
+            style={{ letterSpacing: "0.14em" }}
           >
             /chat
           </span>
@@ -403,7 +391,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
         >
           <span
             className="font-mono text-2xs uppercase text-[var(--color-text-secondary)]"
-            style={{ letterSpacing: "0.18em" }}
+            style={{ letterSpacing: "0.14em" }}
           >
             {t.identity.chipPrefix}: {identitySummary}
           </span>
@@ -454,10 +442,10 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
 
           {messages.length === 0 && (
             <div className="mt-3 flex flex-col gap-3">
-              <p
-                className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
-                style={{ letterSpacing: "0.3em" }}
-              >
+              <p className="flex items-center gap-2 font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+                <span aria-hidden className="text-[var(--color-brand)]">
+                  ✦
+                </span>
                 {t.startersTitle}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -468,9 +456,9 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
                     onClick={() => submit(s)}
                     disabled={isBusy}
                     className={cn(
-                      "group rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-3.5 py-1.5 text-xs text-[var(--color-text-secondary)]",
-                      "transition-all duration-200",
-                      "hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)]",
+                      "group border border-[var(--color-border)] bg-[var(--color-void)] px-3.5 py-2 text-left text-control text-[var(--color-text-secondary)]",
+                      "transition-colors duration-150",
+                      "hover:border-[var(--color-text-primary)]/70 hover:bg-[var(--color-card)] hover:text-[var(--color-text-primary)]",
                       "disabled:cursor-not-allowed disabled:opacity-50",
                     )}
                   >
@@ -486,7 +474,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
       {forwardToast && (
         <div
           role="status"
-          className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-2 text-xs text-[var(--color-text-secondary)]"
+          className="mx-auto mb-3 w-full max-w-3xl border border-[rgba(var(--color-brand-rgb),0.4)] bg-[rgba(var(--color-brand-rgb),0.1)] px-3 py-2 text-xs text-[var(--color-text-primary)]"
         >
           {forwardToast}
         </div>
@@ -503,20 +491,20 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
       {error && !planLimited && messages.length > 0 && (
         <div
           role="alert"
-          className="mx-auto mb-3 w-full max-w-3xl rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"
+          className="mx-auto mb-3 w-full max-w-3xl border border-[var(--color-destructive)]/40 bg-[var(--color-destructive)]/10 px-3 py-2 text-xs text-[var(--color-destructive)]"
         >
           {t.genericError}
         </div>
       )}
 
       <form
-        className="border-t border-[var(--color-border)] bg-[var(--color-surface)]"
+        className="border-t border-[var(--color-border)] bg-[var(--color-void)]"
         onSubmit={(e) => {
           e.preventDefault();
           submit(input);
         }}
       >
-        <div className="mx-auto flex w-full max-w-3xl items-end gap-2 px-4 py-3 sm:px-5">
+        <div className="mx-auto my-3 flex w-[calc(100%-2rem)] max-w-3xl items-end gap-2 border border-[var(--color-border)] bg-[var(--color-void)] p-1.5 transition-colors focus-within:border-[var(--color-ring)] sm:w-[calc(100%-2.5rem)]">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -531,7 +519,7 @@ export function Chat({ t, lang, onLangChange, apiBasePath = "/api" }: ChatProps)
               }
             }}
           />
-          <Button type="submit" disabled={isBusy || !input.trim()} className="shrink-0">
+          <Button type="submit" size="cta" disabled={isBusy || !input.trim()} className="shrink-0">
             {t.send}
           </Button>
         </div>

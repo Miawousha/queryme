@@ -51,7 +51,7 @@ export function ThemeToggle({ label }: ThemeToggleProps) {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 text-[var(--color-text-tertiary)] backdrop-blur transition-colors hover:text-[var(--color-accent)]"
+      className="inline-flex size-8 items-center justify-center border border-[var(--color-border)] bg-[var(--color-void)] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-text-primary)]/70 hover:text-[var(--color-text-primary)]"
     >
       {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </button>

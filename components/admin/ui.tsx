@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Small uppercase mono caption used across the admin UI. */
-export const LABEL = "font-mono text-2xs uppercase text-[var(--color-text-tertiary)]";
+/** Small uppercase mono caption used across the admin UI (v2's label face). */
+export const LABEL = "font-heading text-2xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]";
 
 /** First letters of the first two words of a name, uppercased. "" when blank. */
 export function initialsFrom(name: string | null | undefined): string {
@@ -27,7 +27,7 @@ export function Avatar({ name, tone = "muted" }: { name?: string | null; tone?: 
     <span
       aria-hidden
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full font-mono text-2xs font-medium",
+        "flex size-9 shrink-0 items-center justify-center font-mono text-2xs font-medium",
         tone === "accent"
           ? "bg-[rgba(var(--color-accent-rgb),0.12)] text-[var(--color-accent)]"
           : "border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-tertiary)]",
@@ -68,18 +68,18 @@ export function StatTile({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-[var(--color-card)]/40 px-4 py-3",
-        tone === "warn" ? "border-[rgba(239,159,39,0.4)]" : "border-[var(--color-border)]",
+        "border bg-[var(--color-void)] px-4 py-3",
+        tone === "warn" ? "border-[var(--color-stale)]/40" : "border-[var(--color-border)]",
       )}
     >
       <div className={LABEL}>{label}</div>
       <div
         className={cn(
-          "mt-1.5 font-display text-2xl font-semibold tracking-tight",
+          "mt-2 font-heading text-2xl font-medium tracking-[-0.02em] tabular-nums",
           tone === "accent"
             ? "text-[var(--color-accent)]"
             : tone === "warn"
-              ? "text-[#ef9f27]"
+              ? "text-[var(--color-stale)]"
               : "text-[var(--color-text-primary)]",
         )}
       >
@@ -92,8 +92,8 @@ export function StatTile({
 export function Badge({ children }: { children: ReactNode }) {
   return (
     <span
-      className="rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
-      style={{ letterSpacing: "0.16em" }}
+      className="border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
+      style={{ letterSpacing: "0.14em" }}
     >
       {children}
     </span>

@@ -123,11 +123,7 @@ function ExchangeView({
       {/* Visitor bubble — mirrors the real chat's user styling. */}
       <div className="flex justify-end">
         <div
-          className="max-w-[85%] rounded-2xl bg-[var(--color-card)] px-4 py-2.5 text-left text-[13.5px] leading-relaxed text-[var(--color-text-primary)] ring-1 ring-[rgba(var(--color-accent-rgb),0.25)]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(var(--color-accent-rgb),0.12), rgba(var(--color-accent-rgb),0.12))",
-          }}
+          className="max-w-[85%] border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2.5 text-left text-[13.5px] leading-relaxed text-[var(--color-text-primary)]"
         >
           <span className={state === "typing" ? "caret-blink" : undefined}>
             {ex.question.slice(0, qUnits)}
@@ -139,7 +135,7 @@ function ExchangeView({
       {answering && ex.identify && (
         <div className="cite-pop flex justify-start">
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(var(--color-accent-rgb),0.35)] bg-[rgba(var(--color-accent-rgb),0.07)] px-2.5 py-1 font-mono text-2xs text-[var(--color-accent)]"
+            className="inline-flex items-center gap-1.5 border border-[rgba(var(--color-accent-rgb),0.35)] bg-[rgba(var(--color-accent-rgb),0.07)] px-2.5 py-1 font-mono text-2xs text-[var(--color-accent)]"
             style={{ letterSpacing: "0.04em" }}
           >
             <span aria-hidden>✓</span> identify_interviewer · {ex.identify}
@@ -149,7 +145,7 @@ function ExchangeView({
 
       {state === "thinking" && (
         <div className="flex justify-start">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-3">
+          <div className="border border-[var(--color-border)] bg-[var(--color-void)] px-4 py-3">
             <span className="thinking-dots" aria-label="thinking">
               <span />
               <span />
@@ -162,16 +158,12 @@ function ExchangeView({
       {answering && (
         <div className="flex justify-start">
           <div
-            className="max-w-[85%] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2.5 text-left text-[13.5px] leading-relaxed text-[var(--color-text-primary)]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(var(--color-primary-rgb),0.06), rgba(var(--color-primary-rgb),0.06))",
-            }}
+            className="max-w-[85%] border border-[var(--color-border)] bg-[var(--color-void)] px-4 py-2.5 text-left text-[13.5px] leading-relaxed text-[var(--color-text-primary)]"
           >
-            <span
-              className="mb-1 block font-mono text-3xs uppercase text-[var(--color-primary)]"
-              style={{ letterSpacing: "0.32em" }}
-            >
+            <span className="mb-2 flex items-center gap-1.5 font-heading text-2xs uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+              <span aria-hidden className="text-[var(--color-brand)]">
+                ✦
+              </span>
               agent
             </span>
             <PartialAnswer ex={ex} units={aUnits} />
@@ -300,25 +292,17 @@ export function InterviewDemo() {
   return (
     <div ref={rootRef} className="w-full">
       {/* Product frame */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.55)] backdrop-blur-sm">
-        {/* Frame top bar */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
-          <span
-            className="flex items-center gap-2 font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
-            style={{ letterSpacing: "0.22em" }}
-          >
-            <span
-              aria-hidden
-              className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]"
-              style={{ boxShadow: "0 0 8px 1px rgba(var(--color-accent-rgb),0.7)" }}
-            />
+      <div className="overflow-hidden border border-[var(--color-border)] bg-[var(--color-void)]">
+        {/* Frame top bar — v2's label strip */}
+        <div className="flex items-center justify-between gap-4 border-b border-dashed border-[var(--color-border)] px-4 py-3 font-heading text-label uppercase tracking-[0.14em]">
+          <span className="flex items-center gap-2 text-[var(--color-text-primary)]">
+            <span aria-hidden className="text-[var(--color-brand)]">
+              ✦
+            </span>
             interview replay · scripted demo
           </span>
-          <span
-            className="hidden font-mono text-2xs text-[var(--color-text-tertiary)] sm:inline"
-            style={{ letterSpacing: "0.12em" }}
-          >
-            queritae.com/you
+          <span className="hidden normal-case text-[var(--color-text-secondary)] sm:inline">
+            {"// queritae.com/you"}
           </span>
         </div>
 
@@ -380,7 +364,7 @@ export function InterviewDemo() {
               </span>
               <span
                 className="shrink-0 font-mono text-3xs uppercase text-[var(--color-text-tertiary)] transition-colors group-hover:text-[var(--color-text-secondary)]"
-                style={{ letterSpacing: "0.28em" }}
+                style={{ letterSpacing: "0.14em" }}
               >
                 play ↵
               </span>
@@ -391,7 +375,7 @@ export function InterviewDemo() {
           <aside className="hidden w-[230px] shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-void)]/40 md:flex">
             <div
               className="border-b border-[var(--color-border)] px-3.5 py-2.5 text-left font-mono text-3xs uppercase text-[var(--color-text-tertiary)]"
-              style={{ letterSpacing: "0.28em" }}
+              style={{ letterSpacing: "0.14em" }}
             >
               knowledge base
             </div>
@@ -412,11 +396,6 @@ export function InterviewDemo() {
                       className={`h-1 w-1 shrink-0 rounded-full transition-colors duration-300 ${
                         isCited ? "bg-[var(--color-accent)]" : "bg-[var(--color-border)]"
                       }`}
-                      style={
-                        isCited
-                          ? { boxShadow: "0 0 6px 1px rgba(var(--color-accent-rgb),0.6)" }
-                          : undefined
-                      }
                     />
                     <span className="truncate">{path}</span>
                     {isCited && (
@@ -445,7 +424,7 @@ export function InterviewDemo() {
             key={s.chip}
             type="button"
             onClick={() => jumpTo(i)}
-            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            className={`border px-3 py-1 text-xs transition-colors ${
               !reduce && i === exIdx
                 ? "border-[rgba(var(--color-accent-rgb),0.5)] bg-[rgba(var(--color-accent-rgb),0.08)] text-[var(--color-text-primary)]"
                 : "border-[var(--color-border)] bg-[var(--color-card)]/40 text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-text-primary)]"

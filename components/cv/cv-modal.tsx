@@ -93,14 +93,15 @@ export function CvModal({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] shadow-2xl outline-none"
+        className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] outline-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4">
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-dashed border-[var(--color-border)] px-4">
           <h2
             id="cv-modal-title"
-            className="min-w-0 flex-1 truncate font-display text-sm font-semibold text-[var(--color-text-primary)]"
+            className="flex min-w-0 flex-1 items-center gap-2 truncate font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]"
           >
+            <span aria-hidden className="text-[var(--color-brand)]">✦</span>
             {strings.cv}
           </h2>
           <LanguageToggle value={lang} onChange={onLangChange} />
@@ -113,7 +114,7 @@ export function CvModal({
             type="button"
             onClick={onClose}
             aria-label={strings.close}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+            className="inline-flex h-6 w-6 items-center justify-center border border-[var(--color-border)] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -145,7 +146,7 @@ function ModalAction({ action }: { action: KbDocAction }) {
       aria-label={action.ariaLabel}
       title={feedback ?? action.label}
       className={cn(
-        "inline-flex h-6 w-6 items-center justify-center rounded-full border transition-colors",
+        "inline-flex h-6 w-6 items-center justify-center border transition-colors",
         feedback
           ? "border-[var(--color-accent)] text-[var(--color-accent)]"
           : "border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]",

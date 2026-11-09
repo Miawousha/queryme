@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireSessionAccount, needsTosAcceptance } from "@/lib/accounts/guard";
 import { safeReturnTo } from "@/lib/auth/return-to";
 import { AcceptTosForm } from "@/components/accept-tos-form";
+import { AuthFrame } from "@/components/page-frame";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,9 +21,14 @@ export default async function AcceptTosPage({
   if (!needsTosAcceptance(account)) redirect(returnTo as Route);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6 py-12">
-      <h1 className="font-display text-xl text-[var(--color-text-primary)]">Before you continue</h1>
+    <AuthFrame
+      label="Account"
+      note="terms"
+      eyebrow="One last step"
+      title="Before you continue"
+      lead={<p>Your account is ready. Review the terms that govern it, then head to your admin.</p>}
+    >
       <AcceptTosForm returnTo={returnTo} />
-    </main>
+    </AuthFrame>
   );
 }

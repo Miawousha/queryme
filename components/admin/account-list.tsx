@@ -84,10 +84,10 @@ export function AccountList({ accounts }: { accounts: AccountSummary[] }) {
                 <td className={TD}>
                   <span
                     className={cn(
-                      "rounded-full border px-2 py-0.5 font-mono text-3xs uppercase",
+                      "border px-2 py-0.5 font-mono text-3xs uppercase",
                       STATUS_STYLE[status],
                     )}
-                    style={{ letterSpacing: "0.16em" }}
+                    style={{ letterSpacing: "0.14em" }}
                   >
                     {status}
                   </span>
@@ -109,7 +109,7 @@ export function AccountList({ accounts }: { accounts: AccountSummary[] }) {
                             ? "hover:border-red-400 hover:text-red-400"
                             : "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
                         )}
-                        style={{ letterSpacing: "0.18em" }}
+                        style={{ letterSpacing: "0.14em" }}
                       >
                         {t.label}
                       </button>

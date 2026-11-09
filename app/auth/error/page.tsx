@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { AuthFrame } from "@/components/page-frame";
 
 const MESSAGES: Record<string, string> = {
   not_configured: "Sign-in isn't configured on this deployment yet.",
@@ -18,15 +20,22 @@ export default async function AuthErrorPage({
   const { reason } = await searchParams;
   const message = MESSAGES[reason ?? ""] ?? "Sign-in failed. Please try again.";
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="font-display text-xl text-[var(--color-text-primary)]">Sign-in failed</h1>
-      <p className="max-w-md text-sm text-[var(--color-text-secondary)]">{message}</p>
-      <Link
-        href="/"
-        className="rounded-full border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-      >
-        ← Back to home
-      </Link>
-    </main>
+    <AuthFrame
+      label="Sign in"
+      note={reason ?? "error"}
+      eyebrow="GitHub sign-in"
+      title="Sign-in failed"
+      lead={<p>{message}</p>}
+      actions={
+        <>
+          <a href="/api/auth/github/login" className={buttonVariants({ variant: "default", size: "cta" })}>
+            Try again
+          </a>
+          <Link href="/" className={buttonVariants({ variant: "frame", size: "cta" })}>
+            ← Back to home
+          </Link>
+        </>
+      }
+    />
   );
 }

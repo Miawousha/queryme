@@ -11,7 +11,7 @@ export type LanguageToggleProps = {
 export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
   return (
     <div
-      className="inline-flex overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 p-0.5 backdrop-blur"
+      className="inline-flex h-8 overflow-hidden border border-[var(--color-border)] bg-[var(--color-void)]"
     >
       {(["en", "fr"] as const).map((lang) => {
         const active = value === lang;
@@ -21,12 +21,11 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
             type="button"
             onClick={() => onChange(lang)}
             className={cn(
-              "rounded-full px-3 py-1 font-mono text-2xs uppercase transition-all duration-200",
+              "px-2.5 font-heading text-2xs uppercase tracking-[0.14em] transition-colors duration-150",
               active
-                ? "bg-[rgba(var(--color-accent-rgb),0.18)] text-[var(--color-accent)]"
-                : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]",
+                ? "bg-[var(--color-text-primary)] text-[var(--color-void)]"
+                : "text-[var(--color-text-secondary)] hover:bg-[var(--color-card)] hover:text-[var(--color-text-primary)]",
             )}
-            style={{ letterSpacing: "0.3em" }}
             aria-pressed={active}
           >
             {lang}

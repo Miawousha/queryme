@@ -52,16 +52,18 @@ function firstBulletList(body: string, max: number): string {
   return out.join("\n");
 }
 
-/** Consistent section header: an accent tick, a mono label, and a hairline rule
- * that gives every section the same opening cadence. */
+/** Consistent section header, as Matrice's label strips: the ✦ mark, a mono
+ * label, and a dashed rule that gives every section the same opening cadence. */
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-4 flex items-center gap-3">
-      <span aria-hidden className="h-2 w-2 shrink-0 rounded-[1px] bg-[var(--color-accent)]" />
-      <h2 className="font-mono text-2xs font-medium uppercase tracking-[0.26em] text-[var(--color-text-secondary)]">
+      <span aria-hidden className="shrink-0 font-heading text-label text-[var(--color-accent)]">
+        ✦
+      </span>
+      <h2 className="font-heading text-label font-medium uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
         {children}
       </h2>
-      <span aria-hidden className="h-px flex-1 bg-[var(--color-border)]" />
+      <span aria-hidden className="h-0 flex-1 border-t border-dashed border-[var(--color-border)]" />
     </div>
   );
 }
@@ -142,11 +144,11 @@ export function CvDocumentView({
               <img
                 src={kb.profile.photo}
                 alt={t.photoAlt.replace("{name}", kb.profile.name)}
-                className="cv-photo h-20 w-20 shrink-0 rounded-full object-cover ring-1 ring-[var(--color-border)]"
+                className="cv-photo h-20 w-20 shrink-0 object-cover ring-1 ring-[var(--color-border)]"
               />
             )}
             <div className="min-w-0">
-              <h1 className="font-display text-display font-semibold leading-[1.1] tracking-[-0.01em] text-[var(--color-text-primary)]">
+              <h1 className="font-heading text-display font-medium uppercase leading-[1.1] tracking-[-0.02em] text-[var(--color-text-primary)]">
                 {kb.profile.name}
               </h1>
               {kb.profile.headline && (
@@ -206,7 +208,7 @@ export function CvDocumentView({
         {/* Accent keyline anchoring the identity block. */}
         <span
           aria-hidden
-          className="absolute bottom-0 left-0 h-[2px] w-16 rounded-full bg-[var(--color-accent)]"
+          className="absolute bottom-0 left-0 h-[2px] w-16 bg-[var(--color-accent)]"
         />
         <span aria-hidden className="absolute bottom-0 left-0 h-px w-full bg-[var(--color-border)]" />
       </header>
@@ -333,7 +335,7 @@ export function CvDocumentView({
               .map((s) => (
                 <li
                   key={s.name}
-                  className="cv-entry rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-mono text-xs text-[var(--color-text-secondary)]"
+                  className="cv-entry border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 font-mono text-xs text-[var(--color-text-secondary)]"
                 >
                   {s.name}
                 </li>

@@ -39,8 +39,13 @@ export type AppTopBarProps = {
   } | null;
 };
 
+/** v2's square framed icon button. */
 const ICON_BTN =
-  "inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 text-[var(--color-text-tertiary)] backdrop-blur transition-colors hover:text-[var(--color-accent)]";
+  "inline-flex size-8 items-center justify-center border border-[var(--color-border)] bg-[var(--color-void)] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-text-primary)]/70 hover:text-[var(--color-text-primary)]";
+
+/** A labelled frame button: mono, uppercase, filling on hover. */
+const FRAME_BTN =
+  "inline-flex h-8 items-center gap-1.5 border border-[var(--color-text-primary)]/70 bg-[var(--color-void)] px-3 font-heading text-2xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-text-primary)] hover:text-[var(--color-void)]";
 
 /**
  * Slim full-width app chrome. Sits above the two-pane body in the app shell.
@@ -69,24 +74,21 @@ export function AppTopBar({
   queritae,
 }: AppTopBarProps) {
   return (
-    <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-2.5 backdrop-blur sm:px-6">
+    <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-void)] px-4 sm:px-6">
       <h1 className="sr-only">
         {name} — {tagline}
       </h1>
       <div className="flex shrink-0 items-center gap-3">
-        <MatriceLogo size={28} animated />
+        <MatriceLogo size={19} />
         {/* Name hidden on mobile — the controls cluster needs the full row width. */}
-        <div className="hidden flex-col leading-tight sm:flex">
-          <span
-            className="whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-primary)]"
-            style={{ letterSpacing: "0.32em" }}
-          >
+        <div className="hidden flex-col gap-1 leading-none sm:flex">
+          <span className="whitespace-nowrap font-heading text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
             {name}
           </span>
-          <span
-            className="whitespace-nowrap font-display text-sm font-medium text-[var(--color-text-primary)]"
-            style={{ letterSpacing: "-0.01em" }}
-          >
+          <span className="whitespace-nowrap font-heading text-2xs uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+            <span className="text-[var(--color-brand)]" aria-hidden>
+              ✦{" "}
+            </span>
             {tagline}
           </span>
         </div>
@@ -97,7 +99,7 @@ export function AppTopBar({
           <a
             href={adminHref}
             title={adminButtonLabel}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 font-mono text-2xs font-medium uppercase tracking-[0.14em] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20"
+            className={FRAME_BTN}
           >
             <AdminIcon />
             <span>{adminButtonLabel}</span>
@@ -145,7 +147,7 @@ export function AppTopBar({
             aria-label={cvButtonLabel}
             title={cvButtonLabel}
             aria-haspopup="dialog"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 font-mono text-2xs font-medium uppercase tracking-[0.14em] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20"
+            className={FRAME_BTN}
           >
             <CvIcon />
             <span>CV</span>
@@ -161,7 +163,7 @@ export function AppTopBar({
           className={cn(
             ICON_BTN,
             "hidden sm:inline-flex",
-            !kbCollapsed && "text-[var(--color-accent)]",
+            !kbCollapsed && "border-[var(--color-brand)]/60 text-[var(--color-brand)]",
           )}
         >
           <PanelIcon />

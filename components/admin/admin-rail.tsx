@@ -53,11 +53,14 @@ export function AdminRail({
   return (
     <nav
       aria-label="Admin sections"
-      className="flex w-52 shrink-0 flex-col gap-6 border-r border-[var(--color-border)] px-3 py-6"
+      className="flex w-56 shrink-0 flex-col gap-1 border-r border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-5"
     >
       {groups.map((g) => (
-        <div key={g.title} className="flex flex-col gap-1.5">
-          <span className={cn(LABEL, "px-2")} style={{ letterSpacing: "0.18em" }}>
+        <div key={g.title} className="flex flex-col gap-2 pb-4">
+          <span className={cn(LABEL, "flex items-center gap-2 px-3 text-label")}>
+            <span aria-hidden className="text-[var(--color-brand)]">
+              ✦
+            </span>
             {g.title}
           </span>
           <ul className="flex flex-col gap-0.5">
@@ -69,20 +72,26 @@ export function AdminRail({
                     href={it.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-md border-l-2 px-2.5 py-1.5 text-control transition-colors",
+                      "group relative flex h-9 items-center gap-3 px-3 text-sm transition-colors",
                       active
-                        ? "border-[var(--color-accent)] bg-[var(--color-card)] text-[var(--color-accent)]"
-                        : "border-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-card)]/40 hover:text-[var(--color-primary)]",
+                        ? "bg-[var(--color-card)] text-[var(--color-text-primary)] [&>svg]:text-[var(--color-brand)]"
+                        : "text-[var(--color-text-secondary)] hover:bg-[var(--color-card)]/60 hover:text-[var(--color-text-primary)]",
                     )}
                   >
+                    {active && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-0 left-0 w-0.5 bg-[var(--color-brand)]"
+                      />
+                    )}
                     <RailIcon name={it.icon} />
                     <span className="flex-1 truncate">{it.label}</span>
                     {it.count != null && (
                       <span
                         className={cn(
-                          "font-mono text-2xs",
+                          "font-heading text-2xs tabular-nums",
                           it.accentCount
-                            ? "text-[var(--color-accent)]"
+                            ? "text-[var(--color-stale)]"
                             : "text-[var(--color-text-tertiary)]",
                         )}
                       >

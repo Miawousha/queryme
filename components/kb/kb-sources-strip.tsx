@@ -5,7 +5,7 @@ import { useKb } from "@/components/kb/kb-context";
 import { anchorMatches } from "@/lib/kb/slug";
 
 const LABEL = "font-mono text-2xs uppercase text-[var(--color-text-tertiary)]";
-const LABEL_STYLE = { letterSpacing: "0.24em" };
+const LABEL_STYLE = { letterSpacing: "0.14em" };
 
 type Row = { index: number; path: string; anchor: string | null; docTitle: string; sectionTitle?: string };
 

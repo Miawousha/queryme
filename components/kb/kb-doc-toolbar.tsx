@@ -193,7 +193,7 @@ export function KbDocToolbar({
         onClick={onBack}
         aria-label={backLabel}
         className="shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-        style={{ letterSpacing: "0.2em" }}
+        style={{ letterSpacing: "0.14em" }}
       >
         ‹ {backLabel}
       </button>
@@ -219,8 +219,8 @@ export function KbDocToolbar({
       </div>
       {typeBadge && (
         <span
-          className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
-          style={{ letterSpacing: "0.16em" }}
+          className="shrink-0 border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
+          style={{ letterSpacing: "0.14em" }}
         >
           {typeBadge}
         </span>
@@ -234,7 +234,7 @@ export function KbDocToolbar({
           onClick={onToggleFocus}
           aria-label={focused ? minimizeLabel : expandLabel}
           title={focused ? minimizeLabel : expandLabel}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+          className="inline-flex h-6 w-6 items-center justify-center border border-[var(--color-border)] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
         >
           {focused ? <MinimizeIcon /> : <ExpandIcon />}
         </button>
@@ -259,7 +259,7 @@ function ActionButton({ action }: { action: KbDocAction }) {
       aria-label={action.ariaLabel}
       title={feedback ?? action.label}
       className={cn(
-        "inline-flex h-6 w-6 items-center justify-center rounded-full border transition-colors",
+        "inline-flex h-6 w-6 items-center justify-center border transition-colors",
         feedback
           ? "border-[var(--color-accent)] text-[var(--color-accent)]"
           : "border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]",

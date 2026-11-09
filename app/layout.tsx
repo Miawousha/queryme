@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { DM_Sans, Instrument_Serif, JetBrains_Mono, Sora } from "next/font/google";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
@@ -8,29 +8,17 @@ import "./globals.css";
 // explicitly stored choice wins, otherwise the OS `prefers-color-scheme`.
 const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem('${THEME_STORAGE_KEY}');var t=(s==='light'||s==='dark')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`;
 
-const sora = Sora({
-  variable: "--font-sora",
+// Matrice's faces (matrice-website-v2): Geist for text, JetBrains Mono for
+// headings, the uppercase label strips and code.
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 import { getPersonaStore } from "@/lib/persona/store";
@@ -70,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      className={`${sora.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${dmSans.variable}`}
+      className={`${geist.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body>

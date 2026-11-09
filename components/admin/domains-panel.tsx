@@ -98,7 +98,7 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
               "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
               "disabled:cursor-not-allowed disabled:opacity-50",
             )}
-            style={{ letterSpacing: "0.18em" }}
+            style={{ letterSpacing: "0.14em" }}
           >
             {busy ? "Adding…" : "Add"}
           </button>
@@ -149,10 +149,10 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
               <span className="text-control text-[var(--color-text-primary)]">{d.hostname}</span>
               <span
                 className={cn(
-                  "rounded-full border px-2 py-0.5 font-mono text-3xs uppercase",
+                  "border px-2 py-0.5 font-mono text-3xs uppercase",
                   STATUS_STYLE[d.status],
                 )}
-                style={{ letterSpacing: "0.16em" }}
+                style={{ letterSpacing: "0.14em" }}
               >
                 {d.status}
               </span>
@@ -161,7 +161,7 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
                   type="button"
                   onClick={() => verify(d.id)}
                   className="rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-2xs uppercase hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                  style={{ letterSpacing: "0.18em" }}
+                  style={{ letterSpacing: "0.14em" }}
                 >
                   Verify
                 </button>
@@ -169,7 +169,7 @@ export function DomainsPanel({ apiBasePath }: { apiBasePath: string }) {
                   type="button"
                   onClick={() => remove(d.id)}
                   className="rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-2xs uppercase hover:border-red-400 hover:text-red-400"
-                  style={{ letterSpacing: "0.18em" }}
+                  style={{ letterSpacing: "0.14em" }}
                 >
                   Remove
                 </button>

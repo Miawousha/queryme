@@ -5,7 +5,7 @@ import { useKb } from "@/components/kb/kb-context";
 import { formatPeriod } from "@/lib/kb/meta-format";
 
 const LABEL =
-  "font-mono text-3xs uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]";
+  "font-mono text-3xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -24,7 +24,7 @@ function Chips({ label, items }: { label: string; items: string[] }) {
         {items.map((item) => (
           <span
             key={item}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-0.5 text-2xs text-[var(--color-text-secondary)]"
+            className="border border-[var(--color-border)] bg-[var(--color-card)] px-2 py-0.5 text-2xs text-[var(--color-text-secondary)]"
           >
             {item}
           </span>

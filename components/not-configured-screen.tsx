@@ -1,4 +1,4 @@
-import { MatriceLogo } from "@/components/matrice-logo";
+import { AuthFrame } from "@/components/page-frame";
 
 /**
  * Rendered by `app/page.tsx` when no persona has been synced yet — i.e. the
@@ -7,14 +7,12 @@ import { MatriceLogo } from "@/components/matrice-logo";
  */
 export function NotConfiguredScreen() {
   return (
-    <main className="flex h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
-      <MatriceLogo size={48} animated />
-      <div>
-        <h1 className="font-display text-lg text-[var(--color-text-primary)]">queritae</h1>
-        <p className="mt-2 max-w-md text-sm text-[var(--color-text-secondary)]">
-          This deployment has no persona configured yet.
-        </p>
-      </div>
-    </main>
+    <AuthFrame
+      label="queritae"
+      note="not configured"
+      eyebrow="Setup"
+      title="Nothing to show yet"
+      lead={<p>This deployment has no persona configured yet.</p>}
+    />
   );
 }

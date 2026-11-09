@@ -51,15 +51,15 @@ export function QuestionDetail({
       <div className="flex flex-wrap items-center gap-2">
         {savedAt ? (
           <span
-            className="rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
-            style={{ letterSpacing: "0.16em" }}
+            className="border border-[var(--color-border)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-text-secondary)]"
+            style={{ letterSpacing: "0.14em" }}
           >
             answered
           </span>
         ) : (
           <span
-            className="rounded-full border border-[var(--color-accent)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-accent)]"
-            style={{ letterSpacing: "0.16em" }}
+            className="border border-[var(--color-accent)] px-2 py-0.5 font-mono text-3xs uppercase text-[var(--color-accent)]"
+            style={{ letterSpacing: "0.14em" }}
           >
             unanswered
           </span>
@@ -94,7 +94,7 @@ export function QuestionDetail({
               "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
               "disabled:cursor-not-allowed disabled:opacity-50",
             )}
-            style={{ letterSpacing: "0.18em" }}
+            style={{ letterSpacing: "0.14em" }}
           >
             {busy ? "Sending…" : savedAt ? "Update reply" : "Send reply"}
           </button>
@@ -111,7 +111,7 @@ export function QuestionDetail({
             "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
             "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
           )}
-          style={{ letterSpacing: "0.18em" }}
+          style={{ letterSpacing: "0.14em" }}
         >
           Open conversation →
         </button>

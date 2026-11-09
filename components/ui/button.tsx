@@ -4,38 +4,43 @@ import { Slot } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-const buttonVariants = cva(
+/*
+ * Matrice's buttons (matrice-website-v2, components/ui/button.tsx): square,
+ * the filled one in the foreground colour (light on the dark theme, dark on
+ * the light), `frame` an outlined box that fills on hover, and `cta` the
+ * mono uppercase size the site's calls to action use.
+ */
+const buttonStyles = cva(
   [
     "group relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
-    "rounded-full font-display text-control font-medium tracking-tight",
-    "transition-all duration-200 outline-none",
-    "focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-void)]",
-    "disabled:pointer-events-none disabled:opacity-40",
+    "border border-transparent text-control font-medium",
+    "transition-colors duration-150 outline-none select-none",
+    "focus-visible:border-[var(--color-ring)] focus-visible:ring-3 focus-visible:ring-[var(--color-ring)]/50",
+    "active:translate-y-px disabled:pointer-events-none disabled:opacity-40",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   ].join(" "),
   {
     variants: {
       variant: {
-        default: [
-          "bg-[var(--color-accent)] text-[var(--color-void)]",
-          "shadow-[0_0_0_1px_rgba(var(--color-accent-rgb),0.4),0_8px_24px_-8px_rgba(var(--color-accent-rgb),0.5)]",
-          "hover:brightness-110 active:brightness-95",
-        ].join(" "),
-        outline: [
-          "border border-[var(--color-border)] bg-transparent text-[var(--color-text-primary)]",
-          "hover:border-[var(--color-primary)] hover:bg-[rgba(var(--color-primary-rgb),0.10)]",
-        ].join(" "),
+        default:
+          "bg-[var(--color-text-primary)] text-[var(--color-void)] hover:bg-[var(--color-text-primary)]/80",
+        brand: "bg-[var(--color-brand)] text-[var(--color-void)] hover:bg-[var(--color-brand)]/85",
+        frame:
+          "border-[var(--color-text-primary)]/70 bg-[var(--color-void)] text-[var(--color-text-primary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-void)]",
+        outline:
+          "border-[var(--color-border)] bg-[var(--color-void)] text-[var(--color-text-primary)] hover:bg-[var(--color-card)]",
         ghost:
-          "bg-transparent text-[var(--color-text-secondary)] hover:bg-[rgba(var(--color-primary-rgb),0.10)] hover:text-[var(--color-text-primary)]",
+          "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-card)] hover:text-[var(--color-text-primary)]",
         link: "h-auto px-0 text-[var(--color-accent)] underline-offset-4 hover:underline",
         destructive:
-          "bg-red-500/90 text-white hover:bg-red-500 focus-visible:ring-red-400",
+          "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/20 focus-visible:ring-[var(--color-destructive)]/30",
       },
       size: {
-        default: "h-10 px-5",
-        sm: "h-8 px-3.5 text-xs",
-        lg: "h-11 px-6 text-sm",
-        icon: "h-9 w-9",
+        default: "h-9 px-3",
+        sm: "h-7 px-2.5 text-xs",
+        lg: "h-10 px-4 text-sm",
+        icon: "size-9",
+        cta: "h-10 gap-2 px-4 font-heading text-[13px] uppercase tracking-[0.06em]",
       },
     },
     defaultVariants: {
@@ -52,7 +57,7 @@ function Button({
   asChild = false,
   ...props
 }: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
+  VariantProps<typeof buttonStyles> & {
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot.Root : "button";
@@ -66,6 +71,11 @@ function Button({
       {...props}
     />
   );
+}
+
+/** Merged class names, safe to apply to links and other non-button elements. */
+function buttonVariants(props?: Parameters<typeof buttonStyles>[0]) {
+  return cn(buttonStyles(props));
 }
 
 export { Button, buttonVariants };

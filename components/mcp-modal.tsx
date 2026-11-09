@@ -55,14 +55,15 @@ export function McpModal({ open, onClose, strings }: McpModalProps) {
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 shadow-2xl outline-none"
+        className="flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 outline-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="-mx-6 -mt-6 flex items-center justify-between gap-4 border-b border-dashed border-[var(--color-border)] px-6 py-3.5">
           <h2
             id="mcp-modal-title"
-            className="font-display text-base font-semibold text-[var(--color-text-primary)]"
+            className="flex items-center gap-2 font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]"
           >
+            <span aria-hidden className="text-[var(--color-brand)]">✦</span>
             {strings.title}
           </h2>
           <button
@@ -94,7 +95,7 @@ export function McpModal({ open, onClose, strings }: McpModalProps) {
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className={SECTION_LABEL_CLASS} style={{ letterSpacing: "0.28em" }}>
+          <span className={SECTION_LABEL_CLASS} style={{ letterSpacing: "0.14em" }}>
             {strings.configLabel}
           </span>
           <CodeBlock value={config} copy={strings.copy} copied={strings.copied} />
@@ -104,7 +105,7 @@ export function McpModal({ open, onClose, strings }: McpModalProps) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className={SECTION_LABEL_CLASS} style={{ letterSpacing: "0.28em" }}>
+          <span className={SECTION_LABEL_CLASS} style={{ letterSpacing: "0.14em" }}>
             {strings.toolsTitle}
           </span>
           <ul className="flex flex-col gap-1.5">
@@ -141,7 +142,7 @@ function CopyButton({ onClick, label }: { onClick: () => void; label: string }) 
       type="button"
       onClick={onClick}
       className="shrink-0 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1 font-mono text-2xs uppercase text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-accent)]"
-      style={{ letterSpacing: "0.18em" }}
+      style={{ letterSpacing: "0.14em" }}
     >
       {label}
     </button>
@@ -162,7 +163,7 @@ function CopyField({
   const { copied, trigger } = useCopied();
   return (
     <div className="flex flex-col gap-1.5">
-      <span className={SECTION_LABEL_CLASS} style={{ letterSpacing: "0.28em" }}>
+      <span className={SECTION_LABEL_CLASS} style={{ letterSpacing: "0.14em" }}>
         {label}
       </span>
       <div className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)]/40 p-2">

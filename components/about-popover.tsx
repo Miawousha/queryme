@@ -81,14 +81,15 @@ export function AboutPopover({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 shadow-2xl outline-none"
+        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 outline-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="-mx-6 -mt-6 flex items-center justify-between gap-4 border-b border-dashed border-[var(--color-border)] px-6 py-3.5">
           <h2
             id="about-popover-title"
-            className="font-display text-base font-semibold text-[var(--color-text-primary)]"
+            className="flex items-center gap-2 font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]"
           >
+            <span aria-hidden className="text-[var(--color-brand)]">✦</span>
             {strings.title}
           </h2>
           <button
@@ -110,7 +111,7 @@ export function AboutPopover({
 
         <p
           className="font-mono text-2xs uppercase leading-relaxed text-[var(--color-text-tertiary)]"
-          style={{ letterSpacing: "0.24em" }}
+          style={{ letterSpacing: "0.14em" }}
         >
           {strings.transparency}
         </p>

@@ -14,7 +14,7 @@ export function QuestionRow({ question }: { question: ForwardedQuestion }) {
       <span
         aria-hidden
         className={cn(
-          "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border",
+          "mt-0.5 flex size-7 shrink-0 items-center justify-center border",
           answered
             ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
             : "border-[rgba(var(--color-accent-rgb),0.4)] bg-[rgba(var(--color-accent-rgb),0.08)] text-[var(--color-accent)]",

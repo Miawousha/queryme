@@ -83,24 +83,18 @@ export function ChatMessage({
     >
       <div
         className={cn(
-          "relative max-w-[85%] rounded-2xl px-4 py-3",
+          "relative max-w-[85%] border px-4 py-3",
+          // Opaque fills, so the dot grid behind the chat never shows through.
           isAssistant
-            ? "border border-[var(--color-border)] bg-[var(--color-card)]"
-            : "bg-[var(--color-card)] text-[var(--color-text-primary)] ring-1 ring-[rgba(var(--color-accent-rgb),0.25)]",
+            ? "border-[var(--color-border)] bg-[var(--color-void)]"
+            : "border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-primary)]",
         )}
-        // Opaque `--color-card` fill with a flat tint painted on top, so the
-        // dot-grid background never shows through the bubble.
-        style={{
-          backgroundImage: isAssistant
-            ? "linear-gradient(rgba(var(--color-primary-rgb),0.06), rgba(var(--color-primary-rgb),0.06))"
-            : "linear-gradient(rgba(var(--color-accent-rgb),0.12), rgba(var(--color-accent-rgb),0.12))",
-        }}
       >
         {isAssistant && (
-          <span
-            className="mb-1 block font-mono text-3xs uppercase text-[var(--color-primary)]"
-            style={{ letterSpacing: "0.32em" }}
-          >
+          <span className="mb-2 flex items-center gap-1.5 font-heading text-2xs uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+            <span aria-hidden className="text-[var(--color-brand)]">
+              ✦
+            </span>
             {agentLabel}
           </span>
         )}
@@ -120,7 +114,7 @@ export function ChatMessage({
                         onForward?.(chunk.question, "");
                       }
                     }}
-                    className="mt-2 mr-2 inline-flex rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-text-primary)] hover:bg-[rgba(var(--color-primary-rgb),0.10)]"
+                    className="mt-2 mr-2 inline-flex border border-[var(--color-text-primary)]/70 px-3 py-1 font-heading text-2xs uppercase tracking-[0.12em] text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-text-primary)] hover:text-[var(--color-void)]"
                   >
                     {forwardLabel}
                   </button>
@@ -166,7 +160,7 @@ export function ChatMessage({
               <div
                 role="dialog"
                 aria-modal="true"
-                className="mt-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+                className="mt-2 border border-[var(--color-border)] bg-[var(--color-card)] p-3"
               >
                 <p className="mb-2 text-xs text-[var(--color-text-secondary)]">
                   {forwardStrings.prompt}
@@ -176,13 +170,13 @@ export function ChatMessage({
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                   placeholder={forwardStrings.placeholder}
-                  className="mb-2 w-full rounded border border-[var(--color-border)] bg-transparent px-2 py-1 text-sm"
+                  className="mb-2 h-9 w-full border border-[var(--color-input)] bg-[var(--color-void)] px-3 text-sm outline-none focus-visible:border-[var(--color-ring)]"
                 />
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setPendingForward(null)}
-                    className="rounded px-2 py-1 text-xs text-[var(--color-text-tertiary)]"
+                    className="px-2 py-1 font-heading text-2xs uppercase tracking-[0.12em] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                   >
                     {forwardStrings.cancel}
                   </button>
@@ -192,7 +186,7 @@ export function ChatMessage({
                       onForward?.(pendingForward, contact);
                       setPendingForward(null);
                     }}
-                    className="rounded bg-[var(--color-primary)] px-3 py-1 text-xs text-[var(--color-on-primary)]"
+                    className="bg-[var(--color-text-primary)] px-3 py-1 font-heading text-2xs uppercase tracking-[0.12em] text-[var(--color-void)] hover:opacity-85"
                   >
                     {forwardStrings.send}
                   </button>

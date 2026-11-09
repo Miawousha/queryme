@@ -52,11 +52,11 @@ export function QueritaeCta({ strings, landingHref, signupHref, className }: Que
         title={strings.title}
         aria-haspopup="dialog"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-card)]/40 px-2.5 py-1 font-mono text-2xs lowercase tracking-[0.14em] text-[var(--color-text-tertiary)] backdrop-blur transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]",
+          "inline-flex h-8 items-center gap-1.5 border border-[var(--color-border)] bg-[var(--color-void)] px-2.5 font-heading text-2xs lowercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-brand)]",
           className,
         )}
       >
-        <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" />
+        <span aria-hidden className="text-[var(--color-brand)]">✦</span>
         {strings.pill}
       </button>
 
@@ -71,14 +71,15 @@ export function QueritaeCta({ strings, landingHref, signupHref, className }: Que
           <div
             ref={dialogRef}
             tabIndex={-1}
-            className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 shadow-2xl outline-none"
+            className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-6 outline-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="-mx-6 -mt-6 flex items-center justify-between gap-4 border-b border-dashed border-[var(--color-border)] px-6 py-3.5">
               <h2
                 id="queritae-cta-title"
-                className="font-display text-base font-semibold text-[var(--color-text-primary)]"
+                className="flex items-center gap-2 font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]"
               >
+                <span aria-hidden className="text-[var(--color-brand)]">✦</span>
                 {strings.title}
               </h2>
               <button
@@ -109,7 +110,7 @@ export function QueritaeCta({ strings, landingHref, signupHref, className }: Que
             <div className="mt-1 flex flex-wrap items-center gap-3">
               <a
                 href={landingHref}
-                className="inline-flex items-center rounded-full bg-[var(--color-primary)] px-4 py-1.5 font-mono text-2xs font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90"
+                className="inline-flex items-center bg-[var(--color-text-primary)] px-4 py-1.5 font-mono text-2xs font-medium uppercase tracking-[0.14em] text-[var(--color-void)] transition-opacity hover:opacity-90"
               >
                 {strings.exploreCta}
               </a>

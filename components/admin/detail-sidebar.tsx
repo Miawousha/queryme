@@ -84,7 +84,7 @@ export function DetailSidebar({
       <div
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-200",
+          "absolute inset-0 bg-black/40 transition-opacity duration-200",
           open ? "opacity-100" : "opacity-0",
         )}
       />
@@ -97,7 +97,7 @@ export function DetailSidebar({
         tabIndex={-1}
         className={cn(
           "absolute inset-y-0 right-0 flex w-[min(640px,92vw)] flex-col",
-          "border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl",
+          "border-l border-[var(--color-border)] bg-[var(--color-surface)]",
           "transition-transform duration-200 ease-out focus:outline-none",
           open ? "translate-x-0" : "translate-x-full",
         )}
@@ -107,7 +107,7 @@ export function DetailSidebar({
             {eyebrow && (
               <span
                 className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]"
-                style={{ letterSpacing: "0.18em" }}
+                style={{ letterSpacing: "0.14em" }}
               >
                 {eyebrow}
               </span>
@@ -126,7 +126,7 @@ export function DetailSidebar({
               "hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]",
               "focus-visible:outline-none focus-visible:border-[var(--color-primary)]",
             )}
-            style={{ letterSpacing: "0.18em" }}
+            style={{ letterSpacing: "0.14em" }}
           >
             Close
           </button>

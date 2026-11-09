@@ -135,12 +135,12 @@ function SegmentButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-2xs uppercase transition-colors",
+        "flex items-center gap-1.5 border px-3 py-1 font-mono text-2xs uppercase transition-colors",
         active
           ? "border-[var(--color-accent)] text-[var(--color-accent)]"
           : "border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)]",
       )}
-      style={{ letterSpacing: "0.18em" }}
+      style={{ letterSpacing: "0.14em" }}
     >
       {label}
       <span className="text-[var(--color-text-tertiary)]">{count}</span>

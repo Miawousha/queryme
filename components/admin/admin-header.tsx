@@ -25,21 +25,18 @@ export function AdminHeader({ username }: { username: string }) {
   return (
     <header
       aria-label="queritae admin"
-      className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]/60 px-4 py-2.5 backdrop-blur sm:px-6"
+      className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-void)] px-4 sm:px-6"
     >
       <div className="flex shrink-0 items-center gap-3">
-        <MatriceLogo size={28} animated />
-        <div className="flex flex-col leading-tight">
-          <span
-            className="whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-primary)]"
-            style={{ letterSpacing: "0.32em" }}
-          >
+        <MatriceLogo size={19} />
+        <div className="flex flex-col gap-1 leading-none">
+          <span className="whitespace-nowrap font-heading text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
             queritae
           </span>
-          <span
-            className="whitespace-nowrap font-display text-sm font-medium text-[var(--color-text-primary)]"
-            style={{ letterSpacing: "-0.01em" }}
-          >
+          <span className="whitespace-nowrap font-heading text-2xs uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+            <span className="text-[var(--color-brand)]" aria-hidden>
+              ✦{" "}
+            </span>
             Admin
           </span>
         </div>
@@ -48,12 +45,12 @@ export function AdminHeader({ username }: { username: string }) {
         <a
           href={`/${username}`}
           title="View your public chat page"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 font-mono text-2xs font-medium uppercase tracking-[0.14em] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)]/20"
+          className="inline-flex h-8 items-center gap-1.5 border border-[var(--color-text-primary)]/70 bg-[var(--color-void)] px-3 font-heading text-2xs font-medium uppercase tracking-[0.12em] text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-text-primary)] hover:text-[var(--color-void)]"
         >
           <ChatIcon />
           <span>Chat</span>
         </a>
-        <span className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]" style={{ letterSpacing: "0.18em" }}>
+        <span className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]" style={{ letterSpacing: "0.14em" }}>
           {username}
         </span>
         <ThemeToggle label="Switch between light and dark theme" />

@@ -10,8 +10,8 @@ import { breadcrumbFor, resolveGroups } from "@/lib/kb/tree";
 import { cn } from "@/lib/utils";
 
 /** Shared top-band style — matches the chat pane's status header height. */
-const BAND = "flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-4";
-const LABEL_STYLE = { letterSpacing: "0.24em" };
+const BAND = "flex h-11 shrink-0 items-center gap-2 border-b border-dashed border-[var(--color-border)] px-4";
+const LABEL_STYLE = { letterSpacing: "0.14em" };
 
 export function KbPanel() {
   const {
@@ -88,7 +88,7 @@ export function KbPanel() {
             onClick={closeFile}
             aria-label={strings.backToList}
             className="shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-            style={{ letterSpacing: "0.2em" }}
+            style={{ letterSpacing: "0.14em" }}
           >
             ‹ {strings.back}
           </button>
@@ -104,13 +104,14 @@ export function KbPanel() {
   return (
     <aside className="flex h-full flex-col overflow-hidden">
       <div className={BAND}>
-        <span
-          className="font-mono text-2xs uppercase text-[var(--color-primary)]"
-          style={{ letterSpacing: "0.32em" }}
-        >
+        <span className="flex items-center gap-2 font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
+          <span aria-hidden className="text-[var(--color-brand)]">
+            ✦
+          </span>
           {strings.title}
         </span>
-        <span className="font-mono text-2xs uppercase text-[var(--color-text-tertiary)]">
+        <span className="font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+          {"// "}
           {manifest.length}
         </span>
         <div className="ml-auto flex items-center gap-2">
