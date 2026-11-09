@@ -35,6 +35,16 @@ describe("GET /api/a/[username]/cv", () => {
     expect(loadCvKb).toHaveBeenCalledWith("acc-1", "fr");
   });
 
+  it("is not cached at the CDN, so a content sync shows up immediately", async () => {
+    loadActiveAccountForSlug.mockResolvedValue({ id: "acc-1", username: "alex" });
+    loadCvKb.mockResolvedValue({ root: "/x", cvKb: { projects: [] } });
+    const { GET } = await import("@/app/api/a/[username]/cv/route");
+    const res = await GET(new NextRequest("http://x/api/a/alex/cv"), ctx("alex"));
+    const cacheControl = res.headers.get("Cache-Control") ?? "";
+    expect(cacheControl).toBe("no-store");
+    expect(cacheControl).not.toMatch(/s-maxage/);
+  });
+
   it("503s when the account has no configured content", async () => {
     loadActiveAccountForSlug.mockResolvedValue({ id: "acc-1", username: "alex" });
     loadCvKb.mockResolvedValue(null);
