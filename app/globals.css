@@ -320,7 +320,9 @@ body {
   color: var(--color-text-primary);
 }
 
-.prose-chat > * + * {
+/* Space between blocks. `:not(:first-child)` (not `* + *`) so it outranks the
+   `margin: 0` resets on p, ul and ol below, which would otherwise win. */
+.prose-chat > :not(:first-child) {
   margin-top: 0.85em;
 }
 
