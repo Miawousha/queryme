@@ -87,3 +87,40 @@ describe("KbViewer — GitHub document link", () => {
     expect(screen.getByRole("button", { name: "Download document" })).toBeInTheDocument();
   });
 });
+
+describe("KbViewer — floating outline", () => {
+  const MD: KbFile = {
+    path: "projects/polish.md",
+    title: "Polish",
+    type: "md",
+    sections: [
+      { slug: "what", title: "What", level: 2 },
+      { slug: "tech", title: "Tech", level: 2 },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.mocked(useKb).mockReset();
+    vi.restoreAllMocks();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response("# Polish\n\n## What\n\nA.\n\n## Tech\n\nB.\n"))),
+    );
+  });
+
+  it("lists the doc's sections beside the text once it has loaded", async () => {
+    setContext({});
+    render(<KbViewer file={MD} onBack={vi.fn()} />);
+    const nav = await screen.findByRole("navigation", { name: "Outline" });
+    expect(nav).toHaveTextContent("What");
+    expect(nav).toHaveTextContent("Tech");
+    vi.unstubAllGlobals();
+  });
+
+  it("has no outline for non-markdown docs", () => {
+    setContext({});
+    render(<KbViewer file={FILE} onBack={vi.fn()} />);
+    expect(screen.queryByRole("navigation", { name: "Outline" })).toBeNull();
+    vi.unstubAllGlobals();
+  });
+});

@@ -43,6 +43,93 @@ function textOf(node: ReactNode): string {
   return "";
 }
 
+/**
+ * Floating "on this page" outline beside the reading column. Highlights the
+ * section currently at the top of the scroll area (scroll-spy) and jumps on
+ * click. Only rendered when the doc pane is wide enough (container query).
+ */
+function DocToc({
+  sections,
+  chips,
+  scrollRef,
+  onJumpTo,
+  label,
+}: {
+  sections: { slug: string; title: string; level: 2 | 3 }[];
+  chips: Map<string, number>;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  onJumpTo: (slug: string) => void;
+  label: string;
+}) {
+  const [current, setCurrent] = useState<string | null>(sections[0]?.slug ?? null);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const update = () => {
+      const top = root.getBoundingClientRect().top;
+      let active: string | null = sections[0]?.slug ?? null;
+      for (const s of sections) {
+        const el = root.querySelector(`[id="${CSS.escape(s.slug)}"]`);
+        if (!(el instanceof HTMLElement)) continue;
+        // A heading counts as "current" once it reaches the top third.
+        if (el.getBoundingClientRect().top - top <= root.clientHeight / 3) active = s.slug;
+        else break;
+      }
+      // Scrolled to the bottom: the last section is current even when short.
+      if (root.scrollTop + root.clientHeight >= root.scrollHeight - 2) {
+        active = sections[sections.length - 1]?.slug ?? active;
+      }
+      setCurrent(active);
+    };
+    update();
+    root.addEventListener("scroll", update, { passive: true });
+    return () => root.removeEventListener("scroll", update);
+  }, [scrollRef, sections]);
+
+  return (
+    <nav
+      aria-label={label}
+      className="col-start-3 hidden w-52 justify-self-end @min-[52rem]/doc:block"
+    >
+      <div className="sticky top-0 border-l border-[var(--color-border)] py-1">
+        <p
+          className="mb-2 pl-3 font-mono text-3xs uppercase text-[var(--color-text-tertiary)]"
+          style={{ letterSpacing: "0.14em" }}
+        >
+          {label}
+        </p>
+        <ul className="flex flex-col">
+          {sections.map((s) => {
+            const isCurrent = s.slug === current;
+            const chip = chips.get(s.slug);
+            return (
+              <li key={s.slug}>
+                <button
+                  type="button"
+                  aria-current={isCurrent ? "location" : undefined}
+                  onClick={() => onJumpTo(s.slug)}
+                  className={cn(
+                    "-ml-px flex w-full items-baseline gap-1.5 border-l py-1 pr-1 text-left text-xs transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]",
+                    isCurrent
+                      ? "border-[var(--color-accent)] text-[var(--color-text-primary)]"
+                      : "border-transparent text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]",
+                  )}
+                  style={{ paddingLeft: s.level === 3 ? 22 : 12 }}
+                >
+                  <span className="min-w-0 flex-1">{s.title}</span>
+                  {chip !== undefined && <span className="kb-chip">[{chip}]</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </nav>
+  );
+}
+
 export function KbViewer({
   file,
   anchor = null,
@@ -157,6 +244,9 @@ export function KbViewer({
     return { h2: heading("h2"), h3: heading("h3") };
   }, [sectionChips]);
 
+  const readable = file.type === "md" || file.type === "yaml";
+  const showToc = file.type === "md" && text !== null && (file.sections?.length ?? 0) >= 2;
+
   const actions = useMemo<KbDocAction[]>(() => {
     const list: KbDocAction[] = [];
     if (needsText) {
@@ -254,7 +344,24 @@ export function KbViewer({
         outlineAria={strings.outlineAria}
       />
 
-      <div ref={contentRef} className="min-h-0 flex-1 overflow-auto p-4">
+      <div ref={contentRef} className="@container/doc min-h-0 flex-1 overflow-auto p-4">
+        {/* Text docs read in a bounded column (~75 characters per line),
+            centred in the pane on its own; the outline is pinned to the
+            pane's right edge when there is room (the right track never drops
+            below the outline's width, so the text shifts left rather than
+            overlap). Iframes (html, pdf) keep the full width. */}
+        <div
+          className={cn(
+            readable
+              ? cn(
+                  "grid grid-cols-[minmax(0,1fr)_minmax(0,38rem)_minmax(0,1fr)] @min-[40rem]/doc:px-4 @min-[40rem]/doc:pt-2",
+                  showToc &&
+                    "@min-[52rem]/doc:grid-cols-[minmax(0,1fr)_minmax(0,38rem)_minmax(13rem,1fr)] @min-[52rem]/doc:gap-x-6",
+                )
+              : "h-full",
+          )}
+        >
+        <div className={cn(readable ? "col-start-2 min-w-0" : "h-full")}>
         {showMeta && file.meta && <KbMetaCard meta={file.meta} />}
 
         {error && <p className="text-xs text-red-500">{strings.loadError}</p>}
@@ -297,6 +404,17 @@ export function KbViewer({
             className="h-full min-h-[60vh] w-full rounded-lg border border-[var(--color-border)]"
           />
         )}
+        </div>
+        {showToc && (
+          <DocToc
+            sections={file.sections!}
+            chips={sectionChips}
+            scrollRef={contentRef}
+            onJumpTo={jumpTo}
+            label={strings.outline}
+          />
+        )}
+        </div>
       </div>
     </div>
   );
