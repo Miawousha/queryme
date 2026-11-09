@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import type { KbFile } from "@/lib/kb/manifest";
 import type { CitedRef } from "@/lib/kb/cited-paths";
@@ -11,6 +11,7 @@ import { useKbPeek } from "@/lib/kb/use-kb-peek";
 import { KbPeek } from "@/components/kb/kb-peek";
 import type { PeekTarget } from "@/lib/kb/peek-extract";
 import { buildKbTree, resolveGroups, type KbChip, type KbTreeNode } from "@/lib/kb/tree";
+import { anchorMatches } from "@/lib/kb/slug";
 import { cn } from "@/lib/utils";
 
 const LABEL = "font-mono text-control uppercase text-[var(--color-text-secondary)]";
@@ -145,12 +146,30 @@ type RowCtx = {
   peekHide: () => void;
   /** Indent level of the nearest enclosing cited+open doc, or null. */
   trailLevel?: number | null;
+  /** The document (and section) currently shown in the viewer, if any. */
+  active: { path: string; anchor: string | null } | null;
 };
+
+/** Metadata tab beside a doc title — company, role. */
+const TAG =
+  "min-w-0 truncate rounded-sm border border-[var(--color-border)] bg-[rgba(var(--color-text-primary-rgb),0.03)] px-1.5 text-2xs leading-[1.125rem] text-[var(--color-text-secondary)]";
+/** Date tab — fixed-width digits so ranges line up down the list. */
+const PERIOD =
+  "shrink-0 whitespace-nowrap rounded-sm px-1.5 font-mono text-2xs leading-[1.125rem] tabular-nums text-[var(--color-text-tertiary)]";
+const ACTIVE = "bg-[rgba(var(--color-primary-rgb),0.12)]";
 
 function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCtx }) {
   const open = ctx.searchMode || ctx.isExpanded(node);
   const isCited = node.chips.length > 0;
   const isPulse = ctx.pulseId === node.id;
+  const isActive =
+    ctx.active !== null &&
+    node.path === ctx.active.path &&
+    (node.kind === "doc"
+      ? ctx.active.anchor === null
+      : node.kind === "section" &&
+        ctx.active.anchor !== null &&
+        anchorMatches(ctx.active.anchor, node.anchor ?? ""));
 
   const trailLevel = ctx.trailLevel ?? null;
   // A cited+open doc starts a trail at its own depth for its descendants and itself.
@@ -209,15 +228,32 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
 
   if (node.kind === "doc") {
     const hasChildren = node.children.length > 0;
+    const tags = node.tags ?? [];
+    // One line: title, then metadata tabs that shrink (ellipsis) before the
+    // title does, then the date tab pinned right. Tabs drop out entirely when
+    // the tree is too narrow to show them legibly (container query).
     const label = (
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-control text-[var(--color-text-primary)]">
+      <span className="flex min-w-0 flex-1 items-center gap-1.5">
+        <span
+          className={cn(
+            "min-w-0 truncate text-control text-[var(--color-text-primary)]",
+            tags.length > 0 ? "@min-[22rem]:max-w-[55%] @min-[22rem]:shrink-0" : "flex-1",
+          )}
+        >
           {highlightMatch(node.label, ctx.needle)}
         </span>
-        {node.subtitle && (
-          <span className="truncate text-2xs text-[var(--color-text-tertiary)]">
-            {highlightMatch(node.subtitle, ctx.needle)}
+        {tags.length > 0 && (
+          <span className="hidden min-w-0 flex-1 items-center gap-1 @min-[22rem]:flex">
+            {tags.map((t) => (
+              <span key={t} className={TAG} title={t}>
+                {highlightMatch(t, ctx.needle)}
+              </span>
+            ))}
           </span>
+        )}
+        {tags.length > 0 && <span className="flex-1 @min-[22rem]:hidden" />}
+        {node.period && (
+          <span className={PERIOD}>{highlightMatch(node.period, ctx.needle)}</span>
         )}
       </span>
     );
@@ -243,6 +279,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
           className={cn(
             "relative flex items-center gap-0.5 rounded",
             isCited && "bg-[rgba(var(--color-accent-rgb),0.06)]",
+            isActive && ACTIVE,
             isPulse && "kb-pulse",
           )}
         >
@@ -270,6 +307,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
           <button
             type="button"
             data-kb-row=""
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               "flex min-w-0 flex-1 items-center gap-1.5 rounded px-1 py-1 text-left transition-colors",
               "hover:bg-[rgba(var(--color-primary-rgb),0.07)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]",
@@ -314,10 +352,12 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
     <button
       type="button"
       data-kb-row=""
+      aria-current={isActive ? "location" : undefined}
       style={isCited ? undefined : { paddingLeft: depth * 14 }}
       className={cn(
         "relative flex w-full min-w-0 items-center gap-1.5 rounded py-0.5 text-left transition-colors",
         isCited ? "flex-1 pl-2" : "px-2",
+        !isCited && isActive && ACTIVE,
         "hover:bg-[rgba(var(--color-primary-rgb),0.07)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)]",
         !isCited && isPulse && "kb-pulse",
       )}
@@ -346,7 +386,7 @@ function Row({ node, depth, ctx }: { node: KbTreeNode; depth: number; ctx: RowCt
       style={{ paddingLeft: depth * 14 }}
       className={cn(
         "relative flex items-center gap-1.5 rounded pr-2",
-        "bg-[rgba(var(--color-accent-rgb),0.06)]",
+        isActive ? ACTIVE : "bg-[rgba(var(--color-accent-rgb),0.06)]",
         isPulse && "kb-pulse",
       )}
     >
@@ -367,12 +407,15 @@ export function KbTree({
   onOpen,
   filter = "",
   lens = false,
+  active = null,
 }: {
   manifest: KbFile[];
   citedRefs: CitedRef[];
   onOpen: (path: string, anchor?: string | null) => void;
   filter?: string;
   lens?: boolean;
+  /** The doc/section open in the side viewer — highlighted and kept in view. */
+  active?: { path: string; anchor: string | null } | null;
 }) {
   const { strings, lang, groups: configGroups, apiBasePath, seenAutoReveal, jumpToMessage } =
     useKb();
@@ -443,7 +486,17 @@ export function KbTree({
     needle: filter.trim().toLowerCase(),
     peekShow,
     peekHide,
+    active,
   };
+
+  // Keep the open document's row in view as the viewer changes documents
+  // (e.g. opened from a chat citation while the tree is scrolled elsewhere).
+  const activeKey = active ? `${active.path}#${active.anchor ?? ""}` : null;
+  useEffect(() => {
+    if (activeKey === null) return;
+    const el = containerRef.current?.querySelector<HTMLElement>("[aria-current]");
+    el?.scrollIntoView?.({ block: "nearest" });
+  }, [activeKey]);
 
   const containerKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -461,7 +514,7 @@ export function KbTree({
 
   return (
     <>
-    <div ref={containerRef} className="flex flex-col gap-2" onKeyDown={containerKeyDown}>
+    <div ref={containerRef} className="@container flex flex-col gap-2" onKeyDown={containerKeyDown}>
       {/* Pinned (_virtual/) rows — hidden while filter/lens is active */}
       {!searchMode && pinned.length > 0 && (
         <div className="flex flex-col gap-1 border-b border-[var(--color-border)] pb-2">

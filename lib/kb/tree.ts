@@ -2,7 +2,7 @@ import type { KbFile } from "@/lib/kb/manifest";
 import type { KbFileType } from "@/lib/kb/file-type";
 import type { CitedRef } from "@/lib/kb/cited-paths";
 import type { KbGroup } from "@/lib/kb/meta-format";
-import { humanizeSlug, metaSubtitle } from "@/lib/kb/meta-format";
+import { humanizeSlug, metaRowTags } from "@/lib/kb/meta-format";
 import { anchorMatches } from "@/lib/kb/slug";
 
 /** One citation chip pinned to a tree node: the conversation-global footnote
@@ -20,7 +20,10 @@ export type KbTreeNode = {
   /** Resolved section slug (section nodes). */
   anchor?: string;
   fileType?: KbFileType;
-  subtitle?: string | null;
+  /** Inline metadata tabs beside a doc title (company, role). */
+  tags?: string[];
+  /** Date range / year shown as a trailing tab on doc rows. */
+  period?: string | null;
   /** Citation chips pinned to this exact node (doc and section nodes only). */
   chips: KbChip[];
   /** True when a descendant carries chips — visible while collapsed. */
@@ -159,7 +162,7 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
       label: file.title,
       path: file.path,
       fileType: file.type,
-      subtitle: metaSubtitle(file.meta),
+      ...metaRowTags(file.title, file.meta),
       chips: chipsByNode.get(docId) ?? [],
       dot: false,
       children: (file.sections ?? []).map((s) => {
@@ -196,7 +199,7 @@ export function buildKbTree(input: BuildKbTreeInput): KbTreeNode[] {
   function matches(node: KbTreeNode): boolean {
     if (node.label.toLowerCase().includes(needle)) return true;
     if (node.kind === "doc") {
-      if (node.subtitle?.toLowerCase().includes(needle)) return true;
+      if (node.period?.toLowerCase().includes(needle)) return true;
       const meta = fileByPath.get(node.path!)?.meta;
       const hay = [meta?.company, meta?.role, ...(meta?.tags ?? []), ...(meta?.stack ?? [])];
       return hay.some((h) => h?.toLowerCase().includes(needle));

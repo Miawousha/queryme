@@ -5,10 +5,17 @@ import { useKb } from "@/components/kb/kb-context";
 import { useDialog } from "@/lib/use-dialog";
 import { useIsDesktop } from "@/lib/use-is-desktop";
 
-const WIDTH_KEY = "queritae:kbPanelWidth";
-const MIN_PCT = 24;
-const MAX_PCT = 60;
-const DEFAULT_PCT = 38;
+/**
+ * The pane keeps two widths: one for the tree alone, and a wider one while a
+ * document is open beside the tree. Each is draggable and persisted on its own,
+ * so opening a doc widens the pane and closing it restores the tree width.
+ */
+const MODES = {
+  tree: { key: "queritae:kbPanelWidth", min: 24, max: 60, def: 38 },
+  doc: { key: "queritae:kbPanelWidthDoc", min: 36, max: 80, def: 62 },
+} as const;
+type Mode = keyof typeof MODES;
+const MODES_DEFAULTS: Record<Mode, number> = { tree: MODES.tree.def, doc: MODES.doc.def };
 
 /**
  * Two-pane app-shell body: `chat` on the left, `panel` on the right. Fills the
@@ -32,9 +39,15 @@ export function KbLayout({
   collapsed?: boolean;
   onCollapsedChange?: (next: boolean) => void;
 }) {
-  const { strings, onJumpToMessage } = useKb();
+  const { strings, onJumpToMessage, openTarget } = useKb();
   const isDesktop = useIsDesktop();
-  const [widthPct, setWidthPct] = useState(DEFAULT_PCT);
+  const mode: Mode = openTarget !== null ? "doc" : "tree";
+  const { key: WIDTH_KEY, min: MIN_PCT, max: MAX_PCT } = MODES[mode];
+  const [widths, setWidths] = useState<Record<Mode, number>>(MODES_DEFAULTS);
+  const widthPct = widths[mode];
+  const modeRef = useRef<Mode>(mode);
+  modeRef.current = mode;
+  const setWidthPct = (pct: number) => setWidths((w) => ({ ...w, [mode]: pct }));
   const [collapsedInternal, setCollapsedInternal] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const dragging = useRef(false);
@@ -58,22 +71,29 @@ export function KbLayout({
   };
 
   useEffect(() => {
-    const stored = Number(localStorage.getItem(WIDTH_KEY));
-    if (stored >= MIN_PCT && stored <= MAX_PCT) setWidthPct(stored);
+    const next = { ...MODES_DEFAULTS };
+    for (const m of Object.keys(MODES) as Mode[]) {
+      const stored = Number(localStorage.getItem(MODES[m].key));
+      if (stored >= MODES[m].min && stored <= MODES[m].max) next[m] = stored;
+    }
+    setWidths(next);
   }, []);
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
       if (!dragging.current) return;
+      const { min, max } = MODES[modeRef.current];
       const pct = ((window.innerWidth - e.clientX) / window.innerWidth) * 100;
-      setWidthPct(Math.min(MAX_PCT, Math.max(MIN_PCT, pct)));
+      const m = modeRef.current;
+      setWidths((w) => ({ ...w, [m]: Math.min(max, Math.max(min, pct)) }));
     }
     function onUp() {
       if (!dragging.current) return;
       dragging.current = false;
       document.body.style.userSelect = "";
-      setWidthPct((w) => {
-        localStorage.setItem(WIDTH_KEY, String(Math.round(w)));
+      const m = modeRef.current;
+      setWidths((w) => {
+        localStorage.setItem(MODES[m].key, String(Math.round(w[m])));
         return w;
       });
     }

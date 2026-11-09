@@ -102,3 +102,20 @@ describe("KbPanel header", () => {
     expect(screen.getByText("Sources · this answer")).toBeInTheDocument();
   });
 });
+
+describe("KbPanel — document beside the tree", () => {
+  it("keeps the tree mounted while a document is open", () => {
+    vi.mocked(useKb).mockReturnValue(
+      ctx({ openTarget: { path: "projects/graybox.md", anchor: null } }),
+    );
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    render(<KbPanel />);
+    // Tree controls are still there…
+    expect(screen.getByPlaceholderText("Filter…")).toBeInTheDocument();
+    // …the open doc row is highlighted…
+    expect(screen.getByRole("button", { name: /Graybox/, current: "page" })).toBeInTheDocument();
+    // …and the viewer offers a close control alongside the narrow-pane back.
+    expect(screen.getByRole("button", { name: "close" })).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+});

@@ -157,6 +157,7 @@ export function KbDocToolbar({
   typeBadge,
   backLabel,
   onBack,
+  closeLabel,
   actions,
   focused,
   onToggleFocus,
@@ -172,6 +173,12 @@ export function KbDocToolbar({
   typeBadge?: string;
   backLabel: string;
   onBack: () => void;
+  /**
+   * When set, the toolbar shows a trailing "close ×" instead of "‹ back"
+   * whenever the enclosing `@container` (the KB panel) is wide enough for the
+   * doc to sit beside the tree — there is no list to go "back" to then.
+   */
+  closeLabel?: string;
   actions: KbDocAction[];
   focused: boolean;
   onToggleFocus: () => void;
@@ -192,7 +199,10 @@ export function KbDocToolbar({
         type="button"
         onClick={onBack}
         aria-label={backLabel}
-        className="shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
+        className={cn(
+          "shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]",
+          closeLabel && "@min-[36rem]:hidden",
+        )}
         style={{ letterSpacing: "0.14em" }}
       >
         ‹ {backLabel}
@@ -238,6 +248,17 @@ export function KbDocToolbar({
         >
           {focused ? <MinimizeIcon /> : <ExpandIcon />}
         </button>
+        {closeLabel && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={closeLabel}
+            title={closeLabel}
+            className="hidden h-6 w-6 items-center justify-center border border-[var(--color-border)] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)] @min-[36rem]:inline-flex"
+          >
+            <CloseIcon />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -332,6 +353,14 @@ function ExpandIcon() {
   return (
     <svg {...ICON_PROPS}>
       <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M18 6L6 18M6 6l12 12" />
     </svg>
   );
 }

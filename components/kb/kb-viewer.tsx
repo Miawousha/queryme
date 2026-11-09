@@ -49,6 +49,7 @@ export function KbViewer({
   citedRefs = [],
   breadcrumb = [],
   onBack,
+  closeLabel,
 }: {
   file: KbFile;
   /** Scroll target section slug — jump to a heading on open. */
@@ -58,6 +59,8 @@ export function KbViewer({
   /** Breadcrumb path labels shown muted before the doc title. */
   breadcrumb?: string[];
   onBack: () => void;
+  /** Label for the close control shown when the viewer sits beside the tree. */
+  closeLabel?: string;
 }) {
   const { strings, apiBasePath, lang, contentRepoUrl, contentRepoBranch } = useKb();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -238,6 +241,7 @@ export function KbViewer({
         typeBadge={file.type}
         backLabel={strings.back}
         onBack={onBack}
+        closeLabel={closeLabel}
         actions={actions}
         focused={focus}
         onToggleFocus={() => setFocus((v) => !v)}

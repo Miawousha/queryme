@@ -48,7 +48,8 @@ export function KbPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollKey = `queritae:kbTreeScroll:${apiBasePath}`;
 
-  // Restore the tree's scroll position when returning from the viewer.
+  // Restore the tree's scroll position when returning from the viewer (the
+  // tree column is display:none while a doc fills a narrow pane).
   useLayoutEffect(() => {
     if (openTarget !== null) return;
     const el = scrollRef.current;
@@ -61,60 +62,75 @@ export function KbPanel() {
   }, [openTarget, scrollKey]);
 
   const openFileEntry = openTarget ? manifest.find((f) => f.path === openTarget.path) ?? null : null;
+  const docOpen = openTarget !== null;
 
-  // When a file is open, the viewer owns the whole pane — including its own
-  // top band — so the panel renders nothing else around it.
-  if (openFileEntry) {
-    return (
-      <aside className="flex h-full flex-col overflow-hidden">
-        <KbViewer
-          file={openFileEntry}
-          anchor={openTarget!.anchor}
-          citedRefs={citedRefs}
-          breadcrumb={breadcrumbFor(openFileEntry.path, groups, strings.sections.other)}
-          onBack={closeFile}
-        />
-      </aside>
-    );
-  }
-
-  // openTarget is set but the path is missing from the manifest — dead-end.
-  if (openTarget !== null && openFileEntry === null) {
-    return (
-      <aside className="flex h-full flex-col overflow-hidden">
-        <div className={BAND}>
-          <button
-            type="button"
-            onClick={closeFile}
-            aria-label={strings.backToList}
-            className="shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)]"
-            style={{ letterSpacing: "0.14em" }}
-          >
-            ‹ {strings.back}
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-auto p-4">
-          <p className="text-xs text-[var(--color-text-tertiary)]">{strings.notInKb}</p>
-        </div>
-      </aside>
-    );
-  }
-
-  // Tree view (openTarget === null).
-  return (
-    <aside className="flex h-full flex-col overflow-hidden">
+  // Document pane: the viewer, or a dead-end when the path is missing from
+  // the manifest. Sits RIGHT of the tree so the tree stays usable for
+  // navigation; when the panel is too narrow for both (mobile drawer, a
+  // narrow desktop pane) the tree column hides and the doc takes the pane.
+  const docPane = openTarget === null ? null : openFileEntry ? (
+    <KbViewer
+      file={openFileEntry}
+      anchor={openTarget.anchor}
+      citedRefs={citedRefs}
+      breadcrumb={breadcrumbFor(openFileEntry.path, groups, strings.sections.other)}
+      onBack={closeFile}
+      closeLabel={strings.close}
+    />
+  ) : (
+    <>
       <div className={BAND}>
-        <span className="flex items-center gap-2 font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
+        <button
+          type="button"
+          onClick={closeFile}
+          aria-label={strings.backToList}
+          className="shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)] @min-[36rem]:hidden"
+          style={{ letterSpacing: "0.14em" }}
+        >
+          ‹ {strings.back}
+        </button>
+        <button
+          type="button"
+          onClick={closeFile}
+          aria-label={strings.close}
+          className="ml-auto hidden shrink-0 whitespace-nowrap font-mono text-2xs uppercase text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-accent)] @min-[36rem]:inline"
+          style={{ letterSpacing: "0.14em" }}
+        >
+          {strings.close} ×
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto p-4">
+        <p className="text-xs text-[var(--color-text-tertiary)]">{strings.notInKb}</p>
+      </div>
+    </>
+  );
+
+  return (
+    <aside className="@container flex h-full overflow-hidden">
+      <div
+        className={cn(
+          "min-w-0 flex-col overflow-hidden",
+          docOpen
+            ? "hidden w-[clamp(15rem,34%,24rem)] shrink-0 border-r border-[var(--color-border)] @min-[36rem]:flex"
+            : "flex flex-1",
+        )}
+      >
+      <div className={BAND}>
+        <span className="flex min-w-0 items-center gap-2 whitespace-nowrap font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-primary)]">
           <span aria-hidden className="text-[var(--color-brand)]">
             ✦
           </span>
-          {strings.title}
+          <span className="truncate">{strings.title}</span>
         </span>
-        <span className="font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
-          {"// "}
-          {manifest.length}
-        </span>
-        <div className="ml-auto flex items-center gap-2">
+        {/* Beside an open doc the tree column is narrow: drop the count and
+            shorten the lens button to its ◆ number so the band stays one line. */}
+        {!docOpen && (
+          <span className="whitespace-nowrap font-heading text-label uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+            {"// "}
+            {manifest.length}
+          </span>
+        )}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
             type="button"
             aria-pressed={lens}
@@ -130,7 +146,8 @@ export function KbPanel() {
             )}
             style={LABEL_STYLE}
           >
-            <span aria-hidden>◆</span> {lensCount} {strings.referencedLens}
+            <span aria-hidden>◆</span> {lensCount}
+            {!docOpen && <> {strings.referencedLens}</>}
           </button>
           <button
             type="button"
@@ -206,8 +223,17 @@ export function KbPanel() {
         }}
       >
         <KbSourcesStrip />
-        <KbTree manifest={manifest} citedRefs={citedRefs} onOpen={openFile} filter={filter} lens={lens} />
+        <KbTree
+          manifest={manifest}
+          citedRefs={citedRefs}
+          onOpen={openFile}
+          filter={filter}
+          lens={lens}
+          active={openFileEntry ? openTarget : null}
+        />
       </div>
+      </div>
+      {docPane && <div className="flex min-w-0 flex-1 flex-col overflow-hidden">{docPane}</div>}
     </aside>
   );
 }

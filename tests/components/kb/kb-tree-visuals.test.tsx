@@ -44,3 +44,39 @@ describe("KbTree — visuals", () => {
     expect(container.querySelector("[data-kb-trail]")).not.toBeNull();
   });
 });
+
+describe("KbTree — inline metadata and active row", () => {
+  const META_FILES: KbFile[] = [
+    {
+      path: "experience/2018-ion.md",
+      title: "Battery platform",
+      type: "md",
+      meta: { company: "ION Energy", role: "CTO", start: "2018-01", end: "2022-05" },
+    },
+  ];
+
+  it("renders company, role and period on the doc row itself", () => {
+    vi.mocked(useKb).mockReturnValue(ctx({ manifest: META_FILES }));
+    render(<KbTree manifest={META_FILES} citedRefs={[]} onOpen={vi.fn()} />);
+    const row = screen.getByRole("button", { name: /Battery platform/ });
+    expect(row).toHaveTextContent("ION Energy");
+    expect(row).toHaveTextContent("CTO");
+    expect(row).toHaveTextContent("2018 – 2022");
+  });
+
+  it("marks the doc open in the side viewer as current", () => {
+    vi.mocked(useKb).mockReturnValue(ctx({ manifest: META_FILES }));
+    render(
+      <KbTree
+        manifest={META_FILES}
+        citedRefs={[]}
+        onOpen={vi.fn()}
+        active={{ path: "experience/2018-ion.md", anchor: null }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /Battery platform/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+});

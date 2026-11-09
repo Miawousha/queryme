@@ -221,3 +221,44 @@ describe("breadcrumbFor / resolveGroups", () => {
     expect(resolved[0].label).toBe("Carnets");
   });
 });
+
+describe("buildKbTree — inline row metadata", () => {
+  it("puts role/company in tags and the date range in period (no subtitle line)", () => {
+    const tree = buildKbTree({
+      ...BASE,
+      files: [
+        {
+          path: "experience/2018-ion.md",
+          title: "Battery platform",
+          type: "md",
+          meta: { company: "ION Energy", role: "CTO", start: "2018-01", end: "2022-05" },
+        },
+      ],
+    });
+    const doc = find(tree, "doc:experience/2018-ion.md")!;
+    expect(doc.tags).toEqual(["ION Energy", "CTO"]);
+    expect(doc.period).toBe("2018 – 2022");
+  });
+
+  it("drops a company tag the title already names", () => {
+    const tree = buildKbTree({
+      ...BASE,
+      files: [
+        {
+          path: "experience/2021-ion.md",
+          title: "2021 — ION Energy",
+          type: "md",
+          meta: { company: "ION Energy", role: "CTO", year: 2021 },
+        },
+      ],
+    });
+    const doc = find(tree, "doc:experience/2021-ion.md")!;
+    expect(doc.tags).toEqual(["CTO"]);
+    expect(doc.period).toBe("2021");
+  });
+
+  it("filter matches the period tab", () => {
+    const tree = buildKbTree({ ...BASE, filter: "2025" });
+    expect(find(tree, "doc:experience/2025-altergo.md")).toBeDefined();
+  });
+});

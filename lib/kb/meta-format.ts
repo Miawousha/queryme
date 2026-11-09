@@ -29,6 +29,30 @@ export function metaSubtitle(meta?: KbFileMeta): string | null {
   return null;
 }
 
+/** Inline row metadata for the KB tree: short labelled tags shown beside the
+ * title instead of a second subtitle line. */
+export type KbRowMeta = {
+  /** Company and role, in that order, each only when present. The company is
+   * dropped when the title already names it ("ION Energy — CTO"). */
+  tags: string[];
+  /** Date range, year or date — rendered as a right-aligned tab. */
+  period: string | null;
+};
+
+export function metaRowTags(title: string, meta?: KbFileMeta | null): KbRowMeta {
+  if (!meta) return { tags: [], period: null };
+  const tags: string[] = [];
+  const t = title.toLowerCase();
+  if (meta.company && !t.includes(meta.company.toLowerCase())) tags.push(meta.company);
+  if (meta.role && !t.includes(meta.role.toLowerCase())) tags.push(meta.role);
+  const period =
+    formatPeriod(meta.start, meta.end) ??
+    (meta.year !== undefined ? String(meta.year) : null) ??
+    meta.date ??
+    null;
+  return { tags, period };
+}
+
 /** A directory group of the KB panel, in display order. Derived server-side
  * from the content config's markdown collections. */
 export type KbGroup = {
